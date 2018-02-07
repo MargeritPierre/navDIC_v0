@@ -61,7 +61,11 @@ function hd = manageDICSeeds(hd)
     end
 
 % MODIFY SEED
-    function [seed,valid] = modifySeed(seed)
+    function modifySeed()
+        ID = listBoxSeeds.Value ;
+        seed = SEEDS(ID) ;
+        seed = seed.modify(hd) ;
+        SEEDS(ID) = seed ;
         % Update Lists
             updateSeedList() ;
             inputListChanged = true ;
@@ -97,7 +101,7 @@ function hd = manageDICSeeds(hd)
             disp(char(10)) ;
             disp('NEW SEED ADDED :') ;
             disp(seedToAdd) ;
-        % Add the Input
+        % Add the Seed
             if isempty(SEEDS) 
                 SEEDS = seedToAdd ;
             else

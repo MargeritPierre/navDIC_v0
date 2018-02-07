@@ -9,7 +9,6 @@ function navDIC()
         defaultFrameRate = 1 ; % Hz
         maximumFrameRate = 25 ; % Hz
         
-        
     % Is navDIC already running ?
         navDICFigs = findobj(groot,'tag',navDICTag) ;
         % If YES, prompt figures to Foreground
@@ -268,33 +267,10 @@ function navDIC()
 
 % PREVIEW A CAMERA
     function camPreview
-%         listCams = {hd.Cameras.Name} ;
-%         [selectedIDs,valid] = listdlg('PromptString','Select Cameras to preview:',...
-%                                     'SelectionMode','multiple',...
-%                                     'initialValue',1,...
-%                                     'ListString',listCams) ;
-%         for c = selectedIDs
-%             % Switch status cases
-%                 switch hd.Cameras(c).CurrentState
-%                     case 'setting'
-%                         continue ;
-%                     case 'previewing'
-%                         %continue ;
-%                     case 'free'
-%                 end
-            % Preview the camera if it is OK
-%                 prev = preview(hd.Cameras(c).VidObj) ;
-%                 % Modify axes formatting
-%                     ax = prev.Parent ;
-%                     ax.YDir = 'reverse' ;
-%                     %ax.Units = 'normalized' ;
-                prev = navDICCameraPreview(hd) ;
-                if prev.isValid
-                    hd.Previews{end+1} = prev ;
-                end
-                % Set the camera state
-                    %hd.Cameras(c).CurrentState = 'previewing' ;
-%         end
+        prev = navDICCameraPreview(hd) ;
+        if prev.isValid
+            hd.Previews{end+1} = prev ;
+        end
     end
 
 % SET THE EXTERNAL INPUTS
@@ -352,11 +328,12 @@ function navDIC()
             hd.CurrentFrame = currentFrame ;
             hd.TimeLine = hd.TimeLine(1:nFrames,:) ;
             if nFrames>0 
-                hd.Images = hd.Images{1:nFrames} ;
+                if ~isempty(hd.Cameras) ; hd.Images = hd.Images(1:nFrames) ; end
+                if ~isempty(hd.DAQInputs) ; hd.InputData = hd.InputData(1:nFrames,:) ; end
             else
                 hd.Images = {} ;
+                hd.InputData = [] ;
             end
-            hd.InputData = hd.InputData(1:nFrames,:) ;
         % Update toolbar and previews ;
             updateToolbar() ;
             hd = updateAllPreviews(hd) ;
@@ -380,12 +357,24 @@ function navDIC()
             updateToolbar() ;
     end
 
+% PREVIEW AN INDIVIDUAL DIC SEED
+    function previewSeed()
+        if isempty(hd.Seeds) ; return ; end
+        prev = navDIC2DSeedPreview(hd) ;
+        if prev.isValid
+            hd.Previews{end+1} = prev ;
+        end
+    end
+
 % COMPUTE NON-COMPUTED DIC ZONES
     function computeDIC
+        disp('computeDIC')
     end
 
 % COMPUTE ALL DIC ZONES
     function computeAllDIC
+        disp('computeAllDIC')
+        hd = updateDIC(hd) ;
     end
 
 % MANAGE AXES
@@ -533,14 +522,19 @@ function navDIC()
                 
         % DIC -------------------------------------------------
            hd.ToolBar.MainMenu.DIC = uimenu(hd.ToolBar.fig,'Label','DIC','Enable','off') ;
-           % Manage DIC Zones
+           % Manage DIC Seeds
                 hd.ToolBar.MainMenu.manageDICZones = uimenu(hd.ToolBar.MainMenu.DIC,...
                                                         'Label','Manage DIC Seeds', ...
                                                         'callback',@(src,evt)manageDICZones) ;
+           % Preview a DIC Seed
+                hd.ToolBar.MainMenu.previewSeed = uimenu(hd.ToolBar.MainMenu.DIC,...
+                                                        'Label','Preview a Seed', ...
+                                                        'callback',@(src,evt)previewSeed()) ;
            % Compute DIC
                 hd.ToolBar.MainMenu.computeDIC = uimenu(hd.ToolBar.MainMenu.DIC,...
                                                         'Label','Compute DIC'...
                                                         ...,'Enable','off'...
+                                                        ,'Separator','on'...
                                                         ) ;
                % Only Non-Computed Zones
                     hd.ToolBar.MainMenu.computeSomeDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...

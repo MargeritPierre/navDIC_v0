@@ -6,10 +6,10 @@ classdef navDICPreview
         isValid = true ; 
     end
     
-    methods(Static)
+    methods
         
         % CONSTRUCTOR
-            function prev = navDICPreview(hd)
+            function prev = navDICPreview(hd,varargin)
                 % Parameters
                     figRelSize = 0.5 ;
                 % Figure Creation
@@ -24,7 +24,7 @@ classdef navDICPreview
             end
         
         % UPDATE
-            function prev = updatePreview(prev,hd)
+            function prev = updatePreview(prev,hd,varargin)
                 % Test the preview validity
                     if ~isvalid(prev.fig)
                         prev.isValid = false ;

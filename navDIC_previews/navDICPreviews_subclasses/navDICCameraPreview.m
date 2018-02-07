@@ -11,7 +11,12 @@ classdef navDICCameraPreview < navDICPreview
                     prev = prev@navDICPreview(hd,varargin{:}) ;
                     prev.fig.Name = 'navDIC Camera Preview' ;
                 % Choose a camera to preview
-                    [ID,valid] = selectCameras(hd,'single') ;
+                    if ~isempty(varargin)
+                        ID = varargin{1} ;
+                        valid = ID~=-1 ;
+                    else
+                        [ID,valid] = selectCameras(hd,'single') ;
+                    end
                     if ~valid 
                         close(prev.fig)
                         prev.isValid = false ;
@@ -45,7 +50,7 @@ classdef navDICCameraPreview < navDICPreview
         % UPDATE
             function prev = updatePreview(prev,hd)
                 % Superclass updating function
-                    prev = navDICPreview.updatePreview(prev,hd) ;
+                    prev = updatePreview@navDICPreview(prev,hd) ;
                     if ~prev.isValid ; return ; end
                 % Try to get the last acquired image on camera
                     img = [] ;

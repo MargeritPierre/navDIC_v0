@@ -24,6 +24,30 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 obj.Points = obj.drawToolH.DistMesh.Points ;
                 obj.Triangles = obj.drawToolH.DistMesh.Triangles ;
         end
+        function obj = modify(obj,hd)
+                obj.drawToolH = drawingTool(obj.drawToolH) ;
+                obj.Points = obj.drawToolH.DistMesh.Points ;
+                obj.Triangles = obj.drawToolH.DistMesh.Triangles ;
+        end
+        function updateSeedPreview(obj,hd,ax)
+            triMesh = findobj(ax,'tag',obj.Name) ;
+            if isempty(triMesh)
+                triMesh = patch(ax ...
+                                ,'vertices',obj.Points...
+                                ,'faces',obj.Triangles...
+                                ,'edgecolor','b'...
+                                ,'facecolor','interp'...
+                                ,'facealpha',0.7 ...
+                                ,'hittest','off' ...
+                                ,'tag',obj.Name ...
+                                ) ;
+            end
+            if hd.CurrentFrame>0
+                triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
+                triMesh.CData = sqrt(sum(obj.Displacements(:,:,hd.CurrentFrame).^2,2)) ;
+                caxis(ax,[0 max(triMesh.CData(:))]) ;
+            end
+        end
     end
     
 end 

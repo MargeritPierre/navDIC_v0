@@ -10,12 +10,14 @@ classdef navDICSeed
             refImgs = {} ;
         % Seed elements
             Points = [] ;
+            MovingPoints = [] ;
             Displacements = [] ;
             Strains = [] ;
         % Displ. Computation Method
-            displMethod = [] ;
+            displMode = 'abs' ;
+            displMethod = 'cpcorr' ;
         % Strain Computation Method
-            strainMethod = [] ;
+            strainMethod = 'planefit' ;
         % drawingTool retrurns
             drawToolH = [] ;
     end
@@ -43,9 +45,15 @@ classdef navDICSeed
                 obj.isValid = false ;
             end
         end
-        function computeDisplacements()
+        function obj = modify(obj,hd)
+        end
+        function obj = computeDisplacements(obj,hd)
+            script = ['navDIC_',obj.displMethod] ;
+            eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
         function computeStrains()
+        end
+        function updateSeedPreview(obj,ax)
         end
     end
     
