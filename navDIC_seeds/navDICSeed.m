@@ -14,7 +14,7 @@ classdef navDICSeed
             Displacements = [] ;
             Strains = [] ;
         % Displ. Computation Method
-            displMode = 'abs' ;
+            displMode = 'rel' ;
             displMethod = 'cpcorr' ;
         % Strain Computation Method
             strainMethod = 'planefit' ;

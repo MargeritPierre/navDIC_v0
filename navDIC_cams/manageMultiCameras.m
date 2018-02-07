@@ -196,7 +196,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                 % Cameras connected with this adaptor
                     adaptCams = imaqhwinfo(adaptName) ;
                     nC = length(adaptCams.DeviceIDs) ;
-                    if ~nC ; disp('      NO CONNECTED CAMERAS') ; return ; end
+                    if ~nC ; disp('      NO CONNECTED CAMERAS') ; continue ; end
                         for c = 1:nC
                             availableCams(end+1).Infos = adaptCams.DeviceInfo(c) ;
                             availableCams(end).Adaptor = adaptName ;

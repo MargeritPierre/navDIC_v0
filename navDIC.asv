@@ -97,6 +97,11 @@ function navDIC()
                 disp('') ;
             % Save Acquired Data
                 hd = saveCurrentSetup(hd) ;
+                if ~isempty(hd.WorkDir) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
+                    wd = hd.WorkDir ;
+                    nameImg = [wd.Path,wd.CommonName,'_',num2str(hd.nFrames),wd.ImagesExtension] ;
+                    imwrite(uint16(65535*hd.Images{hd.nFrames}{1}),nameImg) ;
+                end
             % Processing
                 % DIC
                     hd = updateDIC(hd) ;
@@ -217,11 +222,6 @@ function navDIC()
             clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
         % Update the Main Menu Bar
             updateMainMenu() ;
-    end
-
-% SAVE THE SETUP DATA
-    function saveSetupData()
-        hd = saveAllSetupData(hd) ;
     end
 
 
@@ -470,10 +470,6 @@ function navDIC()
                 hd.ToolBar.MainMenu.setDir = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Set the Working Directory', ...
                                                         'callback',@(src,evt)setPath('menu')) ;
-           % Save All Data
-                hd.ToolBar.MainMenu.saveSetupData = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Save the Setup Data', ...
-                                                        'callback',@(src,evt)saveSetupData()) ;
            % Frame Rate
                 hd.ToolBar.MainMenu.frameRate = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Frame Rate', ...
