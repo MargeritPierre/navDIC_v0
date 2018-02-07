@@ -18,7 +18,9 @@ To make the app run, the following Matlab Toolboxes are needed:
 - [Image Acquisition Toolbox](https://www.mathworks.com/products/imaq.html): to control cameras
 - [Data Acquisition Toolbox](https://www.mathworks.com/products/daq.html): to control external inputs/outputs
 
-Depending on the used cameras, particular Matlab adaptators packages could be needed too.
+Depending on the used cameras, particular [Matlab adaptators packages](https://www.mathworks.com/help/imaq/installing-the-support-packages-for-image-acquisition-toolbox-adaptors.html) could be needed too. The app has been tested and works with the following adaptors:
+- [dcam](https://www.mathworks.com/hardware-support/dcam.html) : IEEE 1394 port
+- [GigE](https://www.mathworks.com/hardware-support/gige.html) : RJ45 port
 
 
 ## Installation
