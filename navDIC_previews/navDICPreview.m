@@ -34,7 +34,6 @@ classdef navDICPreview
         
         % DESTRUCTOR
             function hd = closePreview(prev,hd)
-
             end
     end
     

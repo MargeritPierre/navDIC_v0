@@ -17,8 +17,8 @@ function navDIC()
                 return ;
             end
 
-    % Initialization of handles
-        global hd % for debug
+    % Initialization of handles (type "global hd" in cmd to remote debugging access)
+        global hd
         hd = [] ; % Shared handles
         hd.initCompleted = false ;
         hd.navDICTag = navDICTag ;
@@ -413,6 +413,7 @@ function navDIC()
                                     'outerposition',screenPos(end,:),...
                                     'dockcontrols','off',...
                                     'NumberTitle','off',...
+                                    'Visible','off',...
                                     'tag',navDICTag...
                                     ) ;
            hd.ToolBar.fig.ButtonDownFcn = @(src,evt)navDICOnTop() ;
@@ -420,10 +421,7 @@ function navDIC()
         hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closeAll() ;
        % Add the main menu
            addMainMenu() ;
-           setMainMenuShortcuts() ;
            updateMainMenu() ;
-       % Add shortcuts buttons
-           addButtons() ;
        % Put The toolbar at the top of the screen
            drawnow ; % I don't know why, but i'm forced to draw here...
            hd.ToolBar.fig.Position(4) = infosTxtHeight ;
@@ -448,6 +446,13 @@ function navDIC()
                                             ) ;
            % Listener for continuous slider
                 addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)changeFrame());
+        % MAKE THE FIGURE VISIBLE
+            drawnow ;
+            hd.ToolBar.fig.Visible = 'on' ;
+       % Add shortcuts buttons
+            addButtons() ;
+            setMainMenuShortcuts() ;
+            drawnow ;
     end
 
 

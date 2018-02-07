@@ -6,7 +6,7 @@ function hd = updateAllPreviews(hd)
     % Update previews
         validPrev = [] ;
         for p = 1:length(hd.Previews)
-            hd.Previews{p} = updatePreview(hd.Previews{p},hd) ;
+            hd.Previews{p} = hd.Previews{p}.updatePreview(hd) ;
             validPrev(p) = hd.Previews{p}.isValid ;
         end
         validPrev = logical(validPrev) ;
