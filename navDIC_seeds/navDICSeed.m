@@ -51,7 +51,9 @@ classdef navDICSeed
             script = ['navDIC_',obj.displMethod] ;
             eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
-        function computeStrains()
+        function obj = computeStrains(obj,hd)
+            script = ['navDIC_',obj.strainMethod] ;
+            eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
         function updateSeedPreview(obj,ax)
         end
