@@ -345,7 +345,7 @@ function navDIC()
                     case 'Images'
                         if isempty(hd.Cameras) ; warning('No image will be saved until a camera is added') ; end
                     case 'Input Data'
-                        if isempty(hd.DAQInputs) || isempty(hd.DAQInputs.Inputs) ; warning('No data will be saved until a DAQ input is added') ; end
+                        if isempty(hd.DAQInputs) ; warning('No data will be saved until a DAQ input is added') ; end
                     case 'Seed Data'
                         if isempty(hd.Seeds) ; warning('No data will be saved until a seed is added') ; end
                 end
@@ -656,18 +656,8 @@ function navDIC()
                 % Inputs
                     if nIn~=0
                         hd.ToolBar.MainMenu.inputPreview.Enable = 'on' ;
-                        hd.ToolBar.MainMenu.saveInputs.Enable = 'on' ;
                     else
                         hd.ToolBar.MainMenu.inputPreview.Enable = 'off' ;
-                        hd.ToolBar.MainMenu.saveInputs.Enable = 'off' ;
-                    end
-                % Seeds
-                    if ~isempty(hd.Seeds)
-                        hd.ToolBar.MainMenu.seedPreview.Enable = 'on' ;
-                        hd.ToolBar.MainMenu.saveSeeds.Enable = 'on' ;
-                    else
-                        hd.ToolBar.MainMenu.seedPreview.Enable = 'off' ;
-                        hd.ToolBar.MainMenu.saveSeeds.Enable = 'off' ;
                     end
             end
     end

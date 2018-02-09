@@ -50,10 +50,10 @@ classdef navDICSeed
             % SEED PARAMETERS
                 obj.RefFrame = max(1,hd.CurrentFrame) ;
                 % If there was token frames before this seed creation
-%                     if hd.CurrentFrame>1
-%                         obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
-%                         obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
-%                     end
+                    if hd.CurrentFrame>1
+                        obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
+                        obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
+                    end
         end
         function obj = modify(obj,hd)
         end
