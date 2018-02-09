@@ -310,8 +310,7 @@ function navDIC()
         % Evaluate the maximumFrameRate by iterating the global timerFunction
             evalTime = 1 ; % seconds
         % Backup the config
-            nFrames = hd.nFrames ;
-            currentFrame = hd.CurrentFrame ;
+            hd_Bkp = hd ;
         % Stop the timer
             stopContinuous() ;
         % Execute it while it last less than evalTime
@@ -325,16 +324,7 @@ function navDIC()
             maxFR = it/toc(t) ;
             avisedFR = min(0.8*maxFR,maximumFrameRate) ;
         % Reset all data OK
-            hd.nFrames = nFrames ;
-            hd.CurrentFrame = currentFrame ;
-            hd.TimeLine = hd.TimeLine(1:nFrames,:) ;
-            if nFrames>0 
-                if ~isempty(hd.Cameras) ; hd.Images = hd.Images(1:nFrames) ; end
-                if ~isempty(hd.DAQInputs) ; hd.InputData = hd.InputData(1:nFrames,:) ; end
-            else
-                hd.Images = {} ;
-                hd.InputData = [] ;
-            end
+            hd = hd_Bkp ;
         % Update toolbar and previews ;
             updateToolbar() ;
             hd = updateAllPreviews(hd) ;

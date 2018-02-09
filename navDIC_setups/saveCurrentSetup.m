@@ -2,20 +2,45 @@ function hd = saveCurrentSetup(hd,varargin)
 
 % Default Parameters
     frameToSave = hd.nFrames ;
-    camID = 1 ;
+    camsFolderName = 'Images' ; 
+    inputsFolderName = 'Inputs' ; 
 
-if ~isempty(varargin)
-    frameToSave = varargin{1} ;
-end
-
-% Save Images
-    if ~isempty(hd.WorkDir) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
-        wd = hd.WorkDir ;
-        nameImg = [wd.Path,wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-        imwrite(uint16(65535*hd.Images{frameToSave}{camID}),nameImg) ;
+% Maybe an other frame has to be saved ?
+    if ~isempty(varargin)
+        frameToSave = varargin{1} ;
     end
+
+% If no workdir has been defined, return !
+    if isempty(hd.WorkDir) ; return ; end
+    wd = hd.WorkDir ;
     
-% Save Data
-    nameData = [wd.Path,wd.CommonName,'_InputData.mat'] ;
-    InputData = hd.InputData ;
-    save(nameData,'InputData') ;
+% Save Images
+    if ~isempty(hd.Cameras) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
+        for camID = 1:length(hd.Cameras)
+            % A folder by camera
+                folderName = [wd.Path,camsFolderName,'/',hd.Cameras(camID).Name] ;
+            % Is the folder exists ?
+                if ~exist(folderName,'dir') ; mkdir(folderName) ; end
+            % Save the image
+                nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                imwrite(uint16(65535*hd.Images{frameToSave}{camID}),nameImg) ;
+        end
+    end
+
+% Save Inputs Data
+    if ~isempty(hd.DAQInputs) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
+        % Folder of inputs data
+            folderName = [wd.Path,inputsFolderName] ;
+        % Is the folder exists ?
+            if ~exist(folderName,'dir') ; mkdir(folderName) ; end
+        % Saving... 
+            for inID = 1:length(hd.DAQInputs.Inputs)
+                inName = hd.DAQInputs.Inputs(inID).DataName ;
+                % Save the Data
+                    nameData = [folderName,'/',inName,'.mat'] ;
+                    eval([inName,' = hd.InputData(:,inID) ;']) ;
+                    save(nameData,inName) ;
+            end
+    end
+        
+    

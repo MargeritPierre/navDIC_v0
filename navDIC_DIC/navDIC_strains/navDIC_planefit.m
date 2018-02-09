@@ -9,15 +9,20 @@ disp('cpcorr')
 % Retrieve Infos
     frame = hd.CurrentFrame ;
     camID = obj.CamIDs ;
+    refFrame = obj.RefFrame ;
     U = obj.Displacements(:,:,frame) ;
     Pts = obj.Points;
-    PtsMov = round(obj.MovingPoints(:,:,frame-1));
+    try
+        PtsMov = round(obj.MovingPoints(:,:,frame));
+    catch
+        PtsMov = Pts;
+    end
     disp_Mode = obj.displMode ;
-    nPts = length(Pts(:,:,frame));
+    nPts = length(PtsMov(:,:));
     
 % If it is the first frame
     if frame == 1
-        obj.Strains = zeros(size(Pts)) ;
+        obj.Strains = zeros(size(Pts,1),3) ;
     end
     
 % ELSE, Compute Strains Calculation using displacement ether eulerian (relative displacement) or
@@ -25,7 +30,7 @@ disp('cpcorr')
 
     
 disp(['Computation of Strain ' num2str(disp_Mode)]);
-    if frame > 1
+    if frame-refFrame > 1
         % Compute Strains
         % Init
             E(1:nPts,:) = NaN ;
@@ -52,7 +57,6 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
                     E(p,2) = Py(2) ;
                     E(p,3) = .5*(Py(1)+Px(2)) ;
             end
-            toc(t)
         % Save Strains
         obj.Strains(:,:,frame) = E(:,:) ;
     end

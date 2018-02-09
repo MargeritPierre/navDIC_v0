@@ -2,7 +2,6 @@ function cam = setCameraSettings(cam)
 %%% [cam,valid] = setCameraSettings(cam)
 % 
 
-
     % Figure tag (used to prompt figure in first plane)
         figTag = ['setCameraSettings(',cam.Name,')'] ;
         % Is the camera already in setting mode ?
@@ -11,6 +10,8 @@ function cam = setCameraSettings(cam)
                 figure(prevFig) ;
                 return ;
             end
+       
+        
         
     % Init INFOS Structure
         INFOS = [] ;

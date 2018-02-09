@@ -14,7 +14,8 @@ classdef navDICSeed
             Displacements = [] ;
             Strains = [] ;
         % Displ. Computation Method
-            displMode = 'rel' ;
+            displMode = 'abs' ;
+            RefFrame = 1;
             displMethod = 'cpcorr' ;
         % Strain Computation Method
             strainMethod = 'planefit' ;
@@ -24,26 +25,35 @@ classdef navDICSeed
     
     methods
         function obj = navDICSeed(hd,nCams)
-            if ~isempty(hd.Cameras) % Is there defined cameras ?
-                % Select related Cameras
-                    [IDs,validIDs] = selectCameras(hd,nCams) ;
-                    obj.CamIDs = IDs ;
-                    obj.isValid = obj.isValid && validIDs ;
-                    if ~validIDs ; return ; end
-                % Get reference Images
-                    for id = IDs
-                        obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;
-                    end
-            elseif hd.debug % Debug mode
-                % Simulate a camera
-                    vidRes = [640 480] ;
-                    nCams = 1 ;
-                    for id = 1:nCams
-                        obj.refImgs{end+1} = ones(vidRes)'*0.5 ;
-                    end
-            else % The seed is Invalid
-                obj.isValid = false ;
-            end
+            % CAMERA-DEPENDENT DATA
+                if ~isempty(hd.Cameras) % Is there defined cameras ?
+                    % Select related Cameras
+                        [IDs,validIDs] = selectCameras(hd,nCams) ;
+                        obj.CamIDs = IDs ;
+                        obj.isValid = obj.isValid && validIDs ;
+                        if ~validIDs ; return ; end
+                    % Get reference Images
+                        for id = IDs
+                            hd = startAllCameras(hd) ;
+                            obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;
+                        end
+                elseif hd.debug % Debug mode
+                    % Simulate a camera
+                        vidRes = [640 480] ;
+                        nCams = 1 ;
+                        for id = 1:nCams
+                            obj.refImgs{end+1} = ones(vidRes)'*0.5 ;
+                        end
+                else % The seed is Invalid
+                    obj.isValid = false ;
+                end
+            % SEED PARAMETERS
+                obj.RefFrame = max(1,hd.CurrentFrame) ;
+                % If there was token frames before this seed creation
+%                     if hd.CurrentFrame>1
+%                         obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
+%                         obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
+%                     end
         end
         function obj = modify(obj,hd)
         end
@@ -58,5 +68,6 @@ classdef navDICSeed
         function updateSeedPreview(obj,ax)
         end
     end
+
     
 end

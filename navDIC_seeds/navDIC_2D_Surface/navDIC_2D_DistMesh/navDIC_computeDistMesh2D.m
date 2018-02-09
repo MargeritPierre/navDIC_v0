@@ -91,7 +91,8 @@ while 1
       dgrad2=dgradx.^2+dgrady.^2;
       p(ix,:)=p(ix,:)-[d(ix).*dgradx./dgrad2,d(ix).*dgrady./dgrad2];    % Project
 
-  % 8. Termination criterion: All interior nodes move less than dptol (scaled)
+  % 8. Termination criterion: All interior nodes move less than dptol
+  % (scaled)navDIC
       if max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/h0)<dptol, break; end
       if ~isvalid(triMesh) ; break ; end
       if count>maxCount ; break ; end 
