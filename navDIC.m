@@ -17,7 +17,8 @@ function navDIC()
                 return ;
             end
 
-    % Initialization of handles (type "global hd" in cmd to remote debugging access)
+    % Initialization of handles 
+    % (type "global hd" in cmd to remote debugging access)
         global hd
         hd = [] ; % Shared handles
         hd.initCompleted = false ;

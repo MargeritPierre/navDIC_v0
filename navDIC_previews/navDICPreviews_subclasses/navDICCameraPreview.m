@@ -1,6 +1,13 @@
 classdef navDICCameraPreview < navDICPreview
     
     properties
+        % Camera Infos
+            CameraName = [] ;
+            CameraID = [] ;
+        % Axes where the image is displayed
+            AxesImg = [] ;
+        % Handles to the Image Display
+            Img = [] ;
     end
     
     methods
@@ -23,15 +30,15 @@ classdef navDICCameraPreview < navDICPreview
                         return ;
                     end
                 % Retrieve Camera Infos
-                    prev.handles.CameraName = hd.Cameras(ID).Name ;
-                    prev.handles.CameraID = ID ;
-                    prev.fig.Name = [prev.fig.Name,' : ',prev.handles.CameraName] ;
+                    prev.CameraName = hd.Cameras(ID).Name ;
+                    prev.CameraID = ID ;
+                    prev.fig.Name = [prev.fig.Name,' : ',prev.CameraName] ;
                 % Set the axes
-                    prev.handles.AxesImg = axes('position',[0 0 1 1]) ;
+                    prev.AxesImg = axes('position',[0 0 1 1]) ;
                         axis tight
                         axis off
                         axis equal
-                        prev.handles.AxesImg.YDir = 'reverse' ;
+                        prev.AxesImg.YDir = 'reverse' ;
                 % Set the figure at the right size
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
@@ -42,7 +49,7 @@ classdef navDICCameraPreview < navDICPreview
                     newSizeFig = posFig.*ratios ;
                     prev.fig.Position = [prev.fig.Position(1:2)+(posFig-newSizeFig)/2 newSizeFig] ;
                 % Create an empty image
-                    prev.handles.Img = image(ones([fliplr(resCam) 3])*.5) ;
+                    prev.Img = image(ones([fliplr(resCam) 3])*.5) ;
                 % Contrain the aspect ratio
                     prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
             end
@@ -56,18 +63,18 @@ classdef navDICCameraPreview < navDICPreview
                     img = [] ;
                     try
                         img = hd.Images{hd.CurrentFrame} ;
-                        img = img{prev.handles.CameraID} ;
+                        img = img{prev.CameraID} ;
                     end
                     if isempty(img) 
-                        prev.handles.Img.CData = 0.5 + 0*prev.handles.Img.CData ;
+                        prev.Img.CData = 0.5 + 0*prev.Img.CData ;
                         return ;
                     end
                 % Actualize preview image
                     nBands = size(img,3) ;
                     if nBands == 1
-                        prev.handles.Img.CData = repmat(img,[1 1 3]) ;
+                        prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
-                        prev.handles.img.CData = img ;
+                        prev.img.CData = img ;
                     end
             end
         

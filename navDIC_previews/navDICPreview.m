@@ -2,7 +2,6 @@ classdef navDICPreview
     
     properties
         fig = [] ; % the main figure
-        handles = [] ; % handles linked to the preview
         isValid = true ; 
     end
     
@@ -11,7 +10,7 @@ classdef navDICPreview
         % CONSTRUCTOR
             function prev = navDICPreview(hd,varargin)
                 % Parameters
-                    figRelSize = 0.5 ;
+                    figRelSize = 0.5 ; % relative size to screen
                 % Figure Creation
                     prev.fig = figure('tag',hd.navDICTag) ;
                     prev.fig.ToolBar = 'none' ;
