@@ -401,6 +401,11 @@ function navDIC()
         hd = updateDIC(hd) ;
     end
 
+% ADD A PLOT PREVIEW
+    function plotPreview()
+        hd.Previews{end+1} = navDICPlotPreview(hd) ;
+    end
+
 % MANAGE AXES
     function manageViews
     end
@@ -596,6 +601,10 @@ function navDIC()
                 
         % VIEWS -------------------------------------------------
            hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
+           % Manage Axes
+                hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Plot Preview', ...
+                                                        'callback',@(src,evt)plotPreview) ;
            % Manage Axes
                 hd.ToolBar.MainMenu.manageViews = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Manage Views', ...

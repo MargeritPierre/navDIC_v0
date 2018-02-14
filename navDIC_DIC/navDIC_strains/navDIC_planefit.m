@@ -1,6 +1,6 @@
 function [obj,hd] = navDIC_planefit(obj,hd)
 
-disp('cpcorr')
+disp('planefit')
 
 % Params
     d = 40; % il faudra entrer la valeur servant la construction du maillage
@@ -35,7 +35,6 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
         % Init
             E(1:nPts,:) = NaN ;
             for p = 1:nPts
-                
                     if isnan(U(p,1)) ; continue ; end ;
                 % Get neightoring Pts
                     pt = PtsMov(p,:) ;
