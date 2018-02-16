@@ -24,11 +24,14 @@ function navDIC()
         hd.initCompleted = false ;
         hd.navDICTag = navDICTag ;
         hd.debug = false ;
+        hd.FrameRate = defaultFrameRate ;
         % Directories
             % navDic folder
                 [hd.RootPath,~,~] = fileparts(which('navDIC.m')) ;
             % Working Directory
                 hd.WorkDir = [] ;
+        % SOURCES
+            hd.Sources = [] ;
         % DEVICES
             % Cameras
                 hd.Cameras = [] ;
@@ -36,7 +39,6 @@ function navDIC()
                 hd.DAQInputs = [] ;
         % DATA
             initHandleData(false)
-            hd.FrameRate = defaultFrameRate ;
         % PROCESSING
             % DIC
                 hd.Seeds = [] ;

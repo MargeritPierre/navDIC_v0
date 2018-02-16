@@ -51,9 +51,9 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Choose the Video Format
             DeviceInfos = imaqhwinfo(cam.Adaptor, cam.Infos.DeviceID) ;
             [id,valid] = listdlg('PromptString','Select a Video Format:',...
-                'SelectionMode','single',...
-                'initialValue',1,...
-                'ListString',DeviceInfos.SupportedFormats) ;
+                                'SelectionMode','single',...
+                                'initialValue',1,...
+                                'ListString',DeviceInfos.SupportedFormats) ;
             if ~valid ; return ; end
         % Declare the videoinput
             cam.VidObj = videoinput(cam.Adaptor, cam.Infos.DeviceID,DeviceInfos.SupportedFormats{id}) ;
@@ -62,6 +62,9 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Add custom informations
             cam.Name = cam.Infos.DeviceName ;
             cam.CurrentState = 'connected' ;
+        % Create the output Source
+%             cam.Output = navDIC_CameraSource ;
+%             cam.Output.Name = regexprep(cam.Name,' ','_') ;
     end
 
 % RESET ALL HARDWARE INPUTS
