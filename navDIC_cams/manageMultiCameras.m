@@ -11,6 +11,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         if isempty(CAMERAS) 
             imaqreset ;
             CAMERAS = [] ;
+            camsHasChanged = false;
         end
     
     % Init CAMERA List
@@ -40,6 +41,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         
     % Return CAMERAS
         CAMERAS = usedCams ;
+        
         
         
 % ===================================================================================================================    
@@ -290,9 +292,6 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             btnClear.Position = [2*margin+2*btnWidth margin btnWidth btnHeight] ;
             btnClear.Callback = @(src,evt)clickClear() ;
     end
-
-
-
 
 
 end

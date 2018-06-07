@@ -99,7 +99,7 @@ function navDIC()
                 hd = saveCurrentSetup(hd) ;
             % Processing
                 % DIC
-                    hd = updateDIC(hd) ;
+                hd = updateDIC(hd) ;
             % Previews
                 hd = updateAllPreviews(hd) ;
         % Update Infos

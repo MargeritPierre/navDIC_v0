@@ -12,7 +12,7 @@ end
     if ~isempty(hd.WorkDir) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         wd = hd.WorkDir ;
         nameImg = [wd.Path,wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-        imwrite(uint16(65535*hd.Images{frameToSave}{camID}),nameImg) ;
+        imwrite(uint8(255*hd.Images{frameToSave}{camID}),nameImg) ;
     end
     
 % Save Data
