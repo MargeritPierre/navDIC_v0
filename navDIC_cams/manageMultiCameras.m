@@ -293,9 +293,4 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             btnClear.Position = [2*margin+2*btnWidth margin btnWidth btnHeight] ;
             btnClear.Callback = @(src,evt)clickClear() ;
     end
-
-
-
-
-
 end

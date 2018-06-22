@@ -18,12 +18,24 @@ function hd = saveCurrentSetup(hd,varargin)
     if ~isempty(hd.Cameras) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         for camID = 1:length(hd.Cameras)
             % A folder by camera
-                folderName = [wd.Path,camsFolderName,'/',hd.Cameras(camID).Name] ;
+                if isempty(strfind('/',wd.Path))
+                    folderName = [wd.Path,camsFolderName,'/',hd.Cameras(camID).Name] ;
+                else
+                    folderName = [wd.Path,camsFolderName,'\',hd.Cameras(camID).Name] ;
+                end
+                
             % Is the folder exists ?
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
-                nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-                imwrite(uint16(65535*hd.Images{frameToSave}{camID}),nameImg) ;
+                if isempty(wd.ImagesExtension)
+                    wd.ImagesExtension = '.tif' ;
+                end
+                if isempty(strfind('/',wd.Path))
+                    nameImg = [folderName,'/',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                else
+                    nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                end
+                imwrite(uint8(255*hd.Images{frameToSave}{camID}),nameImg) ;
         end
     end
 
@@ -37,7 +49,11 @@ function hd = saveCurrentSetup(hd,varargin)
             for inID = 1:length(hd.DAQInputs.Inputs)
                 inName = hd.DAQInputs.Inputs(inID).DataName ;
                 % Save the Data
-                    nameData = [folderName,'/',inName,'.mat'] ;
+                    if isempty(strfind('/',wd.Path))
+                        nameData = [folderName,'/',inName,'.mat'] ;
+                    else
+                        nameData = [folderName,'\',inName,'.mat'] ;
+                    end
                     eval([inName,' = hd.InputData(:,inID) ;']) ;
                     save(nameData,inName) ;
             end

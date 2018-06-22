@@ -1,4 +1,4 @@
-function hd = captureCameras(hd)
+ function hd = captureCameras(hd)
 
     % Params
         timeOut = 1 ;
@@ -14,7 +14,6 @@ function hd = captureCameras(hd)
                 return ;
             end
         end
-        
     % Get all cams data
         images = cell(1,nCams) ;
         for c = 1:nCams
@@ -30,5 +29,3 @@ function hd = captureCameras(hd)
         
     % Save Images
         hd.Images{hd.nFrames} = images ;
-
-end
