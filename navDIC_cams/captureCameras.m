@@ -20,7 +20,7 @@
             cam = hd.Cameras(c).VidObj ;
             camInfos =  get(cam);
             t = tic ;
-            while camInfos.FramesAvailable == 0 && toc(t)<timeOut ; end
+            %while camInfos.FramesAvailable == 0 && toc(t)<timeOut ; end
             images{c} = im2single(peekdata(cam,1)) ;
         end
         

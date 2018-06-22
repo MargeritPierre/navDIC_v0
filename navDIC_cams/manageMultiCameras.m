@@ -57,6 +57,14 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             if ~valid ; return ; end
         % Declare the videoinput
             cam.VidObj = videoinput(cam.Adaptor, cam.Infos.DeviceID,DeviceInfos.SupportedFormats{id}) ;
+        % Set the trigger to Manual 
+            % 'manual' is better to know perfectly when the picture is taken and
+            % it is also a great option not to log to much photos in memory.
+            %-----------------------------------------------------------
+            % if 'immediate' is chosen the camera takes pictures all the
+            % time and we just get in matlab the last picture that cam has taken, 
+            % the exact time is then unknown 
+            triggerconfig(cam.VidObj,'manual') ;
         % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
         % Add custom informations
@@ -194,9 +202,10 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             nA = length(adaptors) ;
             if ~nA ; disp('NO INSTALLED ADAPTORS') ; return ; end
             for a = 1:nA
-                adaptName = adaptors{a} ;
-                disp(['   ',adaptName]) ;
-                % Cameras connected with this adaptor
+                if ~strcmpi(adaptors{a},'macvideo')
+                    adaptName = adaptors{a} ;
+                    disp(['   ',adaptName]) ;
+                    % Cameras connected with this adaptor
                     adaptCams = imaqhwinfo(adaptName) ;
                     nC = length(adaptCams.DeviceIDs) ;
                     if ~nC ; disp('      NO CONNECTED CAMERAS') ; continue ; end
@@ -204,6 +213,8 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                             availableCams(end+1).Infos = adaptCams.DeviceInfo(c) ;
                             availableCams(end).Adaptor = adaptName ;
                         end
+                   
+                end
             end
     end
 
