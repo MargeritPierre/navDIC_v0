@@ -62,6 +62,17 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Add custom informations
             cam.Name = cam.Infos.DeviceName ;
             cam.CurrentState = 'connected' ;
+        % Reglage du trigger
+            listTriggerType = [{'manual'}, {'hardware'}, {'infinite'}] ;
+            [id,valid] = listdlg('PromptString','Select a trigger type :',...
+                'SelectionMode','single',...
+                'initialValue',1,...
+                'ListString',listTriggerType) ;
+            if ~valid ; return ; end
+            if strcmp(cam.Running,'on')
+                stop(cam) ;   
+            end
+            triggerconfig(cam,listTriggerType{id}) 
     end
 
 % RESET ALL HARDWARE INPUTS
@@ -170,6 +181,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             if isempty(usedCams) ; return ; end
         % Get the selected item
             id = listBoxUsed.Value ;
+        
         % Re-Set Infos
             updatedCam = setCameraSettings(usedCams(id)) ;
             usedCams(id) = updatedCam ;
