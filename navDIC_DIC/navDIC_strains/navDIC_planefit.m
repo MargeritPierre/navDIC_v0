@@ -35,7 +35,6 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
         % Init
             E(1:nPts,1:3) = NaN ;
             for p = 1:nPts
-                
                     if isnan(U(p,1)) ; continue ; end ;
                 % Get neightoring Pts
                     pt = PtsMov(p,:) ;

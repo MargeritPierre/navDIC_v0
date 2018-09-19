@@ -17,17 +17,21 @@ function navDIC()
                 return ;
             end
 
-    % Initialization of handles (type "global hd" in cmd to remote debugging access)
+    % Initialization of handles 
+    % (type "global hd" in cmd to remote debugging access)
         global hd
         hd = [] ; % Shared handles
         hd.initCompleted = false ;
         hd.navDICTag = navDICTag ;
         hd.debug = false ;
+        hd.FrameRate = defaultFrameRate ;
         % Directories
             % navDic folder
                 [hd.RootPath,~,~] = fileparts(which('navDIC.m')) ;
             % Working Directory
                 hd.WorkDir = [] ;
+        % SOURCES
+            hd.Sources = [] ;
         % DEVICES
             % Cameras
                 hd.Cameras = [] ;
@@ -35,7 +39,6 @@ function navDIC()
                 hd.DAQInputs = [] ;
         % DATA
             initHandleData(false)
-            hd.FrameRate = defaultFrameRate ;
         % PROCESSING
             % DIC
                 hd.Seeds = [] ;
@@ -74,37 +77,55 @@ function navDIC()
             hd.ToolBar.infosTxt.BackgroundColor = [1 0.3 0.3] ;
             drawnow ;
         % MAIN FUNCTION
+            startTime = tic ;
+            disp('----- Timer Fcn -----') ;
             % Add a frame
                 hd.nFrames = hd.nFrames+1 ;
                 hd.CurrentFrame = hd.nFrames ;
             % Capture
-                disp('----- Capture time -----') ;
-                t = tic ;
+                lastTime = toc(startTime) ;
+                disp(' - Get Data') ;
                 % Time
                     hd.TimeLine(hd.nFrames,:) = clock() ;
-                    tclock = toc(t) ;
-                    disp(['   Clock : ' num2str(tclock*1000,'%.1f'),' ms']) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Clock : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
                 % Images
                     hd = captureCameras(hd) ;
-                    tcams = toc(t)-tclock ;
-                    disp(['   Cameras : ' num2str(tcams*1000,'%.1f'),' ms']) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Cameras : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
                 % Inputs
                     hd = captureInputs(hd) ;
-                    tinputs = toc(t)-tclock-tcams ;
-                    disp(['   Inputs : ' num2str(tinputs*1000,'%.1f'),' ms']) ;
-                disp(['Total : ' num2str(toc(t)*1000,'%.1f'),' ms']) ;
-                disp('------------------------') ;
-                disp('') ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
             % Save Acquired Data
                 hd = saveCurrentSetup(hd) ;
+                t = toc(startTime)-lastTime ;
+                disp([' - Save : ' num2str(t*1000,'%.1f'),' ms']) ;
+                lastTime = toc(startTime) ;
             % Processing
                 % DIC
                     hd = updateDIC(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp([' - Compute DIC : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
             % Previews
                 hd = updateAllPreviews(hd) ;
+                t = toc(startTime)-lastTime ;
+                disp([' - Update Previews : ' num2str(t*1000,'%.1f'),' ms']) ;
+                lastTime = toc(startTime) ;
         % Update Infos
-            pause(0.005) ;
+            %pause(0.005) ;
             updateToolbar() ;
+            t = toc(startTime)-lastTime ;
+            disp([' - Update Toolbar : ' num2str(t*1000,'%.1f'),' ms']) ;
+            lastTime = toc(startTime) ;
+        % Time
+            disp(['Total Time : ' num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
+            disp('------------------------') ;
+            disp('') ;
         % Reset toolbar Color
             hd.ToolBar.infosTxt.BackgroundColor = hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor ;
     end
@@ -385,6 +406,11 @@ function navDIC()
         hd = updateDIC(hd) ;
     end
 
+% ADD A PLOT PREVIEW
+    function plotPreview()
+        hd.Previews{end+1} = navDICPlotPreview(hd) ;
+    end
+
 % MANAGE AXES
     function manageViews
     end
@@ -580,6 +606,10 @@ function navDIC()
                 
         % VIEWS -------------------------------------------------
            hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
+           % Manage Axes
+                hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Plot Preview', ...
+                                                        'callback',@(src,evt)plotPreview) ;
            % Manage Axes
                 hd.ToolBar.MainMenu.manageViews = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Manage Views', ...

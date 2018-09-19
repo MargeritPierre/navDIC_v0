@@ -30,7 +30,7 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                     if ~prev.isValid ; return ; end
                 % Update seed preview
                     seedID = ismember({hd.Seeds.Name},prev.SeedName) ;
-                    hd.Seeds(seedID).updateSeedPreview(hd,prev.handles.AxesImg) ;
+                    hd.Seeds(seedID).updateSeedPreview(hd,prev.AxesImg) ;
             end
     end
     
