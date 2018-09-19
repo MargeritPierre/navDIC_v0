@@ -1,7 +1,7 @@
 function hd = captureCameras(hd)
 
     % Params
-        timeOut = 1 ;
+        timeOut = 5 ;
 
     % Is there cameras ?
         if isempty(hd.Cameras) ; return ; end
@@ -19,9 +19,12 @@ function hd = captureCameras(hd)
         images = cell(1,nCams) ;
         for c = 1:nCams
             cam = hd.Cameras(c).VidObj ;
-            camInfos =  get(cam);
             t = tic ;
-            while camInfos.FramesAvailable == 0 && toc(t)<timeOut ; end
+            while cam.FramesAvailable == 0 && toc(t)<timeOut ; end
+            if toc(t)>timeOut 
+                images{c} = zeros(cam.VideoResolution) ;
+                continue ; 
+            end
             images{c} = im2single(peekdata(cam,1)) ;
         end
         

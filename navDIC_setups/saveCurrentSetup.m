@@ -23,7 +23,7 @@ function hd = saveCurrentSetup(hd,varargin)
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
                 nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-                imwrite(uint16(65535*hd.Images{frameToSave}{camID}),nameImg) ;
+                imwrite(uint8(255*hd.Images{frameToSave}{camID}),nameImg) ;
         end
     end
 

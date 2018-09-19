@@ -1,9 +1,9 @@
 function [obj,hd] = navDIC_planefit(obj,hd)
 
-disp('cpcorr')
+disp('planefit')
 
 % Params
-    d = 40; % il faudra entrer la valeur servant la construction du maillage
+    d = 150; % il faudra entrer la valeur servant la construction du maillage
     width_pln_strains = 8*d ;
 
 % Retrieve Infos
@@ -20,9 +20,9 @@ disp('cpcorr')
     disp_Mode = obj.displMode ;
     nPts = length(PtsMov(:,:));
     
-% If it is the first frame
-    if frame == 1
-        obj.Strains = zeros(size(Pts,1),3) ;
+    % Blah blah
+    if frame<=obj.RefFrame
+        obj.Strains = zeros([size(Pts,1) 3 frame]) ;
     end
     
 % ELSE, Compute Strains Calculation using displacement ether eulerian (relative displacement) or
@@ -30,10 +30,10 @@ disp('cpcorr')
 
     
 disp(['Computation of Strain ' num2str(disp_Mode)]);
-    if frame-refFrame > 1
+    if frame-refFrame >= 1
         % Compute Strains
         % Init
-            E(1:nPts,:) = NaN ;
+            E(1:nPts,1:3) = NaN ;
             for p = 1:nPts
                 
                     if isnan(U(p,1)) ; continue ; end ;

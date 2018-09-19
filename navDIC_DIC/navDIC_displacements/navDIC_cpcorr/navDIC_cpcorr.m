@@ -3,7 +3,7 @@ function [obj,hd] = navDIC_cpcorr(obj,hd)
 disp('cpcorr')
 
 % Params
-    CorrSize = 10 ;
+    CorrSize = 40 ;
 
 % Retrieve Infos
     frame = hd.CurrentFrame ;

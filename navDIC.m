@@ -308,20 +308,23 @@ function navDIC()
 % EVALUATE THE MAXIMUM FRAME RATE
     function avisedFR = evalMaxFrameRate()
         % Evaluate the maximumFrameRate by iterating the global timerFunction
-            evalTime = 1 ; % seconds
+            evalTime = 3 ; % seconds
         % Backup the config
             hd_Bkp = hd ;
         % Stop the timer
             stopContinuous() ;
         % Execute it while it last less than evalTime
-            t = tic ;
+            startTime = tic ;
+            maxItTime = 0 ;
             it = 0 ;
-            while toc(t)<evalTime
+            while toc(startTime)<evalTime
+                t = tic ;
                 timerFunction() ;
                 it = it+1 ;
+                maxItTime = max(maxItTime,toc(t)) ;
             end
         % Evaluate the maxFrameRate
-            maxFR = it/toc(t) ;
+            maxFR = 1/maxItTime ; % maxFR = it/toc(startTime) ;
             avisedFR = min(0.8*maxFR,maximumFrameRate) ;
         % Reset all data OK
             hd = hd_Bkp ;
