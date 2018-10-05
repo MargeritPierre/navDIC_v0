@@ -3,8 +3,9 @@ function [obj,hd] = navDIC_planefit(obj,hd)
 disp('planefit')
 
 % Params
-    d = 150; % il faudra entrer la valeur servant la construction du maillage
-    width_pln_strains = 8*d ;
+    %d = 15; % il faudra entrer la valeur servant la construction du maillage
+    %width_pln_strains = 300; 3*d ;
+    num_pts_fit = 20 ; % Number of pts used to fit the plane
 
 % Retrieve Infos
     frame = hd.CurrentFrame ;
@@ -39,16 +40,14 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
                 % Get neightoring Pts
                     pt = PtsMov(p,:) ;
                     r = sqrt(sum((PtsMov-repmat(pt,[nPts 1])).^2,2)) ;
-                    indFit = r<width_pln_strains ;
-                    nfit = size(indFit(indFit),1) ;
-                    if nfit<3 ; continue ; end ;
+                    [~,indsort] = sort(r) ;
+                    pts_fit = indsort(1:num_pts_fit) ;
                 % Fit a plane
-                    %fitPts = Pts(indFit,:) ;
-                    xy = PtsMov(indFit,:)-repmat(pt,[nfit 1]) ;
+                    xy = PtsMov(pts_fit,:)-repmat(pt,[num_pts_fit 1]) ;
                     % Plane : a+bx+cy = Ux ; d+ex+fy = Uy ; 
-                        A = [xy(:,1) xy(:,2) ones(nfit,1)] ;
-                        bx = U(indFit,1) ;
-                        by = U(indFit,2) ;
+                        A = [xy(:,1) xy(:,2) ones(num_pts_fit,1)] ;
+                        bx = U(pts_fit,1) ;
+                        by = U(pts_fit,2) ;
                         Px = A\bx ;
                         Py = A\by ;
                 % Strains

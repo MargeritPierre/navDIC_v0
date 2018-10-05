@@ -20,11 +20,11 @@ function hd = captureCameras(hd)
         for c = 1:nCams
             cam = hd.Cameras(c).VidObj ;
             t = tic ;
-            while cam.FramesAvailable == 0 && toc(t)<timeOut ; end
-            if toc(t)>timeOut 
-                images{c} = zeros(cam.VideoResolution) ;
-                continue ; 
-            end
+%            while cam.FramesAvailable == 0 && toc(t)<timeOut ; end
+%             if toc(t)>timeOut 
+%                 images{c} = zeros(cam.VideoResolution) ;
+%                 continue ; 
+%             end
             images{c} = im2single(peekdata(cam,1)) ;
         end
         

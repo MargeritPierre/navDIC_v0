@@ -41,11 +41,22 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'hittest','off' ...
                                 ,'tag',obj.Name ...
                                 ) ;
+                colorbar ;
             end
             if hd.CurrentFrame>0
                 triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
-                triMesh.CData = sqrt(sum(obj.Displacements(:,:,hd.CurrentFrame).^2,2)) ;
-                caxis(ax,[0 max(triMesh.CData(:))]) ;
+                Data =   obj.Strains(:,2,:) ... Eyy
+                        ... obj.Strains(:,1,:) ... Exx
+                        ... obj.Strains(:,3,:) ... Exy
+                        ... sqrt(sum(obj.Displacements(:,:,:).^2,2)) ... Displacement Magnitude
+                        ;
+                Data = squeeze(Data) ;
+                triMesh.CData = Data(:,hd.CurrentFrame) ;
+                %caxis(ax,[min(Data(:)),max(Data(:))]) ;
+                caxis(ax,max(abs(Data(:)))*[-1 1]) ;
+                %caxis(ax,[0 1e-3]) ;
+                %caxis(ax,[0 max(abs(triMesh.CData(:)))]) ;
+                %caxis auto ;
             end
         end
     end

@@ -403,7 +403,12 @@ function navDIC()
 % COMPUTE ALL DIC ZONES
     function computeAllDIC
         disp('computeAllDIC')
-        hd = updateDIC(hd) ;
+        for fr = 1:hd.nFrames
+            hd.CurrentFrame = fr ;
+            hd = updateDIC(hd) ;
+            hd = updateAllPreviews(hd) ;
+            drawnow ;
+        end
     end
 
 % ADD A PLOT PREVIEW
