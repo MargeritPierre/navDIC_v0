@@ -165,7 +165,7 @@ function hd = manageDICSeeds(hd)
             for c = 1:length(dirinfo)
                 seedClass = dirinfo(c).name ;
                 % SubClasses dir
-                    subClasses = dir([path,'/',seedClass]) ;
+                    subClasses = dir([path,'\',seedClass]) ;
                     subClasses(~[subClasses.isdir]) = [] ;
                     subClasses(ismember({subClasses.name},{'.','..'})) = [] ;
                 % Available class

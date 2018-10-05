@@ -16,7 +16,7 @@ function H = navDIC_processShapesForDistMesh(H)
     % Retrieve custom Data
         customData = H.uiContextMenuData ;
         % Convert to double
-            for s = 1:length(customData) ;
+            for s = 1:length(customData) 
                 customData(s).h0 = str2num(customData(s).h0) ;
                 customData(s).h = str2num(customData(s).h) ;
                 customData(s).l = str2num(customData(s).l) ;
@@ -83,8 +83,10 @@ function H = navDIC_processShapesForDistMesh(H)
                             l = sqrt(sum(diff(pos([1:end,1],:),1,1).^2,2)) ;
                             L = cumsum(l) ;
                             edgPt = @(t)interp1([0;L]/L(end),pos([1:end,1],:),t) ;
+ 
                 end
             % Add or Remove Domain
+            
                 switch H.Geometries(s).Bool
                     case '+'
                         if geo==1 
@@ -116,6 +118,7 @@ function H = navDIC_processShapesForDistMesh(H)
                 end
         end
     % Final dist. Function
+
         fd = dFrecurs{end} ;
     % Final dist. Function
         FH = @(p)hFrecurs{end}(p) ;
@@ -123,11 +126,12 @@ function H = navDIC_processShapesForDistMesh(H)
     % Add intersection points to fixed ppoints
         pFix = [pFix ; pInt] ;
         
+        
     % Remove fixed points that are not on the boundary
         if ~isempty(pFix)
             pFix = pFix(abs(fd(pFix))<=eps,:) ;
         end
-        
+
     % BoundingBox
         [j,i] = find(H.ROI) ;
         margin = 1 ;
