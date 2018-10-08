@@ -15,7 +15,7 @@ function hd = manageDICSeeds(hd)
     % Init Seed Classes List
         availableSeedClasses = [] ;
         getAvailableSeedClasses() ;
-        if isempty(availableSeedClasses) ;
+        if isempty(availableSeedClasses) 
             disp('NO SEED CLASSES AVAILABLE !') ;
             return ; 
         end

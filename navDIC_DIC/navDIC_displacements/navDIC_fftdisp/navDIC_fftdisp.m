@@ -1,6 +1,6 @@
-function [obj,hd] = navDIC_cpcorr(obj,hd)
+function [obj,hd] = navDIC_fftdisp(obj,hd)
 
-disp('cpcorr')
+disp('fftdisp')
 
 % Params
     CorrSize = obj.corrSize ; % 40 ;
@@ -38,7 +38,7 @@ disp('cpcorr')
         end
         valid = ~any(isnan(PtsMov),2) ;
         obj.MovingPoints(:,:,frame) = obj.Points*NaN ;
-        obj.MovingPoints(valid,:,frame) = my_cpcorr(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
+        obj.MovingPoints(valid,:,frame) = fftDispMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
     end
     
 % Compute Displacements

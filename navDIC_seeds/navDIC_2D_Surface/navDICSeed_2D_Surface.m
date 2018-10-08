@@ -1,6 +1,7 @@
 classdef navDICSeed_2D_Surface < navDICSeed
    
     properties
+        corrSize = 40 ;
     end
     
     methods

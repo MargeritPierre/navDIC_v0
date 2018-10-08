@@ -24,7 +24,7 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
             end
             
         % UPDATE
-            function prev = updatePreview(prev,hd)
+            function [prev,hd] = updatePreview(prev,hd)
                 % Superclass updating function
                     prev = updatePreview@navDICCameraPreview(prev,hd) ;
                     if ~prev.isValid ; return ; end

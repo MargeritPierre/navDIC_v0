@@ -1,4 +1,4 @@
-classdef navDICSeed
+classdef navDICSeed < matlab.mixin.Heterogeneous
     
     properties
         % Basic Infos
@@ -34,8 +34,17 @@ classdef navDICSeed
                         if ~validIDs ; return ; end
                     % Get reference Images
                         for id = IDs
-                            hd = startAllCameras(hd) ;
-                            obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;
+                            if ~isempty(hd.Images)
+                                img = hd.Images{id,1} ;
+                                if iscell(img)
+                                    obj.refImgs{end+1} = img{1} ;
+                                else
+                                    obj.refImgs{end+1} = img ;
+                                end
+                            else
+                                hd = startAllCameras(hd) ;
+                                obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;
+                            end
                         end
                 elseif hd.debug % Debug mode
                     % Simulate a camera

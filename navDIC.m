@@ -227,14 +227,10 @@ function navDIC()
             [path] = uigetdir('SELECT THE DIRECTORY OF A SAVED SETUP') ;
             if path==0 ; return ; end
         % Load the setup
-            setup = loadSetup(path) ;
+            [setup,hd] = loadSetup(hd,path) ;
         % Set the WorkDir
             setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
         % Update handles and displays it
-            hd.Images = setup.Images ;
-            hd.ROI = setup.ROI ;
-            hd.DIC = setup.DIC ;
-            hd.Data = setup.Data ;
             clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
         % Update the Main Menu Bar
             updateMainMenu() ;

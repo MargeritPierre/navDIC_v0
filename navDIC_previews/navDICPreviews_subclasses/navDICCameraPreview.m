@@ -51,7 +51,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Create an empty image
                     prev.Img = image(ones([fliplr(resCam) 3])*.5) ;
                 % Contrain the aspect ratio
-                    prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
+                    %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
             end
             
         % UPDATE

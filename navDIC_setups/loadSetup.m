@@ -1,69 +1,104 @@
-function out = loadSetup(path)
-    
-% Image files present in the directory (in the format: commonName_id.ext)
-    % Possible image extensions
-        imgExt = {'tif','png','bmp','jpg','jpeg'} ;
-    % Get files
-        files = dir('*.anImpossibleExtension') ;
-        for i = 1:length(imgExt)
-            f = dir([path,'/*.',imgExt{i}]) ;
-            files(end+(1:length(f))) = f ;
+function [setup,hd] = loadSetup(hd,path)
+
+    % SET CAMERAS AND IMAGES
+        % Get Cameras folders
+            camFolders = {} ;
+            answer = 1 ;
+            while answer~=0
+                [answer] = uigetdir(path,'SELECT A CAMERA FOLDER OR CANCEL TO CONTINUE') ;
+                if answer==0 ; break ; end
+                camFolders{end+1} = answer ;
+            end
+            nCams = length(camFolders) ;
+            if nCams<1
+                warning('NO CAMERA DATA LOADED')
+            end
+        % Get associated images
+            imgExt = {'png','tif','jpg','jpeg','bmp'} ;
+            Images = {} ;
+            Cameras = struct([]) ;
+            for cam = 1:nCams    % Possible image extensions
+                % Get files
+                    files = dir('*.anImpossibleExtension') ;
+                    for i = 1:length(imgExt)
+                        f = dir([camFolders{cam},'/*.',imgExt{i}]) ;
+                        files(end+(1:length(f))) = f ;
+                    end
+                % Keep file names only
+                    fileNames = {files.name} ;
+                % Get the common name and extension
+                    str = strsplit(fileNames{1},'_') ;
+                    if length(str)==1
+                        commonName = str{1} ;
+                    else
+                        commonName = strjoin(str(1:end-1),'_') ;
+                    end
+                    [~,~,ext] = fileparts(str{end}) ;
+                % Get image ids
+                    idSTR = {} ;
+                    idNUM = [] ;
+                    for i = 1:length(fileNames)
+                        idSTR{i} = fileNames{i}(length(commonName)+2:end-length(ext)) ;
+                        if ~isempty(str2num(idSTR{i}))
+                            idNUM(i) = str2num(idSTR{i}) ;
+                        else
+                            idNUM(i) = NaN ;
+                        end
+                    end
+                    [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
+                    idSTR = idSTR(ind(~isnan(idNUM))) ;
+                    nImgs = length(idSTR) ;
+                % Load images
+                    for i = 1:nImgs
+                        Images{cam,i} = {imread([camFolders{cam},'/',commonName,'_',idSTR{i},ext])} ;
+                    end
+                % SET THE CAMERA
+                    CamName = strsplit(camFolders{cam},{'/','\'}) ;
+                    Cameras(cam).Name = CamName{end} ;
+                    Cameras(cam).CurrentState = 'ghost' ;
+                    Cameras(cam).Adaptator = 'folder' ;
+                    refImg = Images{cam,1} ;
+                    Cameras(cam).VidObj.ROIPosition = [0 0 flip(size(refImg{1}))] ;
+            end
+            
+        
+    % GET INPUT DATA
+        [inputFiles,inputPath] = uigetfile('*.mat','SELECT THE INPUT DATA FILE(S) OR CANCEL',path,'MultiSelect','on') ;
+        if ischar(inputFiles)
+            inputFiles = {inputFiles} ;
         end
-    % Keep file names only
-        fileNames = {files.name} ;
-    % Get the common name and extension
-        str = strsplit(fileNames{1},'_') ;
-        if length(str)==1
-            commonName = str{1} ;
-        else
-            commonName = strjoin(str(1:end-1),'_') ;
+        nInputs = length(inputFiles) ;
+        if inputPath==0
+            warning('NO INPUT DATA LOADED')
+            nInputs = 0 ;
         end
-        [~,~,ext] = fileparts(str{end}) ;
-    % Get image ids
-        idSTR = {} ;
-        idNUM = [] ;
-        for i = 1:length(fileNames)
-            idSTR{i} = fileNames{i}(length(commonName)+2:end-length(ext)) ;
-            if ~isempty(str2num(idSTR{i}))
-                idNUM(i) = str2num(idSTR{i}) ;
-            else
-                idNUM(i) = NaN ;
+        % Load files
+        InputData = [] ;
+        for in = 1:nInputs
+            dataInFile = load([inputPath,inputFiles{in}]) ;
+            for fi = fieldnames(dataInFile)
+                 data = dataInFile.(fi{1}) ;
+                 InputData(1:length(data),end+1) = data ;
             end
         end
-        [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
-        idSTR = idSTR(ind(~isnan(idNUM))) ;
-        nImgs = length(idSTR) ;
-        
-% Load images
-    images = {} ;
-    for i = 1:nImgs
-        images{i} = imread([path,'/',commonName,'_',idSTR{i},ext]) ;
-    end
+            
+% Put everything in the setup
+    setup.Path = path ;
+    setup.CommonName = commonName ;
+    setup.ImagesExtension = ext ;
     
-% Load ROI
-    ROI = [] ;
-    try
-        ROI = imread([path,'/',commonName,'_ROI',ext]) ;
-        ROI = uint8(logical(ROI(:,:,1))) ;
-    end
+% Change the handles
+    hd.Images = Images ;
+    hd.InputData = InputData ;
+    hd.nFrames = max(size(InputData,1),size(Images,2)) ;
+    hd.CurrentFrame = 1 ;
+    hd.Cameras = Cameras ;
     
-% Load DIC
-    DIC = {} ;
-    try
-        DIC = load([path,'/',commonName,'_DIC.mat']) ;
-    end
     
-% Load Supplementary Data
-    Data = [] ;
-    try
-        load([path,'/',commonName,'_data.mat']) ;
-    end
     
-% Put everything in output
-    out.Path = path ;
-    out.CommonName = commonName ;
-    out.ImagesExtension = ext ;
-    out.Images = images ;
-    out.ROI = ROI ;
-    out.DIC = DIC ;
-    out.Data = Data ;
+    
+    
+    
+    
+    
+    

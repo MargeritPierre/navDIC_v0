@@ -5,6 +5,7 @@ function hd = stopAllCameras(hd)
         
     % Stop all cams
         for c = 1:length(hd.Cameras)
+            if strcmp(hd.Cameras(c).CurrentState,'ghost') ; continue ; end
             cam = hd.Cameras(c).VidObj ;
             if strcmp(cam.Running,'off') ; continue ; end
             stop(cam)

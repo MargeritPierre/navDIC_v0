@@ -71,6 +71,8 @@ function xymoving = my_cpcorr(varargin)
     else
         CORRSIZE = 10;
     end
+    CORRSIZE = 10 ;
+    THRESHOLD = 0.02 ;
     
 % Format inputs
     [xymoving_in,xyfixed_in,moving,fixed] = ParseInputs(varargin{1:4});
@@ -116,7 +118,6 @@ for icp = 1:ncp
     [xpeak, ypeak, amplitude] = my_findpeak(norm_cross_corr);
 
     % eliminate any poor correlations
-    THRESHOLD = 0.02 ;
     if (amplitude < THRESHOLD) 
         % low correlation, unable to adjust
         continue
