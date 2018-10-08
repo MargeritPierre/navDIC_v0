@@ -1,6 +1,6 @@
 function [obj,hd] = navDIC_planefit(obj,hd)
 
-disp('cpcorr')
+disp('planefit')
 
 % Params
     d = 40; % il faudra entrer la valeur servant la construction du maillage

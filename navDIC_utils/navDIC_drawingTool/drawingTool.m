@@ -53,6 +53,7 @@ function H = drawingTool(varargin)
                     H.Shapes{numShape} = imellipse(H.Axes,varargin{:}) ;
                 case 'impoly'
                     H.Shapes{numShape} = impoly(H.Axes,varargin{:}) ;
+                    p = wait(H.Shapes{numShape}); 
                 case 'impoint'
                     H.Shapes{numShape} = impoint(H.Axes,varargin{:}) ;
                 case 'imline'
