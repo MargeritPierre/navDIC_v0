@@ -38,7 +38,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         function updateSeedPreview(obj,hd,ax)
             triMesh = findobj(ax,'tag',obj.Name) ;
             if isempty(triMesh)
-                triMesh = patch(ax ...
+                axes(ax) ;
+                triMesh = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
                                 ,'vertices',obj.Points...
                                 ,'faces',obj.Triangles...
                                 ,'edgecolor','b'...
@@ -48,15 +49,15 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'tag',obj.Name ...
                                 ) ;
                 % ADD A COLORBAR
-                if 1
-                    clrbr = colorbar(ax,'location','west') ;
-                    clrbr.Units = 'pixels' ;
-                    ax.Units = 'pixels' ;
-                    fig = ax.Parent ;
-                    fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
-                    clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
-                    clrbr.AxisLocation = 'out';
-                end
+                    if 1
+                        clrbr = colorbar(ax,'location','west') ;
+                        clrbr.Units = 'pixels' ;
+                        ax.Units = 'pixels' ;
+                        fig = ax.Parent ;
+                        fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
+                        clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
+                        clrbr.AxisLocation = 'out';
+                    end
             end
             if hd.CurrentFrame>0
                 triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;

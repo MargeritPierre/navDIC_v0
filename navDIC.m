@@ -232,8 +232,9 @@ function navDIC()
             setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
         % Update handles and displays it
             clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
-        % Update the Main Menu Bar
+        % Update the navDIC Interface
             updateMainMenu() ;
+            updateToolbar() ;
     end
 
 % SAVE THE SETUP DATA
@@ -403,6 +404,7 @@ function navDIC()
             hd.CurrentFrame = fr ;
             hd = updateDIC(hd) ;
             hd = updateAllPreviews(hd) ;
+            updateToolbar() ;
             drawnow ;
         end
     end
