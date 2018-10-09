@@ -1,6 +1,7 @@
 function [obj,hd] = navDIC_planefit(obj,hd)
 
-disp('planefit')
+%disp('planefit')
+startTime = tic() ;
 
 % Params
     %d = 15; % il faudra entrer la valeur servant la construction du maillage
@@ -57,12 +58,16 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
             end
         % Save Strains
         obj.Strains(:,:,frame) = E(:,:) ;
+        
     end
+    
+    % TIMING
+        disp(['planefit: ',num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
     
     
     
 % Display Object
-    disp(obj)
+    %disp(obj)
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % OLD

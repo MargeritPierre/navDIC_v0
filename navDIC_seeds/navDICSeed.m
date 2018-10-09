@@ -16,7 +16,9 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
         % Displ. Computation Method
             displMode = 'abs' ;
             RefFrame = 1;
-            displMethod = 'cpcorr' ;
+            displMethod = ... 'cpcorr' ...
+                           'fftdisp' ...
+                          ;
         % Strain Computation Method
             strainMethod = 'planefit' ;
         % drawingTool retrurns

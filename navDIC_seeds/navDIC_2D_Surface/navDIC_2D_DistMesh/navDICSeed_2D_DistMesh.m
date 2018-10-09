@@ -42,7 +42,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 triMesh = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
                                 ,'vertices',obj.Points...
                                 ,'faces',obj.Triangles...
-                                ,'edgecolor','b'...
+                                ,'edgecolor','k'...
+                                ,'EdgeAlpha', 0.2 ...
+                                ,'linewidth',0.1...
                                 ,'facecolor','interp'...
                                 ,'facealpha',0.7 ...
                                 ,'hittest','off' ...
@@ -57,22 +59,33 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
                         clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
                         clrbr.AxisLocation = 'out';
+                        drawnow;
+                        clrbr.Units = 'normalized' ;
+                        ax.Units = 'normalized' ;
                     end
             end
             if hd.CurrentFrame>0
                 triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
-                Data =   obj.Strains(:,2,:) ... Eyy
-                        ... obj.Strains(:,1,:) ... Exx
+                Data =  ... obj.Strains(:,2,:) ... Eyy
+                         obj.Strains(:,1,:) ... Exx
                         ... obj.Strains(:,3,:) ... Exy
                         ... sqrt(sum(obj.Displacements(:,:,:).^2,2)) ... Displacement Magnitude
                         ;
+                %Data = log10(abs(Data)+1) ;
                 Data = squeeze(Data) ;
                 triMesh.CData = Data(:,hd.CurrentFrame) ;
-                %caxis(ax,[min(Data(:)),max(Data(:))]) ;
-                caxis(ax,max(max(abs(Data(:))),0)*[-1 1]) ;
-                %caxis(ax,[0 1e-3]) ;
-                %caxis(ax,[0 max(abs(triMesh.CData(:)))]) ;
-                %caxis auto ;
+                % Color scale
+                    minData = min(Data(:)) ;
+                    maxData = max(Data(:)) ;
+                    if sign(minData)==sign(maxData) ;
+                        if sign(minData)==-1
+                            caxis(ax,[min(Data(:)) 0]) ;
+                        else
+                            caxis(ax,[0 max(Data(:))]) ;
+                        end
+                    else
+                        caxis(ax,[min(Data(:)) max(Data(:))]) ;
+                    end
             end
         end
         

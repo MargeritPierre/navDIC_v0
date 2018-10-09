@@ -1,6 +1,6 @@
 function [obj,hd] = navDIC_fftdisp(obj,hd)
 
-disp('fftdisp')
+%disp('fftdisp')
 
 % Params
     CorrSize = obj.corrSize ; % 40 ;
@@ -45,4 +45,4 @@ disp('fftdisp')
     obj.Displacements(:,:,frame) = obj.MovingPoints(:,:,frame)-obj.Points ;
     
 % Display Object
-    disp(obj)
+    %disp(obj)

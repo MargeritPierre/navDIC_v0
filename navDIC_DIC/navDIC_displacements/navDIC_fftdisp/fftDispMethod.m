@@ -1,10 +1,13 @@
 function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
-    % INFOS
-        CorrSize = 20 ;
+    % PARALETERS
+        CorrSize = 30 ;
         m = round(CorrSize/4) ; % Margin to truncate borders
-        r = 1 ; % order of the FFT ;
+        uMax = CorrSize/4 ; % Maximum allowed displacement per iteration
+    
+    % INFOS
         nPts = size(PtsMov,1) ;
+        startTime = tic ;
         
     % Discrete positions
         disPtsRef  = round(PtsRef) ;
@@ -33,6 +36,10 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
         fftRef = fft(fft(imagettesRef,[],1),[],2) ;
         fftMov = fft(fft(imagettesMov,[],1),[],2) ;
         
+    % Normalize
+        fftRef = fftRef./abs(fftRef) ;
+        fftMov = fftMov./abs(fftMov) ;
+        
     % Phase field
         PHI = fftshift(fftshift(fftMov./fftRef,1),2) ;
         PHI = PHI./abs(PHI) ;
@@ -50,22 +57,23 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
             % Select and truncate
                 phi = PHI(1+m:end-m,1+m:end-m,p) ;
             % SVD Filtering
-                [U,S,V] = svd(phi) ;
-                phi = U(:,1:r)*S(1:r,1:r)*V(:,1:r)' ;
+                [U,~,V] = svd(phi) ;
             % Shift Invariance
-                upI = reshape(phi(1:end-1,:),[],1) ;
-                dwnI = reshape(phi(2:end,:),[],1) ;
-                upJ = reshape(phi(:,1:end-1),[],1) ;
-                dwnJ = reshape(phi(:,2:end),[],1) ;
-            % Wavevector estimation
-                k(p,2) = upI\dwnI ;
-                k(p,1) = upJ\dwnJ ;
+                k(p,2) = U(1:end-1,1)\U(2:end,1) ;
+                k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
         end
         
     % Displacement
         U = real(1i*log(k))*CorrSize/2/pi ;
-        MovingPoints = U + disPtsMov ;
+        normU = sum(U.^2,2) ;
+        U(normU>uMax^2,:) = NaN ;
         
+    % Moving Points
+        MovingPoints = U + disPtsMov - (disPtsRef-PtsRef) ;
+        
+        
+    % Timing
+        disp(['fftdisp: ',num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
 end
 
 

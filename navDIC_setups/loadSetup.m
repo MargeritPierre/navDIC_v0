@@ -93,6 +93,9 @@ function [setup,hd] = loadSetup(hd,path)
     hd.nFrames = max(size(InputData,1),size(Images,2)) ;
     hd.CurrentFrame = 1 ;
     hd.Cameras = Cameras ;
+        
+    % DEFAULT TIMELINE
+        hd.TimeLine = (0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
     
     
     
