@@ -7,6 +7,7 @@ startTime = tic() ;
     %d = 15; % il faudra entrer la valeur servant la construction du maillage
     %width_pln_strains = 300; 3*d ;
     num_pts_fit = 20 ; % Number of pts used to fit the plane
+    FIT = 'TLS' ; % Type of plane-fit (see below)
 
 % Retrieve Infos
     frame = hd.CurrentFrame ;
@@ -47,14 +48,25 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
                     xy = PtsMov(pts_fit,:)-repmat(pt,[num_pts_fit 1]) ;
                     % Plane : a+bx+cy = Ux ; d+ex+fy = Uy ; 
                         A = [xy(:,1) xy(:,2) ones(num_pts_fit,1)] ;
-                        bx = U(pts_fit,1) ;
-                        by = U(pts_fit,2) ;
-                        Px = A\bx ;
-                        Py = A\by ;
+                        b = U(pts_fit,:) ;
+                        switch FIT
+                            case 'LS' % LEAST SQUARES
+                                P = A\b ;
+                            case 'TLS' % TOTAL LEAST SQUARES
+                                [~,~,v] = svd([A b],0);           % find the SVD of Z.
+                                vXY = v(1:3,4:end);     % Take the block of V consisting of the first n rows and the n+1 to last column
+                                vYY = v(4:end,4:end) ; % Take the bottom-right block of V.
+                                P = -vXY/vYY;
+                            case 'GLS' % GENERALIZED LEAST SQUARES
+                                P = A\b ;
+                                res  = sum((A*P-b).^2,2)/2 ;
+                                RES = diag(1./res) ;
+                                P = (RES*A)\(RES*b) ;
+                        end
                 % Strains
-                    E(p,1) = Px(1) ;
-                    E(p,2) = Py(2) ;
-                    E(p,3) = .5*(Py(1)+Px(2)) ;
+                    E(p,1) = P(1,1) ;
+                    E(p,2) = P(2,2) ;
+                    E(p,3) = .5*(P(1,2)+P(2,1)) ;
             end
         % Save Strains
         obj.Strains(:,:,frame) = E(:,:) ;
