@@ -5,21 +5,23 @@ function navDIC()
 % ===================================================================================================================
     
     % DEFAULT VALUES
+        global hd
         navDICTag = 'navDIC' ;
         defaultFrameRate = 1 ; % Hz
         maximumFrameRate = 25 ; % Hz
         
     % Is navDIC already running ?
+        set(0,'ShowHiddenHandles','on') ; % Force hadle visibility
         navDICFigs = findobj(groot,'tag',navDICTag) ;
         % If YES, prompt figures to Foreground
             if ~isempty(navDICFigs)
                 navDICOnTop() ;
                 return ;
             end
+        set(0,'ShowHiddenHandles','off') ;
 
     % Initialization of handles 
     % (type "global hd" in cmd to remote debugging access)
-        global hd
         hd = [] ; % Shared handles
         hd.initCompleted = false ;
         hd.navDICTag = navDICTag ;
@@ -490,6 +492,8 @@ function navDIC()
             addButtons() ;
             setMainMenuShortcuts() ;
             drawnow ;
+        % Set the figure handle invisible
+            hd.ToolBar.fig.HandleVisibility = 'off' ;
     end
 
 

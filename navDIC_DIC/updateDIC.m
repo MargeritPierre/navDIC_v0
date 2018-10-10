@@ -13,7 +13,7 @@ function hd = updateDIC(hd)
         
     % Compute Strains
         for s = 1:length(hd.Seeds)
-            hd.Seeds(s) = hd.Seeds(s).computeStrains(hd) ;
+            %hd.Seeds(s) = hd.Seeds(s).computeStrains(hd) ;
         end
 
 end

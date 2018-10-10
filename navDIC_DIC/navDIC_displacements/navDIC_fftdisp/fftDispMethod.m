@@ -1,17 +1,21 @@
 function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
-    % PARALETERS
-        CorrSize = 30 ;
-        m = round(CorrSize/4) ; % Margin to truncate borders
+    % PARAMETERS
+        CorrSize = 40 ;
+        m = 0 ; round(CorrSize/10) ; % Margin to truncate borders
         uMax = CorrSize/4 ; % Maximum allowed displacement per iteration
+        FIT =   ... 'LS' ...
+                 'SVD' ...
+                ; 
     
     % INFOS
         nPts = size(PtsMov,1) ;
         startTime = tic ;
+        imgSize = size(imgRef) ;
         
     % Discrete positions
-        disPtsRef  = round(PtsRef) ;
-        disPtsMov  = round(PtsMov) ;
+        disPtsRef = round(PtsRef) ;
+        disPtsMov = round(PtsMov) ;
 
     % Create Imagettes
         % Indices
@@ -25,9 +29,21 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                 JJJRef = bsxfun(@plus,JJJ,reshape(disPtsRef(:,1),[1 1 nPts])) ;
                 IIIMov = bsxfun(@plus,III,reshape(disPtsMov(:,2),[1 1 nPts])) ;
                 JJJMov = bsxfun(@plus,JJJ,reshape(disPtsMov(:,1),[1 1 nPts])) ;
+            % If outside of Image
+                Valid = IIIRef>0 ...
+                        & IIIRef<=imgSize(1) ...
+                        & JJJRef>0 ...
+                        & JJJRef<=imgSize(2) ...
+                        & IIIMov>0 ...
+                        & IIIMov<=imgSize(1) ...
+                        & JJJMov>0 ...
+                        & JJJMov<=imgSize(1) ;
+                Valid = ~any(any(~Valid,1),2) ;
+                notValid = ~Valid ;
+                nPts = sum(Valid(:)) ;
             % Linear Indices
-                NNNRef = sub2ind(size(imgRef),IIIRef,JJJRef) ;
-                NNNMov = sub2ind(size(imgMov),IIIMov,JJJMov) ;
+                NNNRef = sub2ind(size(imgRef),IIIRef(:,:,Valid),JJJRef(:,:,Valid)) ;
+                NNNMov = sub2ind(size(imgMov),IIIMov(:,:,Valid),JJJMov(:,:,Valid)) ;
             % Pixel Values
                 imagettesRef = imgRef(NNNRef) ;
                 imagettesMov = imgMov(NNNMov) ;
@@ -44,23 +60,48 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
         PHI = fftshift(fftshift(fftMov./fftRef,1),2) ;
         PHI = PHI./abs(PHI) ;
         PHI(isnan(PHI)) = 1 ;
-    
-    % Shift invariance
-%         upI = reshape(PHI(1:end-1,:,:),[],nPts) ;
-%         dwnI = reshape(PHI(2:end,:,:),[],nPts) ;
-%         upJ = reshape(PHI(:,1:end-1,:),[],nPts) ;
-%         dwnJ = reshape(PHI(:,2:end,:),[],nPts) ;
+
         
     % Wavevectors
         k = zeros(nPts,2) ;
-        for p = 1:nPts
-            % Select and truncate
-                phi = PHI(1+m:end-m,1+m:end-m,p) ;
-            % SVD Filtering
-                [U,~,V] = svd(phi) ;
-            % Shift Invariance
-                k(p,2) = U(1:end-1,1)\U(2:end,1) ;
-                k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
+        switch FIT
+            case 'LS' % Fast implementation
+                % Reshape the data
+                    PHI = reshape(PHI,[],nPts) ;
+                % Selection indices
+                    ind = [false(m,CorrSize) ; ...
+                            [false(CorrSize-2*m,m),...
+                                true(CorrSize-2*m,CorrSize-2*m),...
+                                false(CorrSize-2*m,m)] ; ...
+                           false(m,CorrSize)] ; 
+                    indSelect = [true(CorrSize,m) false(CorrSize,1) true(CorrSize,CorrSize-m-1)] ; 
+                    indUpI = ind & flipud(indSelect') ;
+                    indDwnI = ind & (indSelect') ;
+                    indUpJ = ind & fliplr(indSelect) ;
+                    indDwnJ = ind & indSelect ;
+                % Shifted data
+                    phiUpI = PHI(indUpI(:),:) ;
+                    phiDwnI = PHI(indDwnI(:),:) ;
+                    phiUpJ = PHI(indUpJ(:),:) ;
+                    phiDwnJ = PHI(indDwnJ(:),:) ;
+                % LS Formatting: u1\u2 = (u1'*u2)/|u1|^2
+                    normPhiUpI = sum(abs(phiUpI).^2,1) ;
+                    normPhiUpJ = sum(abs(phiUpJ).^2,1) ;
+                    scalPhiI = sum(conj(phiUpI).*phiDwnI,1) ;
+                    scalPhiJ = sum(conj(phiUpJ).*phiDwnJ,1) ;
+                % LS Estimation
+                    k(:,2) = scalPhiI./normPhiUpI ;
+                    k(:,1) = scalPhiJ./normPhiUpJ ;
+            case 'SVD' % Use SVD Decomposition (Slower)
+                for p = 1:nPts
+                    % Select and truncate
+                        phi = PHI(1+m:end-m,1+m:end-m,p) ;
+                    % SVD Filtering
+                        [U,~,V] = svd(phi) ;
+                    % Shift Invariance
+                        k(p,2) = U(1:end-1,1)\U(2:end,1) ;
+                        k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
+                end
         end
         
     % Displacement
@@ -69,7 +110,8 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
         U(normU>uMax^2,:) = NaN ;
         
     % Moving Points
-        MovingPoints = U + disPtsMov - (disPtsRef-PtsRef) ;
+        MovingPoints = zeros(size(PtsMov))*NaN ;
+        MovingPoints(Valid,:) = U + disPtsMov(Valid,:) - (disPtsRef(Valid,:)-PtsRef(Valid,:)) ;
         
         
     % Timing
