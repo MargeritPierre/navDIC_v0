@@ -22,8 +22,8 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
                     % Force vs Time
-                    plotMachin = 'strain_time'
-                    timeString =  'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
+                    plotMachin = 'velocity_time'
+                    timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'
                             prev.XDataSources{1} = timeString ;
@@ -40,11 +40,23 @@ classdef navDICPlotPreview < navDICPreview
                         case 'STRAIN_TIME'
                             for e = 1:3
                                 prev.XDataSources{e} = timeString ;
-                                prev.YDataSources{e} = ['meanNoNaN((hd.Seeds(1).Strains(:,',num2str(e),',:)),1)'] ;
+                                prev.YDataSources{e} = ['meanNoNaN((hd.Seeds(end).Strains(:,',num2str(e),',:)),1)'] ;
                                 prev.lines(e) = plot(NaN,NaN,'tag','Srain/Time') ;
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                                 prev.timeMarkers(e) = plot(NaN,NaN) ;
                             end
+                        case 'POSITION_TIME'
+                            prev.XDataSources{1} = timeString ;
+                            prev.YDataSources{1} = ['meanNoNaN((hd.Seeds(end).Displacements(:,','1',',:)),1)'] ;
+                            prev.lines(1) = plot(NaN,NaN,'tag','Position/Time') ;
+                            prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                            prev.timeMarkers(1) = plot(NaN,NaN) ;
+                        case 'VELOCITY_TIME'
+                            prev.XDataSources{1} = timeString ;
+                            prev.YDataSources{1} = ['cat(3,0,diff(meanNoNaN((hd.Seeds(end).Displacements(:,','1',',:)),1)))'] ;
+                            prev.lines(1) = plot(NaN,NaN,'tag','Position/Time') ;
+                            prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                            prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'POISSON'
                             prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(1).Strains(:,2,:)),1)'] ;
                             prev.YDataSources{1} = ['meanNoNaN((hd.Seeds(1).Strains(:,1,:)),1)'] ;
@@ -77,12 +89,12 @@ classdef navDICPlotPreview < navDICPreview
                             try
                                 xdata = eval(prev.XDataSources{l}) ;
                                 ydata = eval(prev.YDataSources{l}) ;
-                            end
-                            if ~isempty(xdata) && ~isempty(ydata)
-                                prev.lines(l).XData = xdata ;
-                                prev.lines(l).YData = ydata ;
-                                prev.timeMarkers(l).XData = xdata(hd.CurrentFrame) ;
-                                prev.timeMarkers(l).YData = ydata(hd.CurrentFrame) ;
+                                if ~isempty(xdata) && ~isempty(ydata)
+                                    prev.lines(l).XData = xdata ;
+                                    prev.lines(l).YData = ydata ;
+                                    prev.timeMarkers(l).XData = xdata(hd.CurrentFrame) ;
+                                    prev.timeMarkers(l).YData = ydata(hd.CurrentFrame) ;
+                                end
                             end
                         end
                     %=======================================

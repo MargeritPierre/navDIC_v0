@@ -29,16 +29,21 @@ function [setup,hd] = loadSetup(hd,path)
                 % Get the common name and extension
                     str = strsplit(fileNames{1},'_') ;
                     if length(str)==1
-                        commonName = str{1} ;
+                        % Empty common name ?
+                            if strcmp(str,fileNames{1})
+                                commonName = '' ;
+                            else
+                                commonName = str{1} ;
+                            end
                     else
-                        commonName = strjoin(str(1:end-1),'_') ;
+                        commonName = [strjoin(str(1:end-1),'_'),'_'] ;
                     end
                     [~,~,ext] = fileparts(str{end}) ;
                 % Get image ids
                     idSTR = {} ;
                     idNUM = [] ;
                     for i = 1:length(fileNames)
-                        idSTR{i} = fileNames{i}(length(commonName)+2:end-length(ext)) ;
+                        idSTR{i} = fileNames{i}(length(commonName)+1:end-length(ext)) ;
                         if ~isempty(str2num(idSTR{i}))
                             idNUM(i) = str2num(idSTR{i}) ;
                         else
@@ -50,7 +55,7 @@ function [setup,hd] = loadSetup(hd,path)
                     nImgs = length(idSTR) ;
                 % Load images
                     for i = 1:nImgs
-                        Images{cam,i} = {imread([camFolders{cam},'/',commonName,'_',idSTR{i},ext])} ;
+                        Images{cam,i} = {imread([camFolders{cam},'/',commonName,idSTR{i},ext])} ;
                     end
                 % SET THE CAMERA
                     CamName = strsplit(camFolders{cam},{'/','\'}) ;
