@@ -22,7 +22,7 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
                     % Force vs Time
-                    plotMachin = 'strain_time'
+                    plotMachin = 'force_time'
                     timeString =  'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'
