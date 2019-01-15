@@ -38,7 +38,7 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
         % Init
             E(1:nPts,1:3) = NaN ;
             for p = 1:nPts
-                    if isnan(U(p,1)) ; continue ; end ;
+                    if any(isnan(U(p,:))) ; continue ; end ;
                 % Get neightoring Pts
                     pt = PtsMov(p,:) ;
                     r = sqrt(sum((PtsMov-repmat(pt,[nPts 1])).^2,2)) ;
@@ -53,10 +53,10 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
                             case 'LS' % LEAST SQUARES
                                 P = A\b ;
                             case 'TLS' % TOTAL LEAST SQUARES
-                                [~,~,v] = svd([A b],0);           % find the SVD of Z.
-                                vXY = v(1:3,4:end);     % Take the block of V consisting of the first n rows and the n+1 to last column
+                                [~,~,v] = svd([A b],0) ;           % find the SVD of Z.
+                                vXY = v(1:3,4:end) ;     % Take the block of V consisting of the first n rows and the n+1 to last column
                                 vYY = v(4:end,4:end) ; % Take the bottom-right block of V.
-                                P = -vXY/vYY;
+                                P = -vXY/vYY ;
                             case 'GLS' % GENERALIZED LEAST SQUARES
                                 P = A\b ;
                                 res  = sum((A*P-b).^2,2)/2 ;

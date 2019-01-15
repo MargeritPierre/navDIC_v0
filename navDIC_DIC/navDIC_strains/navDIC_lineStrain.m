@@ -1,10 +1,46 @@
-function [obj,hd] = navDIC_deltaL(obj,hd)
+function [obj,hd] = navDIC_lineStrain(obj,hd)
 
-disp('deltaL_L')
+disp('lineStrain')
 
-L0 = sqrt(sum(diff(obj.Points,1,1).^2,2)) ;
-L = sqrt(sum(diff(obj.MovingPoints(:,:,hd.CurrentFrame),1,1).^2,2)) ;
-obj.Strains(:,:,hd.CurrentFrame) = (L-L0)./L0 ;
+if 1 % GLOBAL STRETCH
+    % Get the line direction (from end points)
+        v0 = obj.Points(end,:)-obj.Points(1,:) ; v0 = v0/norm(v0) ;
+        v = obj.MovingPoints(end,:,hd.CurrentFrame) - obj.MovingPoints(1,:,hd.CurrentFrame) ; v = v/norm(v) ;
+
+    % Positions in the line coordinate
+        x0 = obj.Points*v0(:) ; x0 = x0-x0(1) ;
+        x = obj.MovingPoints(:,:,hd.CurrentFrame)*v(:) ; % x = x-x(1) ;
+        dx = x-x0 ;
+
+    % Valid indices
+        valid = ~isnan(dx) ;
+        dx = dx(valid) ;
+        x0 = x0(valid) ;
+
+    % Least-squares fit dx = a * x0 + b
+        ab = [x0(:) ones(length(x0),1)]\dx(:) ;
+        obj.Strains(:,:,hd.CurrentFrame) = ab(1) ;
+end
+
+if 1 % BEAM MOTION
+    % Get curve parameter
+        t0 = cumsum([0 ; sqrt(sum(diff(obj.Points,1,1).^2,2))]) ;
+        t = cumsum([0 ; sqrt(sum(diff(obj.MovingPoints(:,:,hd.CurrentFrame),1,1).^2,2))]) ;
+    % Local stretch
+        L0 = diff(t0) ;
+        L = diff(t) ;
+        E = (L-L0)./L0 ; % Stretch strain
+    % Curvature
+        % Third-order polynom (3f config)
+        y = obj.Displacements(:,2,hd.CurrentFrame) ;
+        P = 3 ; 
+        maxT = max(abs(t))/2 ;
+        tm = t - mean(t) ; tm = abs(tm(:))/maxT ;
+        T =  tm.^(0:P) ; 
+        a = T\y(:) ;
+        K = tm.^(0:P-2)*(factorial(2:P).*a(3:P+1).').' ;
+        obj.Strains(:,:,hd.CurrentFrame) = (K(1:end-1)+K(2:end))/2 ;
+end
     
     
     

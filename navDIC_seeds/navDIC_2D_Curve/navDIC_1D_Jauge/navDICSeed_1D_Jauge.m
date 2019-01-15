@@ -3,6 +3,7 @@ classdef navDICSeed_1D_Jauge < navDICSeed
     properties
         ROI = [] ;
         corrSize = 40 ;
+        L0 = [] ;
     end
     
     methods
@@ -28,6 +29,7 @@ classdef navDICSeed_1D_Jauge < navDICSeed
                 obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Strains = ones(size(obj.Points,1),1,hd.nFrames)*NaN ;
+                obj.L0 = norm(diff(obj.Points,1,1)) ;
         end
         
         function obj = modify(obj,hd)
@@ -55,8 +57,9 @@ classdef navDICSeed_1D_Jauge < navDICSeed
                                 ,'hittest','off' ...
                                 ,'tag',obj.Name ...
                                 ) ;
-                label = text(ax ...
-                                ,NaN,NaN,'' ...
+                axes(ax) ;
+                label = text(...ax, ...
+                                NaN,NaN,'' ...
                                 ,'color',[0 0 1]+[1 1 0]*.5 ...
                                 ,'fontsize',13 ...
                                 ,'backgroundcolor','w' ...
@@ -67,10 +70,12 @@ classdef navDICSeed_1D_Jauge < navDICSeed
                                 ) ;
             end
             if hd.CurrentFrame>0
-                line.XData = obj.MovingPoints(:,1,hd.CurrentFrame) ;
-                line.YData = obj.MovingPoints(:,2,hd.CurrentFrame) ;
-                label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame),1) ;
-                label.String = [num2str(obj.Strains(1,1,hd.CurrentFrame)*100,3), '%'] ;
+                %try
+                    line.XData = obj.MovingPoints(:,1,hd.CurrentFrame) ;
+                    line.YData = obj.MovingPoints(:,2,hd.CurrentFrame) ;
+                    label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame),1) ;
+                    label.String = [num2str(obj.Strains(1,1,hd.CurrentFrame)*100,3), '%'] ;
+                %end
             end
         end
         

@@ -3,7 +3,7 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
 %disp('fftdisp')
 
 % Params
-    CorrSize = obj.corrSize ; % 40 ;
+    CorrSize = [] ; % obj.corrSize ; % 40 ;
 
 % Retrieve Infos
     frame = hd.CurrentFrame ;
@@ -28,7 +28,7 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
             case 'abs'
                 PtsRef = obj.Points ;
                 imgRef = hd.Images{obj.RefFrame}{camID} ;%obj.refImgs{1} ;
-                PtsMov = round(obj.MovingPoints(:,:,frame-obj.RefFrame)) ;
+                PtsMov = obj.MovingPoints(:,:,frame-obj.RefFrame) ; % round() ?
                 imgMov = hd.Images{frame}{camID} ;
             case 'rel'
                 PtsRef = obj.MovingPoints(:,:,frame-1) ;
