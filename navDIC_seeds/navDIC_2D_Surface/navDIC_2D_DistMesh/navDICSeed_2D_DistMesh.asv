@@ -67,9 +67,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             if hd.CurrentFrame>0
                 triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
                 Data =  ...                
-                        ... obj.Strains(:,2,:) ... Eyy
+                         obj.Strains(:,2,:) ... Eyy
                         ... obj.Strains(:,1,:) ... Exx
-                         obj.Strains(:,3,:) ... Exy
+                        ... obj.Strains(:,3,:) ... Exy
                         ... obj.Displacements(:,1,:) ... Ux
                         ... obj.Displacements(:,2,:) ... Uy
                         ... sqrt(sum(obj.Displacements(:,:,:).^2,2)) ... Displacement Magnitude
@@ -77,7 +77,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 %Data = log10(abs(Data)+1) ;
                 Data = squeeze(Data) ;
                 triMesh.CData = Data(:,hd.CurrentFrame) ;
-                colorData = Data(:,:) ; Data(:,hd.CurrentFrame) ;
+                colorData = Data(:,:) ; Data(:,hd.CurrentFrame)
                 % Color scale
                     minData = min(colorData(:)) ;
                     maxData = max(colorData(:)) ;
