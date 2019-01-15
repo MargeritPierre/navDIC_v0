@@ -2,10 +2,10 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         CorrSize = 40 ;
-        m = 0 ; round(CorrSize/10) ; % Margin to truncate borders
+        m = round(CorrSize/8) ; 0 ; % Margin to truncate borders
         uMax = CorrSize/4 ; % Maximum allowed displacement per iteration
-        FIT =   ... 'LS' ...
-                 'SVD' ...
+        FIT =    'LS' ...
+                ... 'SVD' ...
                 ; 
     
     % INFOS
