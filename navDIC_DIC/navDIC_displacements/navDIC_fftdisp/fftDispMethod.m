@@ -171,7 +171,7 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
         
         
     % Timing
-disp(['fftdisp: ',num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
+        disp(['fftdisp: ',num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
 end
 
 
