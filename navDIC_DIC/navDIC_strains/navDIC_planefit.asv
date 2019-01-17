@@ -13,24 +13,28 @@ startTime = tic() ;
     frame = hd.CurrentFrame ;
     camID = obj.CamIDs ;
     refFrame = obj.RefFrame ;
-    disp_Mode = obj.displMode ;
     U = obj.Displacements(:,:,frame) ;
     Pts = obj.Points;
-    PtsMov = obj.MovingPoints(:,:,frame);
+    try
+        PtsMov = round(obj.MovingPoints(:,:,frame));
+    catch
+        PtsMov = Pts;
+    end
+    disp_Mode = obj.displMode ;
     nPts = length(PtsMov(:,:));
     
-% Modify parameters
-    if num_pts_fit>nPts ; num_pts_fit = nPts ; end
+Modify parameters
     
-% Blah blah
+    % Blah blah
     if frame<=obj.RefFrame
         obj.Strains = zeros([size(Pts,1) 3 frame]) ;
     end
     
-% ELSE, Compute Strains Calculation using displacement either eulerian (relative displacement) or
+% ELSE, Compute Strains Calculation using displacement ether eulerian (relative displacement) or
 % Lagrangian (absolute displacement) 
-disp(['Computation of Strain ' num2str(disp_Mode)]);
 
+    
+disp(['Computation of Strain ' num2str(disp_Mode)]);
     if frame-refFrame >= 1
         % Compute Strains
         % Init
@@ -42,13 +46,10 @@ disp(['Computation of Strain ' num2str(disp_Mode)]);
                     r = sqrt(sum((PtsMov-repmat(pt,[nPts 1])).^2,2)) ;
                     [~,indsort] = sort(r) ;
                     pts_fit = indsort(1:num_pts_fit) ;
-                % Cull NaNs
-                    pts_fit = pts_fit(~any(isnan(PtsMov(pts_fit,:)),2)) ;
                 % Fit a plane
-                    % Get positions
-                        xy = bsxfun(@minus,PtsMov(pts_fit,:),pt) ;
+                    xy = PtsMov(pts_fit,:)-repmat(pt,[num_pts_fit 1]) ;
                     % Plane : a+bx+cy = Ux ; d+ex+fy = Uy ; 
-                        A = [xy(:,1) xy(:,2) ones(length(pts_fit),1)] ;
+                        A = [xy(:,1) xy(:,2) ones(num_pts_fit,1)] ;
                         b = U(pts_fit,:) ;
                         switch FIT
                             case 'LS' % LEAST SQUARES

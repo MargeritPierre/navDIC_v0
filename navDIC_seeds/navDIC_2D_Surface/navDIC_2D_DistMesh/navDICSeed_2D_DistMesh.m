@@ -68,8 +68,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
                 Data =  ...                
                         ... obj.Strains(:,2,:) ... Eyy
-                        ... obj.Strains(:,1,:) ... Exx
-                         obj.Strains(:,3,:) ... Exy
+                         obj.Strains(:,1,:) ... Exx
+                        ... obj.Strains(:,3,:) ... Exy
                         ... obj.Displacements(:,1,:) ... Ux
                         ... obj.Displacements(:,2,:) ... Uy
                         ... sqrt(sum(obj.Displacements(:,:,:).^2,2)) ... Displacement Magnitude
