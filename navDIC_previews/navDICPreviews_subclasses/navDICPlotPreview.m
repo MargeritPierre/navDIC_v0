@@ -22,7 +22,7 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
                     % Force vs Time
-                    plotMachin = 'velocity_time' 
+                    plotMachin = 'poisson' 
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'
@@ -58,8 +58,8 @@ classdef navDICPlotPreview < navDICPreview
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'POISSON'
-                            prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(1).Strains(:,2,:)),1)'] ;
-                            prev.YDataSources{1} = ['meanNoNaN((hd.Seeds(1).Strains(:,1,:)),1)'] ;
+                            prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(end).Strains(:,2,:)),1)'] ;
+                            prev.YDataSources{1} = ['meanNoNaN((hd.Seeds(end).Strains(:,1,:)),1)'] ;
                             prev.lines(1) = plot(NaN,NaN,'tag','Poisson') ;
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
@@ -89,12 +89,12 @@ classdef navDICPlotPreview < navDICPreview
                             try
                                 xdata = eval(prev.XDataSources{l}) ;
                                 ydata = eval(prev.YDataSources{l}) ;
-                                if ~isempty(xdata) && ~isempty(ydata)
-                                    prev.lines(l).XData = xdata ;
-                                    prev.lines(l).YData = ydata ;
-                                    prev.timeMarkers(l).XData = xdata(hd.CurrentFrame) ;
-                                    prev.timeMarkers(l).YData = ydata(hd.CurrentFrame) ;
-                                end
+                            end
+                            if ~isempty(xdata) && ~isempty(ydata)
+                                prev.lines(l).XData = xdata(1:length(ydata)) ;
+                                prev.lines(l).YData = ydata ;
+                                prev.timeMarkers(l).XData = xdata(hd.CurrentFrame) ;
+                                prev.timeMarkers(l).YData = ydata(hd.CurrentFrame) ;
                             end
                         end
                     %=======================================

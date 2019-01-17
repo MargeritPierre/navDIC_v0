@@ -6,7 +6,7 @@ startTime = tic() ;
 % Params
     %d = 15; % il faudra entrer la valeur servant la construction du maillage
     %width_pln_strains = 300; 3*d ;
-    num_pts_fit = 20 ; % Number of pts used to fit the plane
+    num_pts_fit = 10 ; % Number of pts used to fit the plane
     FIT = 'TLS' ; % Type of plane-fit (see below)
 
 % Retrieve Infos
