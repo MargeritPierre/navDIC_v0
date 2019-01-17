@@ -54,9 +54,12 @@ function [setup,hd] = loadSetup(hd,path)
                     idSTR = idSTR(ind(~isnan(idNUM))) ;
                     nImgs = length(idSTR) ;
                 % Load images
+                    wtbr = waitbar(0,'Loading Images...') ;
                     for i = 1:nImgs
                         Images{cam,i} = {imread([camFolders{cam},'/',commonName,idSTR{i},ext])} ;
+                        wtbr = waitbar(i/nImgs,wtbr) ;
                     end
+                    delete(wtbr) ;
                 % SET THE CAMERA
                     CamName = strsplit(camFolders{cam},{'/','\'}) ;
                     Cameras(cam).Name = CamName{end} ;
