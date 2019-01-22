@@ -10,7 +10,7 @@ classdef navDIC2DSeedGraph < navDICCameraPreview
             function prev = navDIC2DSeedGraph(hd)
                 % Choose a seed to preview
                     [seedID,valid] = selectSeeds(hd,'single') ;
-                % get the cam to preview
+                % Get the cam to preview
                     if ~valid 
                         camID = -1 ;
                     else
@@ -21,6 +21,8 @@ classdef navDIC2DSeedGraph < navDICCameraPreview
                     prev = prev@navDICCameraPreview(hd,camID) ;
                     prev.fig.Name = ['navDIC Seed Preview: ',seed.Name] ;
                     prev.SeedName = seed.Name ;
+                % Update the preview
+                    prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE

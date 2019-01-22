@@ -2,7 +2,7 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
-        CorrSize = 51*[1 1] ; % Rectangular window
+        CorrSize = 31*[1 1] ; % Rectangular window
         m = round(CorrSize/4) ; % Margin to truncate borders
         uMax = CorrSize/4 ; % Maximum allowed displacement per iteration
         FIT =   ... 'LS' ...
@@ -20,8 +20,8 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
     
     % INFOS
         nPts = size(PtsMov,1) ;
-        startTime = tic ;
         imgSize = size(imgRef) ;
+        startTime = tic ;
         
     % Discrete positions
         disPtsRef = round(PtsRef) ;

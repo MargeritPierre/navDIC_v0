@@ -35,9 +35,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             obj.Triangles = obj.drawToolH.DistMesh.Triangles ;
         end
         
-        function updateSeedPreview(obj,hd,ax)
-            triMesh = findobj(ax,'tag',obj.Name) ;
-            if isempty(triMesh)
+        function initSeedPreview(obj,ax)
+            % INIT THE MESH
                 axes(ax) ;
                 triMesh = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
                                 ,'vertices',obj.Points...
@@ -46,51 +45,103 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'EdgeAlpha', 0.2 ...
                                 ,'linewidth',0.1...
                                 ,'facecolor','interp'...
-                                ,'facealpha',0.7 ...
+                                ,'facealpha',0.5 ...
                                 ,'hittest','off' ...
                                 ,'tag',obj.Name ...
                                 ) ;
-                % ADD A COLORBAR
-                    if 1
-                        clrbr = colorbar(ax,'location','west') ;
-                        clrbr.Units = 'pixels' ;
-                        ax.Units = 'pixels' ;
-                        fig = ax.Parent ;
+            % ADD A COLORBAR
+                clrbr = colorbar(ax) ;
+                clrbr.Units = 'pixels' ;
+                ax.Units = 'pixels' ;
+                fig = ax.Parent ;
+                switch fig.Position(3)<fig.Position(4)
+                    case true
+                        clrbr.Location = 'east' ;
                         fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
                         clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
-                        clrbr.AxisLocation = 'out';
-                        drawnow;
-                        clrbr.Units = 'normalized' ;
-                        ax.Units = 'normalized' ;
-                    end
-            end
-            if hd.CurrentFrame>0
-                triMesh.Vertices = obj.MovingPoints(:,:,hd.CurrentFrame) ;
-                Data =  ...                
-                        ... obj.Strains(:,2,:) ... Eyy
-                         obj.Strains(:,1,:) ... Exx
-                        ... obj.Strains(:,3,:) ... Exy
-                        ... obj.Displacements(:,1,:) ... Ux
-                        ... obj.Displacements(:,2,:) ... Uy
-                        ... sqrt(sum(obj.Displacements(:,:,:).^2,2)) ... Displacement Magnitude
-                        ;
-                %Data = log10(abs(Data)+1) ;
-                Data = squeeze(Data) ;
-                triMesh.CData = Data(:,hd.CurrentFrame) ;
-                colorData = Data(:,:) ; Data(:,hd.CurrentFrame) ;
-                % Color scale
-                    minData = min(colorData(:)) ;
-                    maxData = max(colorData(:)) ;
-                    if sign(minData)==sign(maxData)
-                        if sign(minData)==-1
-                            caxis(ax,[minData 0]) ;
-                        else
-                            caxis(ax,[0 maxData]) ;
+                    case false
+                        clrbr.Location = 'north' ;
+                        fig.Position(4) = fig.Position(4) + 4*clrbr.Position(4) ;
+                        clrbr.Position(2) = ax.Position(4) + clrbr.Position(4)*1 ;
+                end
+                clrbr.AxisLocation = 'out';
+                drawnow;
+                clrbr.Units = 'normalized' ;
+                ax.Units = 'normalized' ;
+            % ADD THE MENU BAR
+                % Data to plot
+                    mData = uimenu(ax.Parent,'text','Data') ;
+                        submenus(1) = uimenu(mData,'text','|U|','checked','on') ;
+                        submenus(end+1) = uimenu(mData,'text','Ux') ;
+                        submenus(end+1) = uimenu(mData,'text','Uy') ;
+                        submenus(end+1) = uimenu(mData,'text','Exx','separator',true) ;
+                        submenus(end+1) = uimenu(mData,'text','Eyy') ;
+                        submenus(end+1) = uimenu(mData,'text','Exy') ;
+                    % Common Properties
+                        set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
+                % UserData in axes to choose the data to plot
+                    ax.UserData.dataLabel = submenus(1).Text ;
+        end
+        
+        function updateSeedMenus(obj,subMenu,ax)
+            % Uncheck all subMenuItems
+                set(subMenu.Parent.Children,'checked','off')
+            % Check the selected item
+                subMenu.Checked = 'on' ;
+            % Change the ax userData
+                ax.UserData.dataLabel = subMenu.Text ;
+            % Update the preview
+                updateSeedPreview(obj,ax)
+        end
+        
+        function updateSeedPreview(obj,ax)
+            % Search for the mesh
+                triMesh = findobj(ax,'tag',obj.Name) ;
+            % If it is not found, re-init
+                if isempty(triMesh)
+                    initSeedPreview(obj,ax) ;
+                    triMesh = findobj(ax,'tag',obj.Name) ;
+                end
+            % Get the frame
+                CurrentFrame = ax.UserData.currentFrame ;
+            % If the frame is valid, Update
+                if CurrentFrame>0 && CurrentFrame<=size(obj.MovingPoints,3)
+                    % Deform the mesh
+                        triMesh.Vertices = obj.MovingPoints(:,:,CurrentFrame) ;
+                    % Retrieve the data
+                        switch ax.UserData.dataLabel
+                            case '|U|'
+                                Data =  sqrt(sum(obj.Displacements(:,:,:).^2,2)) ;
+                            case 'Ux'
+                                Data = obj.Displacements(:,1,:) ;
+                            case 'Uy'
+                                Data = obj.Displacements(:,2,:) ;
+                            case 'Exx'
+                                Data = obj.Strains(:,1,:) ;
+                            case 'Eyy'
+                                Data = obj.Strains(:,2,:) ;
+                            case 'Exy'
+                                Data = obj.Strains(:,3,:) ;
                         end
-                    else
-                        caxis(ax,[minData maxData]) ;
-                    end
-            end
+                        Data = squeeze(Data) ;
+                    % Apply data to mesh
+                        triMesh.CData = Data(:,CurrentFrame) ;
+                        colorData = Data(:,CurrentFrame) ; Data(:,:) ;
+                    % Color scale
+                        minData = min(colorData(:)) ;
+                        maxData = max(colorData(:)) ;
+                        if ~any(isnan([minData maxData]))
+                            if sign(minData)==sign(maxData)
+                                if sign(minData)==-1
+                                    caxis(ax,[minData 0]) ;
+                                else
+                                    caxis(ax,[0 maxData]) ;
+                                end
+                            else
+                                caxis(ax,[minData maxData]) ;
+                            end
+                        end
+                end
         end
         
     end
