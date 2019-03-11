@@ -15,7 +15,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
             Strains = [] ;
         % Displ. Computation Method
             displMode = 'abs' ;
-            RefFrame = 1;
+            RefFrame = 1 ;
             displMethod = ... 'cpcorr' ...
                            'fftdisp' ...
                           ;
@@ -26,6 +26,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
     end
     
     methods
+        
         function obj = navDICSeed(hd,nCams)
             % CAMERA-DEPENDENT DATA
                 if ~isempty(hd.Cameras) % Is there defined cameras ?
@@ -37,7 +38,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     % Get reference Images
                         for id = IDs
                             if ~isempty(hd.Images)
-                                img = hd.Images{id,1} ;
+                                img = hd.Images{id,hd.CurrentFrame} ;
                                 if iscell(img)
                                     obj.refImgs{end+1} = img{1} ;
                                 else
@@ -67,18 +68,27 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                         obj.Strains= zeros([size(obj.Points) obj.RefFrame]) ;
                     end
         end
+        
+        
         function obj = modify(obj,hd)
         end
+        
+        
         function obj = computeDisplacements(obj,hd)
             script = ['navDIC_',obj.displMethod] ;
             eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
+        
+        
         function obj = computeStrains(obj,hd)
             script = ['navDIC_',obj.strainMethod] ;
             eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
+        
+        
         function updateSeedPreview(obj,ax)
         end
+        
     end
 
     

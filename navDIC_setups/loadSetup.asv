@@ -54,11 +54,11 @@ function [setup,hd] = loadSetup(hd,path)
                     idSTR = idSTR(ind(~isnan(idNUM))) ;
                     nImgs = length(idSTR) ;
                 % Load images
+                    Images{cam} = zeros(size(
                     wtbr = waitbar(0,'Loading Images...') ;
                     for i = 1:nImgs
-                        imData = imread([camFolders{cam},'/',commonName,idSTR{i},ext]) ;
-                        if size(imData,3)>1 ; imData = mean(imData,3) ; end % To Black and White...
-                        Images{cam,i} = {imData} ;
+                        %Images{cam,i} = {imread([camFolders{cam},'/',commonName,idSTR{i},ext])} ;
+                        Images{cam,i} = {imread([camFolders{cam},'/',commonName,idSTR{i},ext])} ;
                         wtbr = waitbar(i/nImgs,wtbr) ;
                     end
                     delete(wtbr) ;

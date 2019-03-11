@@ -464,7 +464,7 @@ function navDIC()
        % Put The toolbar at the top of the screen
            drawnow ; % I don't know why, but i'm forced to draw here...
            hd.ToolBar.fig.Position(4) = infosTxtHeight ;
-           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) - hd.ToolBar.fig.OuterPosition(4) ;
+           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) + screenPos(end,2) - hd.ToolBar.fig.OuterPosition(4) ;
            drawnow ;
        % Init the Info textbox
            hd.ToolBar.infosTxt = uicontrol('style','text'...
@@ -745,64 +745,3 @@ end
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-% ===================================================================================================================    
-% RETIRED CODE FUNCTIONS
-% ===================================================================================================================
-
-
-% FUNCTIONS ----------------------------------------------------
-% % SET THE ROI
-%     function setTheROI
-%     end
-% 
-% % CROP WITH ROI
-%     function cropWithROI
-%     end
-% 
-% % SET CROPPING MARGINS
-%     function setCroppingMargins
-%     end
-
-
-    
-
-% TOOLBAR MENUS ----------------------------------------------------
-%         % ROI -------------------------------------------------
-%            hd.ToolBar.MainMenu.ROI = uimenu(hd.ToolBar.fig,'Label','ROI');%,'Enable','off') ;
-%            % Set the ROI
-%                 hd.ToolBar.MainMenu.setROI = uimenu(hd.ToolBar.MainMenu.ROI,...
-%                                                         'Label','Set the Region Of Interest', ...
-%                                                         'callback',@(src,evt)setTheROI) ;
-%            % Separator -------------
-%                 uimenu(hd.ToolBar.MainMenu.ROI,'Label','-------------------','Enable','off') ;
-%            % Crop With ROI
-%                 hd.ToolBar.MainMenu.cropWithROI = uimenu(hd.ToolBar.MainMenu.ROI,...
-%                                                         'Label','Crop Images with the ROI', ...
-%                                                         'Checked','on', ...
-%                                                         'Enable','off', ...
-%                                                         'callback',@(src,evt)cropWithROI) ;
-%            % Crop Margins
-%                 hd.ToolBar.MainMenu.cropMargins = uimenu(hd.ToolBar.MainMenu.ROI,...
-%                                                         'Label','Cropping Margins', ...
-%                                                         'Enable','off', ...
-%                                                         'callback',@(src,evt)setCroppingMargins) ;

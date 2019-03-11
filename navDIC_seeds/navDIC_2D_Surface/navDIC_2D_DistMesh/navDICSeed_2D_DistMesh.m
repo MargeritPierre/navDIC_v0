@@ -65,7 +65,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         clrbr.Position(2) = ax.Position(4) + clrbr.Position(4)*1 ;
                 end
                 clrbr.AxisLocation = 'out';
-                drawnow;
+                drawnow; pause(0.05) ;
                 clrbr.Units = 'normalized' ;
                 ax.Units = 'normalized' ;
             % ADD THE MENU BAR
@@ -91,10 +91,10 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             % Change the ax userData
                 ax.UserData.dataLabel = subMenu.Text ;
             % Update the preview
-                updateSeedPreview(obj,ax)
+                updateSeedPreview(obj,[],ax)
         end
         
-        function updateSeedPreview(obj,ax)
+        function updateSeedPreview(obj,hd,ax)
             % Search for the mesh
                 triMesh = findobj(ax,'tag',obj.Name) ;
             % If it is not found, re-init
@@ -125,6 +125,11 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         end
                         Data = squeeze(Data) ;
                     % Apply data to mesh
+                        if size(Data,1) == size(triMesh.Faces,1) % Facet data
+                            triMesh.FaceColor = 'flat' ;
+                        else
+                            triMesh.FaceColor = 'interp' ;
+                        end
                         triMesh.CData = Data(:,CurrentFrame) ;
                         colorData = Data(:,CurrentFrame) ; Data(:,:) ;
                     % Color scale

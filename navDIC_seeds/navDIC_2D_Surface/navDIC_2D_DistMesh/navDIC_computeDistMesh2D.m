@@ -4,14 +4,15 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
 %   Adapted for the use in navDIC by Pierre Margerit (2018)
 
 % Parameters for convergence of the mesh
-    maxCount = 200 ; % maxNumber of iterations
-    dptol=.001; 
-    ttol=.01; 
-    Fscale=1.2; 
-    deltat=.05; 
-    geps=.001*h0; 
-    deps=sqrt(eps)*h0;
-    densityctrlfreq=30;
+    maxCount = 1000 ; % max number of iterations
+    dptol = .0001; % point displacement tolerance (convergence criterion)
+    ttol = .005; % re-triangulation tolerance
+    Fscale = 1.2; % spring L0 relative to bar length
+    deltat = .03; % explicite time increment
+    geps = .01*h0; % maximum distance function allowed (remove pts)
+    deps = sqrt(eps)*h0; % discrete gradient estim. step
+    densityctrlfreq = 30 ; % control if points too close every (.) iterations
+    plotFreq = 30 ; % update plot frequency
 
 % 1. Create initial distribution in bounding box (equilateral triangles)
     [x,y]=meshgrid(bbox(1,1):h0:bbox(2,1),bbox(1,2):h0*sqrt(3)/2:bbox(2,2));
@@ -33,8 +34,10 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
     mesh = [] ;
     lastPlotTime = tic ;
     count=0;
-    pold=inf;                                           % For first iteration
-
+    pold=inf; % For first iteration
+    nReTri = 0 ;
+    infos = {}; % to print informations at the end
+    
 % Initialize mesh
     triMesh = findobj(Axes,'tag','DistMeshPreview') ;
     delete(triMesh) ;
@@ -54,7 +57,9 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
 while 1
   count=count+1;
   % 3. Retriangulation by the Delaunay algorithm
-      if max(sqrt(sum((p-pold).^2,2))/h0)>ttol           % Any large movement?
+      %if max(sqrt(sum((p-pold).^2,2))/h0)>ttol           % Any large movement?
+      if any(abs(sqrt(sum((p-pold).^2,2))./fh(p))>ttol)          % Any large movement?
+        nReTri = nReTri+1 ;
         pold=p;                                          % Save current positions
         t = computeMesh(p) ;
         % 4. Describe each bar by a unique pair of nodes
@@ -93,10 +98,14 @@ while 1
 
   % 8. Termination criterion: All interior nodes move less than dptol
   % (scaled)navDIC
-      if max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/h0)<dptol, break; end
-      if ~isvalid(triMesh) ; break ; end
-      if count>maxCount ; break ; end 
+      dP = max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/h0) ;
+      if dP<dptol ; infos{end+1} = {'out criterion: |dP|<tol'} ; break; end
+      if ~isvalid(triMesh) ; infos{end+1} = {'out criterion: TriMesh not valid'} ; break ; end
+      if count>=maxCount ; infos{end+1} = {'out criterion: iteration count'} ; break ; end 
 end
+infos{end+1} = {[num2str(count),' iterations']} ;
+infos{end+1} = {['last dP: ',num2str(dP)]} ;
+infos{end+1} = {[num2str(nReTri),' re-triangulations']} ;
 
 % Clean up and plot final mesh
 [p,t]=fixmesh(p,t);
@@ -112,9 +121,17 @@ end
     mesh.Points = p ;
     mesh.Triangles = t ;
     mesh.Patches = triMesh ;
+    infos{end+1} = {[num2str(size(p,1)),' nodes']} ;
+    infos{end+1} = {[num2str(size(t,1)),' triangles']} ;
     
     
-    
+% DISPLAY INFOS
+disp(newline)
+disp('--- DistMesh ---')
+for in = [infos{:}]
+    disp(['  ',in{1}])
+end
+disp('----------------')
 %simpplot(p,t)
     
 
@@ -134,7 +151,7 @@ end
         if isvalid(triMesh) 
             triMesh.Vertices = p ;
             triMesh.Faces = t ;
-            if toc(lastPlotTime)>0.02
+            if toc(lastPlotTime)>1/plotFreq
                 drawnow
                 lastPlotTime = tic ;
             end

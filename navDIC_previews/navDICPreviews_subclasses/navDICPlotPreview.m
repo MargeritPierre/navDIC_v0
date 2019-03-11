@@ -21,7 +21,13 @@ classdef navDICPlotPreview < navDICPreview
                 % Set the axes
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
-                    plotMachin = 'strain_time' 
+                    % Let the user choose the plot
+                        availablePlots = {'strain_time','force_time','disp_time','position_time','velocity_time','poisson','force_strain'} ;
+                        [IDs,valid] = listdlg('PromptString','Select A Plot Option :',...
+                                                    'initialValue',1,...
+                                                    'ListString',availablePlots) ;
+                        if ~valid ; IDs = 1 ; end
+                        plotMachin = availablePlots{IDs} ;
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'

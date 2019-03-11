@@ -16,7 +16,7 @@ function H = navDIC_processShapesForDistMesh(H)
     % Retrieve custom Data
         customData = H.uiContextMenuData ;
         % Convert to double
-            for s = 1:length(customData) ;
+            for s = 1:length(customData)
                 customData(s).h0 = str2num(customData(s).h0) ;
                 customData(s).h = str2num(customData(s).h) ;
                 customData(s).l = str2num(customData(s).l) ;
@@ -27,7 +27,7 @@ function H = navDIC_processShapesForDistMesh(H)
             else
                 h0 = customData(H.numShape).h0 ;
             end
-            for s = 1:length(customData) ;
+            for s = 1:length(customData)
                 H.uiContextMenuData(s) = setfield(H.uiContextMenuData(s),'h0',num2str(h0)) ;
             end
         % Set variable bar length

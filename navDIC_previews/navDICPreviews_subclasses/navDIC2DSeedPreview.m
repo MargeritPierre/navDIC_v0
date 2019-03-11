@@ -33,7 +33,7 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                 % Update seed preview
                     seedID = ismember({hd.Seeds.Name},prev.SeedName) ;
                     prev.AxesImg.UserData.currentFrame = hd.CurrentFrame ;
-                    hd.Seeds(seedID).updateSeedPreview(prev.AxesImg) ;
+                    hd.Seeds(seedID).updateSeedPreview(hd,prev.AxesImg) ;
             end
     end
     
