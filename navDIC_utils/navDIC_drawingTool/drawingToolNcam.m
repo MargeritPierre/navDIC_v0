@@ -230,9 +230,9 @@ function H = drawingToolNcam(varargin)
             hmax = max(size(refImg{1},1),size(refImg{2},1)  ) ;
             lmax = size(refImg{1},2) + size(refImg{2},2) ;
             % Fix the aspect ratio to image
-                maxSize = get(0,'defaultfigureposition') ; maxSize = maxSize(3:4)*figRelSize  ;
-                Ratio = [max((size(refImg{1})+2*marg)./(maxSize-[0 55])), max((size(refImg{2})+2*marg)./(maxSize-[0 55]))];
-                H.Figure.Position([4,3]) = round(( [size(refImg{1},1)/Ratio(1)+size(refImg{2},1)/Ratio(1) lmax/Ratio(1)] ))+2*marg ;
+                maxSize = get(0,'defaultfigureposition') ; maxSize = maxSize(3:4)*figRelSize-[0 55]  ;
+                Ratio = [(size(refImg{1},1)+2*marg)./maxSize(1), (size(refImg{2},1)+2*marg)./maxSize(1)];
+                H.Figure.Position([4,3]) = round(( [size(refImg{1},1)/Ratio(1)+size(refImg{2},1)/Ratio(2) size(refImg{1},1)/Ratio(1)] ))+2*marg ;
             % Center the figure on screen
                 H.Figure.Units = 'normalized' ;
                 H.Figure.Position(1:2) = [.5-H.Figure.Position(3:4)/2] ;
@@ -246,7 +246,7 @@ function H = drawingToolNcam(varargin)
                     H.Axes(i).Position = H.Axes(i).Position + [marg marg -2*marg -2*marg] ;
                     H.Axes(i).Units = 'normalized' ;
                     H.Axes(i).YDir = 'reverse' ;
-                    H.Img(i) = imagesc(refImg{i}) ;
+                    H.Img(i) = imagesc(H.Axes(i),refImg{i}) ;
                     H.Img(i).CData = repmat(refImg{i},[1 1 3]) ;
                     axis equal
                     axis tight

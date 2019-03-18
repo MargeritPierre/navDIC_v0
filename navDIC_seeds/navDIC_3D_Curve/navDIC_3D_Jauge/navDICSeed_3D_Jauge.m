@@ -2,46 +2,59 @@ classdef navDICSeed_3D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
-        corrSize = 7 ;
+        corrSize = [7, 7] ; % taille fenetre de correlation cam 1 et cam 2
         L0 = [] ;
     end
     
     methods
-        
         function obj = navDICSeed_3D_Jauge(hd)
             % Initialize
                 obj = obj@navDICSeed(hd,'multiple') ;
-                obj.Class = 'navDICSeed_jauge' ;
-                obj.strainMethod = 'deltaL' ;
-                
-           % Draw points       
-                obj.drawToolH = drawingToolNcam('drawROI',true ...
-                                            ,'background', obj.refImgs) ;
-           %  obj.drawToolH
-               if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
-                   for p =1:2
-                        obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
-                   end
-               elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
-                   obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
+                obj.Class = 'navDICSeed_jauge'  ;
+                obj.displMethod = 'cpcorr3D' ;
+                obj.strainMethod = 'deltaLCor3D' ;
+           
+           % Set cameras Position and Optic parameters 
+               for i = 1 : length(obj.CamIDs)
+                    hd = setCameraProperties(hd,i) ;
                end
+           % Draw points
+           nbCam = length(obj.CamIDs) ;
+                for cam = 1 : nbCam
+                    obj.drawToolH = drawingTool('drawROI',true ...
+                                                ,'background', obj.refImgs{cam}) ;
+
+               %  obj.drawToolH
+                   if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
+                       for p =1:2
+                            obj.Points(p,:,cam) = obj.drawToolH.Geometries(p).Position ;
+                       end
+                   elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
+                       obj.Points(:,:,cam) = obj.drawToolH(cam).Geometries.Position(:,:) ;
+                   end
+                end
+                obj.Points = camsTo3d(hd,obj.Points) ;
             % INITIALIZE
-                obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
-                obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
-                obj.Strains = ones(size(obj.Points,1),1,hd.nFrames)*NaN ;
-                obj.L0 = norm(diff(obj.Points,1,1)) ;
+                obj.MovingPoints = ones(size(obj.Points,1),3,hd.nFrames,nbCam)*NaN ;
+                obj.Displacements = ones(size(obj.Points,1),3,hd.nFrames,nbCam)*NaN ;
+                obj.Strains = ones(size(obj.Points,1),1,hd.nFrames,nbCam)*NaN ;
+                obj.L0 = norm(diff(obj.Points,1,1,nbCam)) ;
         end
         
         function obj = modify(obj,hd)
-            obj.drawToolH = drawingTool(obj.drawToolH) ;
-            %  obj.drawToolH
-           if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
-               for p =1:2
-                    obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
-               end
-           elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
-               obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
-           end
+            for cam = 1 : length(obj.CamIDs)
+                    obj.drawToolH = drawingTool('drawROI',true ...
+                                                ,'background', obj.refImgs{cam}) ;
+
+               %  obj.drawToolH
+                   if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
+                       for p =1:2
+                            obj.CamPoints{cam}(p,:) = obj.drawToolH.Geometries(p).Position ;
+                       end
+                   elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
+                       obj.CamPoints{cam} = obj.drawToolH(cam).Geometries.Position(:,:) ;
+                   end
+            end
         end
         
         function obj = updateSeedPreview(obj,hd,ax)
