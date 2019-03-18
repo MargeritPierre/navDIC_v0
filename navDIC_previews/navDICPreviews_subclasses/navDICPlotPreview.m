@@ -22,7 +22,7 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
                     % Force vs Time
-                    plotMachin = 'strain_time' 
+                    plotMachin = 'force_strain' 
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'
@@ -64,7 +64,7 @@ classdef navDICPlotPreview < navDICPreview
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'FORCE_STRAIN'
-                            prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(1).Strains(:,2,:)),1)'] ;
+                            prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(end).Strains(:,',num2str(1),',:)),1)'] ;
                             prev.YDataSources{1} = ['hd.InputData-hd.InputData(1)'] ;
                             prev.lines(1) = plot(NaN,NaN,'tag','Poisson') ;
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;

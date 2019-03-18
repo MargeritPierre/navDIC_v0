@@ -2,7 +2,7 @@ classdef navDICSeed_1D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
-        corrSize = 40 ;
+        corrSize = 7 ;
         L0 = [] ;
     end
     
@@ -18,11 +18,12 @@ classdef navDICSeed_1D_Jauge < navDICSeed
                 obj.drawToolH = drawingTool('drawROI',true ...
                                             ,'background', obj.refImgs{1}) ;
            %  obj.drawToolH
-               if strcmpi(obj.drawToolH.Geometries.Class, 'impoint')
+               
+               if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
                    for p =1:2
                         obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
                    end
-               elseif strcmpi(obj.drawToolH.Geometries.Class, 'imline')
+               elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
                    obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
                end
             % INITIALIZE
@@ -35,11 +36,11 @@ classdef navDICSeed_1D_Jauge < navDICSeed
         function obj = modify(obj,hd)
             obj.drawToolH = drawingTool(obj.drawToolH) ;
             %  obj.drawToolH
-           if strcmpi(obj.drawToolH.Geometries.Class, 'impoint')
+           if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
                for p =1:2
                     obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
                end
-           elseif strcmpi(obj.drawToolH.Geometries.Class, 'imline')
+           elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
                obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
            end
         end

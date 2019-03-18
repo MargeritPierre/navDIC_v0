@@ -16,8 +16,8 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
         % Displ. Computation Method
             displMode = 'abs' ;
             RefFrame = 1;
-            displMethod = ... 'cpcorr' ...
-                           'fftdisp' ...
+            displMethod = 'cpcorr' ...
+                          ...  'fftdisp' ...
                           ;
         % Strain Computation Method
             strainMethod = 'planefit' ;
@@ -37,7 +37,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     % Get reference Images
                         for id = IDs
                             if ~isempty(hd.Images)
-                                img = hd.Images{id,1} ;
+                                img = hd.Images{1}{id} ;
                                 if iscell(img)
                                     obj.refImgs{end+1} = img{1} ;
                                 else
