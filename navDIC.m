@@ -464,7 +464,7 @@ function navDIC()
        % Put The toolbar at the top of the screen
            drawnow ; % I don't know why, but i'm forced to draw here...
            hd.ToolBar.fig.Position(4) = infosTxtHeight ;
-           hd.ToolBar.fig.OuterPosition(2) = screenPos(4) - hd.ToolBar.fig.OuterPosition(4) ;
+           hd.ToolBar.fig.OuterPosition(2) = screenPos(2,4) - infosTxtHeight ;
            drawnow ;
        % Init the Info textbox
            hd.ToolBar.infosTxt = uicontrol('style','text'...

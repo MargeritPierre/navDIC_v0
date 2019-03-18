@@ -1,4 +1,4 @@
-classdef navDICSeed_1D_Jauge < navDICSeed
+classdef navDICSeed_3D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
@@ -8,17 +8,16 @@ classdef navDICSeed_1D_Jauge < navDICSeed
     
     methods
         
-        function obj = navDICSeed_1D_Jauge(hd)
+        function obj = navDICSeed_3D_Jauge(hd)
             % Initialize
-                obj = obj@navDICSeed(hd,'single') ;
+                obj = obj@navDICSeed(hd,'multiple') ;
                 obj.Class = 'navDICSeed_jauge' ;
                 obj.strainMethod = 'deltaL' ;
                 
            % Draw points       
-                obj.drawToolH = drawingTool('drawROI',true ...
-                                            ,'background', obj.refImgs{1}) ;
+                obj.drawToolH = drawingToolNcam('drawROI',true ...
+                                            ,'background', obj.refImgs) ;
            %  obj.drawToolH
-               
                if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
                    for p =1:2
                         obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
