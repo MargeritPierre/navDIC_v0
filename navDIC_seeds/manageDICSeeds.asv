@@ -56,13 +56,11 @@ function hd = manageDICSeeds(hd)
             hd ;
             split = strsplit(newSeedName{1},'_') ;
             if strcmpi(split{1},'3D')
-                if ~isfield(hd.Cameras,'Properties')
-                    for i = 1 : length(hd.Cameras)
-                        hd = setCameraProperties(hd,i) ;
-                    end
+                for i = 1 : length(hd.Cameras)
+                    hd = setCameraProperties(hd,i) ;
                 end
             end
-            seed = eval([seedClass.Class,'(hd)']) ; %navDICSeed_2D_DistMesh(hd) ; %
+            seed = eval(['hd = ',seedClass.Class,'(hd)']) ; %navDICSeed_2D_DistMesh(hd) ; %
             seed.Name = newSeedName{1} ;
         % Output OK
             valid = seed.isValid ;

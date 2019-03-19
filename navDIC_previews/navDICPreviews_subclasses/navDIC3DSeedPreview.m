@@ -1,14 +1,13 @@
-classdef navDIC2DSeedPreview < navDICCameraPreview
+classdef navDIC3DSeedPreview < navDICCameraPreview
     
     properties
         SeedName = {} ;
-        cam = [] ;
     end
     
     methods
         
         % CONSTRUCTOR        
-            function prev = navDIC2DSeedPreview(hd)
+            function prev = navDIC3DSeedPreview(hd)
                 % Choose a seed to preview
                     [seedID,valid] = selectSeeds(hd,'single') ;
                 % get the cam to preview
@@ -18,20 +17,10 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                         seed = hd.Seeds(seedID) ;
                         camID = seed.CamIDs ;
                     end
-                    if length(camID) > 1
-                        listCam = {hd.Cameras(:).Name} ;
-                        ID = listdlg('PromptString','Select the Camera :',...
-                                'SelectionMode','Single',...
-                                'initialValue',1,...
-                                'ListString',listCam) ;
-                    else
-                        ID = camID ; 
-                    end
                 % Superclass constructor call
-                    prev = prev@navDICCameraPreview(hd,ID) ;
-                    prev.fig.Name = ['navDIC Seed Preview: ',seed.Name, ', Camera ', hd.Cameras(ID).Name] ;
+                    prev = prev@navDICCameraPreview(hd,camID) ;
+                    prev.fig.Name = ['navDIC Seed Preview: ',seed.Name, ' camera : ', num2str(camID(i)) ] ;
                     prev.SeedName = seed.Name ;
-                    prev.cam = ID ;
             end
             
         % UPDATE

@@ -2,7 +2,6 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
     
     properties
         SeedName = {} ;
-        cam = [] ;
     end
     
     methods
@@ -19,19 +18,14 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                         camID = seed.CamIDs ;
                     end
                     if length(camID) > 1
-                        listCam = {hd.Cameras(:).Name} ;
-                        ID = listdlg('PromptString','Select the Camera :',...
-                                'SelectionMode','Single',...
+                        [IDs,valid] = listdlg('PromptString','Select Camera :',...
+                                'SelectionMode',SelectionMode,...
                                 'initialValue',1,...
-                                'ListString',listCam) ;
-                    else
-                        ID = camID ; 
-                    end
+                                'ListString',{hd.Cameras(1).n) ;
                 % Superclass constructor call
-                    prev = prev@navDICCameraPreview(hd,ID) ;
-                    prev.fig.Name = ['navDIC Seed Preview: ',seed.Name, ', Camera ', hd.Cameras(ID).Name] ;
+                    prev = prev@navDICCameraPreview(hd,camID) ;
+                    prev.fig.Name = ['navDIC Seed Preview: ',seed.Name] ;
                     prev.SeedName = seed.Name ;
-                    prev.cam = ID ;
             end
             
         % UPDATE

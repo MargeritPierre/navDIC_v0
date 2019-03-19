@@ -4,41 +4,46 @@ classdef navDICSeed_3D_Jauge < navDICSeed
         ROI = [] ;
         corrSize = [7, 7] ; % taille fenetre de correlation cam 1 et cam 2
         L0 = [] ;
+        cam
     end
     
     methods
-        function obj = navDICSeed_3D_Jauge(hd)
+        function [obj] = navDICSeed_3D_Jauge(hd)
             % Initialize
                 obj = obj@navDICSeed(hd,'multiple') ;
                 obj.Class = 'navDICSeed_jauge'  ;
                 obj.displMethod = 'cpcorr3D' ;
                 obj.strainMethod = 'deltaLCor3D' ;
            
-           % Set cameras Position and Optic parameters 
-               for i = 1 : length(obj.CamIDs)
-                    hd = setCameraProperties(hd,i) ;
-               end
            % Draw points
            nbCam = length(obj.CamIDs) ;
-                for cam = 1 : nbCam
+           cam = 1 ;
+                while cam <= nbCam
                     obj.drawToolH = drawingTool('drawROI',true ...
                                                 ,'background', obj.refImgs{cam}) ;
 
                %  obj.drawToolH
                    if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
-                       for p =1:2
-                            obj.Points(p,:,cam) = obj.drawToolH.Geometries(p).Position ;
+                       for p = 1:length(obj.drawToolH.Geometries)
+                            pts(p,:) = obj.drawToolH.Geometries(p).Position ;
                        end
                    elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
-                       obj.Points(:,:,cam) = obj.drawToolH(cam).Geometries.Position(:,:) ;
+                       pts = obj.drawToolH.Geometries.Position(:,:) ;
                    end
+                   
+                   if length(pts) == length(obj.Points(:,:,1)) || cam == 1 
+                       obj.Points(:,:,cam) = pts ;
+                       cam = cam + 1 ;
+                   end
+                   
                 end
-                obj.Points = camsTo3d(hd,obj.Points) ;
             % INITIALIZE
-                obj.MovingPoints = ones(size(obj.Points,1),3,hd.nFrames,nbCam)*NaN ;
-                obj.Displacements = ones(size(obj.Points,1),3,hd.nFrames,nbCam)*NaN ;
-                obj.Strains = ones(size(obj.Points,1),1,hd.nFrames,nbCam)*NaN ;
-                obj.L0 = norm(diff(obj.Points,1,1,nbCam)) ;
+                obj.MovingPoints = ones(size(obj.Points,1),size(obj.Points,2),hd.nFrames,nbCam)*NaN ;
+                obj.Displacements = ones(size(obj.Points,1),size(obj.Points,2),hd.nFrames,nbCam)*NaN ;
+                obj.Strains = ones(1,1,hd.nFrames,nbCam)*NaN ;
+                for i = 1:nbCam
+                    obj.L0(i) = norm(diff(obj.Points(:,:,i),1,1)) ;
+                end
         end
         
         function obj = modify(obj,hd)
@@ -84,10 +89,11 @@ classdef navDICSeed_3D_Jauge < navDICSeed
             end
             if hd.CurrentFrame>0
                 %try
-                    line.XData = obj.MovingPoints(:,1,hd.CurrentFrame) ;
-                    line.YData = obj.MovingPoints(:,2,hd.CurrentFrame) ;
-                    label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame),1) ;
-                    label.String = [num2str(obj.Strains(1,1,hd.CurrentFrame)*100,3), '%'] ;
+                    idCam = hd.Previews{1}.cam ;
+                    line.XData = obj.MovingPoints(:,1,hd.CurrentFrame,idCam) ;
+                    line.YData = obj.MovingPoints(:,2,hd.CurrentFrame,idCam) ;
+                    label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame,idCam),1) ;
+                    label.String = [num2str(obj.Strains(1,1,hd.CurrentFrame,idCam)*100,3), '%'] ;
                 %end
             end
         end

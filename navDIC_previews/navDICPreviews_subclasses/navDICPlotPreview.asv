@@ -71,17 +71,19 @@ classdef navDICPlotPreview < navDICPreview
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'FORCE_STRAIN3D'
                             nb = length(hd.InputData-hd.InputData(1)) ;
-                            for i = 1:length(hd.Seeds(end))
-                                prev.XDataSources{1+i-1} = ['reshape(hd.Seeds(end).Strains(1,1,:,1),[',num2str(nb),' 1])'] ;
-                                prev.YDataSources{1} = 'hd.InputData-hd.InputData(1)' ;
-                                prev.XDataSources{2} = ['reshape(hd.Seeds(end).Strains(1,1,:,2),[',num2str(nb),' 1])'] ;
-                                prev.YDataSources{2} = 'hd.InputData-hd.InputData(1)' ;
-                                prev.lines(1) = plot(NaN,NaN,'tag','Cam 1') ;
-                                prev.lines(2) = plot(NaN,NaN,'tag','Cam 2') ;
-                                prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
-                                prev.timeMarkers(1) = plot(NaN,NaN) ;
-                                prev.timeMarkers(2) = plot(NaN,NaN) ;
-                            end
+                            prev.XDataSources{1} = ['reshape(hd.Seeds(end).Strains(1,1,:,1),[',num2str(nb),' 1])'] ;
+                            prev.YDataSources{1} = 'hd.InputData-hd.InputData(1)' ;
+                            prev.XDataSources{2} = ['reshape(hd.Seeds(end).Strains(1,1,:,2),[',num2str(nb),' 1])'] ;
+                            prev.YDataSources{2} = 'hd.InputData-hd.InputData(1)' ;
+                            prev.XDataSources{3} = ['reshape(hd.Seeds(end).Strains(1,1,:,2),[',num2str(nb),' 1])'] ;
+                            prev.YDataSources{3} = 'hd.InputData-hd.InputData(1)' ;
+                            prev.XDataSources{4} = ['reshape(hd.Seeds(end).Strains(1,1,:,2),[',num2str(nb),' 1])'] ;
+                            prev.YDataSources{4} = 'hd.InputData-hd.InputData(1)' ;
+                            prev.lines(1) = plot(NaN,NaN,'tag','Cam 1') ;
+                            prev.lines(2) = plot(NaN,NaN,'tag','Cam 2') ;
+                            prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                            prev.timeMarkers(1) = plot(NaN,NaN) ;
+                            prev.timeMarkers(2) = plot(NaN,NaN) ;
                     end
                     title(regexprep(plotMachin,{'_'},{' '}))
                     prev = updatePreview(prev,hd) ;

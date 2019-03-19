@@ -2,18 +2,22 @@ function [obj,hd] = navDIC_deltaLCor3D(obj,hd)
 
 disp('deltaL_LCor3D')
 
-nbCam = size(obj.Points,4) ; 
+nbCam = size(obj.Points,3) ; 
 cocam = [2, 1] ;
 sig = [dot(hd.Cameras(2).Properties.X,hd.Cameras(1).Properties.Z), dot(hd.Cameras(1).Properties.X,hd.Cameras(2).Properties.Z)] ;
 
-L0(1) = sqrt(sum(diff(obj.Points(:,:,1),1,1).^2,2)) ;
-L0(2) = sqrt(sum(diff(obj.Points(:,:,2),1,1).^2,2)) ;
+refPts = camsTo3d(hd,obj.Points) ;
+movPts2D(:,:,:) = obj.MovingPoints(:,:,hd.CurrentFrame,:) ;
+movPts = camsTo3d(hd,movPts2D) ;
+
+L0(1) = sqrt(sum(diff(refPts(:,:,1),1,1).^2,2)) ;
+L0(2) = sqrt(sum(diff(refPts(:,:,2),1,1).^2,2)) ;
 for i = 1:nbCam
-    dz = sig(i) * obj.MovingPoints(:,1,hd.CurrentFrame,cocam(i)) - obj.Points(:,1,cocam(i)) ;
-    movPointCor(:,:) = obj.MovingPoints(:,:,hd.CurrentFrame,i) ;
-    movPointCor(:,3) = movPointCor(:,3) + dz ;  
-    L = sqrt(sum(diff(movPointCor,1,1).^2,2)) ;
-    obj.Strains(:,:,hd.CurrentFrame,i) = (L-L0(i))./L0(i) ;
+    dz = sig(i) * ( movPts(:,1,cocam(i)) - refPts(:,1,cocam(i)) ) ;
+    movPtsCor(:,:) = movPts(:,:,i) ;
+    movPtsCor(:,:) = ( ones(size(movPtsCor(:,:))) + repmat(dz,[1 1]) / hd.Cameras(i).Properties.do ) .* movPtsCor(:,:) ;  
+    L = sqrt(sum(diff(movPtsCor,1,1).^2,2)) ;
+    obj.Strains(:,1,hd.CurrentFrame,i) = (L-L0(i))./L0(i) ;
 end
 end
 % disp('deltaL_L')

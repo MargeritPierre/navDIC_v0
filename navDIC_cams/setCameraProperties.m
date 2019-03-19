@@ -1,5 +1,9 @@
 function hd = setCameraProperties(hd,num)
 
+disp('------------------------------------------------------------------') ;
+disp(['Setting of position and properties of the camera ', num2str(num),' : ',hd.Cameras(num).Name]) ;
+disp('------------------------------------------------------------------') ;
+
 f = 120 ; % inputdlg('Entrer la valeur de la longueur focale de l''objectif (mm) : ') ;
 refO = input('Entrer la dimension reel d''une reference du plan objet (mm) : ') ;
 refpix = input('Entrer la dimension en pixel correspondant dans le plan image (pix) : ') ;
@@ -30,7 +34,7 @@ hd.Cameras(num).Properties.Y = Ycam1 ;
 hd.Cameras(num).Properties.Z = Zcam1 ;
 
 
-hd.Cameras(num).Properties.Cam(1).P = [ dot(Xcam1, [1;0;0]), dot(Xcam1, [0;1;0]), dot(Xcam1, [1;0;0]) ;...
+hd.Cameras(num).Properties.P = [ dot(Xcam1, [1;0;0]), dot(Xcam1, [0;1;0]), dot(Xcam1, [1;0;0]) ;...
     dot( Ycam1, [1;0;0]), dot(Ycam1, [0;1;0]), dot(Ycam1,[1;0;0]) ;...
     dot( Zcam1, [1;0;0]), dot(Zcam1, [0;1;0]), dot(Zcam1,[1;0;0])] ;
 
