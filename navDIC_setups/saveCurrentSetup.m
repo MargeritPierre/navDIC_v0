@@ -44,7 +44,7 @@ function hd = saveCurrentSetup(hd,varargin)
         % Saving Timeline
             nameData = [folderName,'/','Time','.mat'] ;
             time = sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 3600*24 3600 60 1]),2) ;
-            save(nameData,time(:)) ;
+            save(nameData,'time') ;
             
     end
         

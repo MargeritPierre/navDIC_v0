@@ -14,7 +14,6 @@ resY = input('Entrer le nombre de pixel dans la hauteur : ') ;
 ix = input('Entrer la largeur du capteur CCD : ') ;
 iy = input('Entrer la hauteur du capteur CCD : ') ;
 
-
 di = ( refpix / resY * iy + refO ) * f / refO ;
 do = di * refO / ( refpix / resY * iy ) ;
 
@@ -38,6 +37,7 @@ hd.Cameras(num).Properties.P = [ dot(Xcam1, [1;0;0]), dot(Xcam1, [0;1;0]), dot(X
     dot( Ycam1, [1;0;0]), dot(Ycam1, [0;1;0]), dot(Ycam1,[1;0;0]) ;...
     dot( Zcam1, [1;0;0]), dot(Zcam1, [0;1;0]), dot(Zcam1,[1;0;0])] ;
 
+hd.Cameras(num).Properties.di = di ;
 hd.Cameras(num).Properties.do = do ;
 hd.Cameras(num).Properties.f = f ; % mm
 hd.Cameras(num).Properties.px = resX ; % nombre de pixels en x 
