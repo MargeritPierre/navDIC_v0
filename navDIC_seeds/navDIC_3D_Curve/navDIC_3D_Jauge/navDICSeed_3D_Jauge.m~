@@ -90,7 +90,7 @@ classdef navDICSeed_3D_Jauge < navDICSeed
             if hd.CurrentFrame>0
                 camName = strsplit(line.Parent.Parent.Name, 'Camera ') ;
                 camName = camName{end} ;
-                idCam = find(ismember({hd.Cameras.Name},camName)) ;
+                idCam = ismember({hd.Cameras.Name},camName);
                 line.XData = obj.MovingPoints(:,1,hd.CurrentFrame,idCam) ;
                 line.YData = obj.MovingPoints(:,2,hd.CurrentFrame,idCam) ;
                 label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame,idCam),1) ;

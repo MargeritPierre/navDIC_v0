@@ -32,6 +32,8 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                     prev.fig.Name = ['navDIC Seed Preview: ',seed.Name, ', Camera ', hd.Cameras(ID).Name] ;
                     prev.SeedName = seed.Name ;
                     prev.cam = ID ;
+                    [prev,hd] = setIdPreview(prev,hd) ;
+
             end
             
         % UPDATE
@@ -43,6 +45,13 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                     seedID = ismember({hd.Seeds.Name},prev.SeedName) ;
                     hd.Seeds(seedID).updateSeedPreview(hd,prev.AxesImg) ;
             end
+            
+            function [prev,hd] = setIdPreview(prev,hd)
+                % Superclass updating function
+                    seedID = ismember({hd.Seeds.Name},prev.SeedName) ;
+                    hd.Seeds(seedID).cam = prev.cam ;
+            end
+            
     end
     
             
