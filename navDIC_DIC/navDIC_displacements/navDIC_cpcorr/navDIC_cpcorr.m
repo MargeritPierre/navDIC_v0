@@ -3,8 +3,11 @@ function [obj,hd] = navDIC_cpcorr(obj,hd)
 disp('cpcorr')
 
 % Params
+try
     CorrSize = obj.corrSize ; % 40 ;
-
+catch
+    CorrSize = 6 ;
+end
 % Retrieve Infos
     frame = hd.CurrentFrame ;
     camID = obj.CamIDs ;
@@ -27,14 +30,30 @@ disp('cpcorr')
         switch obj.displMode
             case 'abs'
                 PtsRef = obj.Points ;
-                imgRef = hd.Images{obj.RefFrame}{camID} ;%obj.refImgs{1} ;
+                if iscell(hd.Images{obj.RefFrame}{camID})
+                    imgRef = hd.Images{obj.RefFrame}{camID}{1} ;%obj.refImgs{1} ;
+                else
+                    imgRef = hd.Images{obj.RefFrame}{camID} ;
+                end
                 PtsMov = round(obj.MovingPoints(:,:,frame-obj.RefFrame)) ;
-                imgMov = hd.Images{frame}{camID} ;
+                if iscell(hd.Images{frame}{camID})
+                    imgMov = hd.Images{frame}{camID}{1} ;
+                else
+                    imgMov = hd.Images{frame}{camID} ;
+                end
             case 'rel'
                 PtsRef = obj.MovingPoints(:,:,frame-1) ;
-                imgRef = hd.Images{frame-1}{camID} ;
+                if iscell(hd.Images{frame-1}{camID})
+                    imgRef = hd.Images{frame-1}{camID}{1} ;%obj.refImgs{1} ;
+                else
+                    imgRef = hd.Images{frame-1}{camID} ;
+                end
                 PtsMov = obj.MovingPoints(:,:,frame-1) ;
-                imgMov = hd.Images{frame}{camID} ;
+                if iscell(hd.Images{frame}{camID})
+                    imgMov = hd.Images{frame}{camID}{1} ;
+                else
+                    imgMov = hd.Images{frame}{camID} ;
+                end
         end
         valid = ~any(isnan(PtsMov),2) ;
         obj.MovingPoints(:,:,frame) = obj.Points*NaN ;

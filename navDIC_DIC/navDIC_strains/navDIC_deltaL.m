@@ -1,10 +1,17 @@
 function [obj,hd] = navDIC_deltaL(obj,hd)
 
 disp('deltaL_L')
+Pts = obj.Points;
+frame = hd.CurrentFrame ;
 
-L0 = sqrt(sum(diff(obj.Points,1,1).^2,2)) ;
-L = sqrt(sum(diff(obj.MovingPoints(:,:,hd.CurrentFrame),1,1).^2,2)) ;
-obj.Strains(:,:,hd.CurrentFrame) = (L-L0)./L0 ;
+% Blah blah
+    if frame<=obj.RefFrame
+        obj.Strains = zeros([size(Pts,1)/2 1 frame]) ;
+    end
+
+L0 = sqrt(sum( ( obj.Points(2:2:end,:)-obj.Points(1:2:end,:) ).^2,2)) ;
+L = sqrt(sum( (obj.MovingPoints(2:2:end,:,hd.CurrentFrame) - obj.MovingPoints(1:2:end,:,hd.CurrentFrame)).^2,2)) ;
+obj.Strains(:,1,hd.CurrentFrame) = (L-L0)./L0 ;
     
     
     

@@ -32,8 +32,9 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                     prev.fig.Name = ['navDIC Seed Preview: ',seed.Name, ', Camera ', hd.Cameras(ID).Name] ;
                     prev.SeedName = seed.Name ;
                     prev.cam = ID ;
-                    [prev,hd] = setIdPreview(prev,hd) ;
-
+                    if length(camID) > 1
+                        [prev,hd] = setIdPreview(prev,hd) ;
+                    end
             end
             
         % UPDATE

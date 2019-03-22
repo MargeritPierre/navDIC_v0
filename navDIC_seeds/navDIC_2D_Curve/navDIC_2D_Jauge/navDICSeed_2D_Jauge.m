@@ -2,7 +2,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
-        corrSize = 7 ;
+        corrSize = 8 ;
         L0 = [] ;
     end
     
@@ -20,16 +20,18 @@ classdef navDICSeed_2D_Jauge < navDICSeed
            %  obj.drawToolH
                
                if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
-                   for p =1:2
+                   for p = 1:length(obj.drawToolH.Geometries)
                         obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
                    end
                elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
-                   obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
+                   for l = 1:length(obj.drawToolH.Geometries)
+                        obj.Points(end+1:end+2,:) = obj.drawToolH.Geometries(l).Position(:,:) ;
+                   end
                end
             % INITIALIZE
                 obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
-                obj.Strains = ones(size(obj.Points,1),1,hd.nFrames)*NaN ;
+                obj.Strains = ones(size(obj.Points,1)/2,1,hd.nFrames)*NaN ;
                 obj.L0 = norm(diff(obj.Points,1,1)) ;
         end
         
@@ -37,11 +39,13 @@ classdef navDICSeed_2D_Jauge < navDICSeed
             obj.drawToolH = drawingTool(obj.drawToolH) ;
             %  obj.drawToolH
            if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
-               for p =1:2
-                    obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
+               for p = 1:length(obj.drawToolH.Geometries)
+                   obj.Points(p,:) = obj.drawToolH.Geometries(p).Position ;
                end
            elseif strcmpi(obj.drawToolH.Geometries(1).Class, 'imline')
-               obj.Points(:,:) = obj.drawToolH.Geometries.Position(:,:) ;
+               for l = 1:length(obj.drawToolH.Geometries)
+                   obj.Points(end+1:end+2,:) = obj.drawToolH.Geometries(l).Position(:,:) ;
+               end
            end
         end
         
@@ -50,32 +54,36 @@ classdef navDICSeed_2D_Jauge < navDICSeed
             line = findobj(handles,'type','line') ;
             label = findobj(handles,'type','text') ;
             if isempty(line)
-                line = plot(ax ...
-                                ,NaN,NaN ...
-                                ,'linewidth',2 ...
-                                ,'marker','o'...
-                                ,'color','b'...
-                                ,'hittest','off' ...
-                                ,'tag',obj.Name ...
-                                ) ;
-                axes(ax) ;
-                label = text(...ax, ...
-                                NaN,NaN,'' ...
-                                ,'color',[0 0 1]+[1 1 0]*.5 ...
-                                ,'fontsize',13 ...
-                                ,'backgroundcolor','w' ...
-                                ,'interpreter','none' ...
-                                ,'horizontalalignment','left'...
-                                ,'hittest','off' ...
-                                ,'tag',obj.Name ...
-                                ) ;
+                for l = 1:size(obj.Strains,1)
+                    line(l) = plot(ax ...
+                                    ,NaN,NaN ...
+                                    ,'linewidth',2 ...
+                                    ,'marker','o'...
+                                    ,'color','b'...
+                                    ,'hittest','off' ...
+                                    ,'tag',obj.Name ...
+                                    ) ;
+                    axes(ax) ;
+                    label(l) = text(...ax, ...
+                                    NaN,NaN,'' ...
+                                    ,'color',[0 0 1]+[1 1 0]*.5 ...
+                                    ,'fontsize',13 ...
+                                    ,'backgroundcolor','w' ...
+                                    ,'interpreter','none' ...
+                                    ,'horizontalalignment','left'...
+                                    ,'hittest','off' ...
+                                    ,'tag',obj.Name ...
+                                    ) ;
+                end
             end
             if hd.CurrentFrame>0
                 %try
-                    line.XData = obj.MovingPoints(:,1,hd.CurrentFrame) ;
-                    line.YData = obj.MovingPoints(:,2,hd.CurrentFrame) ;
-                    label.Position = mean(obj.MovingPoints(:,:,hd.CurrentFrame),1) ;
-                    label.String = [num2str(obj.Strains(1,1,hd.CurrentFrame)*100,3), '%'] ;
+                for i = 1:length(line)
+                    line(i).XData = obj.MovingPoints((i-1)*2+1:i*2,1,hd.CurrentFrame) ;
+                    line(i).YData = obj.MovingPoints((i-1)*2+1:i*2,2,hd.CurrentFrame) ;
+                    label(i).Position = mean(obj.MovingPoints((i-1)*2+1:i*2,:,hd.CurrentFrame),1) ;
+                    label(i).String = [num2str(obj.Strains(i,1,hd.CurrentFrame)*100,3), '%'] ;
+                end
                 %end
             end
         end

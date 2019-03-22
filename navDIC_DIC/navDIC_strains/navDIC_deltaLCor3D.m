@@ -1,9 +1,22 @@
 function [obj,hd] = navDIC_deltaLCor3D(obj,hd)
 
+
+
 disp('deltaL_LCor3D')
+Pts = obj.Points;
+frame = hd.CurrentFrame ;
+
+% Blah blah
+    if frame<=obj.RefFrame
+        obj.Strains = zeros([size(Pts,1) 3 frame]) ;
+    end
+
+
+
 
 nbCam = size(obj.Points,3) ; 
 cocam = [2, 1] ;
+
 sig = [dot(hd.Cameras(2).Properties.X,hd.Cameras(1).Properties.Z), dot(hd.Cameras(1).Properties.X,hd.Cameras(2).Properties.Z)] ;
 
 refPts = camsTo3d(hd,obj.Points) ;

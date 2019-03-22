@@ -6,6 +6,7 @@ classdef navDICPlotPreview < navDICPreview
         timeMarkers = gobjects(0) ;
         XDataSources = {} ;
         YDataSources = {} ;
+        sources = {} ;
     end
     
     methods
@@ -22,8 +23,12 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                 % TEMPORARY CODE =======================
                     % Force vs Time
-                    plotMachin = 'force_strain3D' ;
+                    plotMachin = 'force_strain' ;
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
+                    prev = listeSource(prev,hd) ;
+                    lst = listdlg('PromptString','Select the output you want to plot : ',...
+                                'SelectionMode','multiple',...
+                                'ListString',prev.sources) ;
                     switch upper(plotMachin)
                         case 'FORCE_TIME'
                             prev.XDataSources{1} = timeString ;
@@ -64,17 +69,17 @@ classdef navDICPlotPreview < navDICPreview
                             prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'FORCE_STRAIN'
-                            prev.XDataSources{1} = ['meanNoNaN((hd.Seeds(end).Strains(:,',num2str(1),',:)),1)'] ;
-                            prev.YDataSources{1} = ['hd.InputData-hd.InputData(1)'] ;
-                            prev.lines(1) = plot(NaN,NaN,'tag','Poisson') ;
-                            prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
-                            prev.timeMarkers(1) = plot(NaN,NaN) ;
+                            for i = lst
+                                prev.XDataSources{i} = ['meanNoNaN(hd.Seeds(', num2str(i),').Strains(1,1,:),1)'] ;
+                                prev.YDataSources{i} = ['hd.InputData-hd.InputData(1)'] ;
+                                prev.lines(i) = plot(NaN,NaN,'tag','Poisson') ;
+                                prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                                prev.timeMarkers(i) = plot(NaN,NaN) ;
+                            end
                         case 'FORCE_STRAIN3D'
-                            nb = length(hd.InputData-hd.InputData(1)) ;
-
-                            prev.XDataSources{1} = ['reshape(hd.Seeds(end).Strains(1,1,:,1),[',num2str(nb),' 1])'] ;
+                            prev.XDataSources{1} = ['squeeze(meanNoNaN( hd.Seeds(end).Strains(:,1,:) ) ) '] ;
                             prev.YDataSources{1} = 'hd.InputData-hd.InputData(1)' ;
-                            prev.XDataSources{2} = ['reshape(hd.Seeds(end).Strains(1,1,:,2),[',num2str(nb),' 1])'] ;
+                            prev.XDataSources{2} = ['squeeze(meanNoNaN( hd.Seeds(end).Strains(1,1,:,2) ) ) '] ;
                             prev.YDataSources{2} = 'hd.InputData-hd.InputData(1)' ;
                             prev.lines(1) = plot(NaN,NaN,'tag','Cam 1') ;
                             prev.lines(2) = plot(NaN,NaN,'tag','Cam 2') ;
@@ -82,15 +87,18 @@ classdef navDICPlotPreview < navDICPreview
                             prev.timeMarkers(1) = plot(NaN,NaN) ;
                             prev.timeMarkers(2) = plot(NaN,NaN) ;
                     end
-                    title(regexprep(plotMachin,{'_'},{' '}))
+                    title(regexprep(plotMachin,{'_'},{' vs '}))
                     prev = updatePreview(prev,hd) ;
-                    if strcmpi(plotMachin,'FORCE_STRAIN3D')
-                        set(prev.lines(1),'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color','b')
-                        set(prev.lines(2),'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color','r')
-                        set(prev.timeMarkers,'linestyle','none','marker','o','markersize',12,'linewidth',2)
-                    else
-                        set(prev.lines,'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color','b')
-                        set(prev.timeMarkers,'linestyle','none','marker','o','markersize',12,'linewidth',2)
+                    col = colormap('lines') ;
+                    for i = 1 : length(lst)
+                        set(prev.lines(i),'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color',col(i,:))
+                        set(prev.timeMarkers(i),'linestyle','none','marker','o','markersize',12,'linewidth',2,'color',col(i,:))
+                        if strcmpi(plotMachin,'FORCE_STRAIN3D')
+                            set(prev.lines((i-1)*2+1),'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color',col((i-1)*2+1,:))
+                            set(prev.lines(i*2),'linestyle','-.','linewidth',1,'marker','.','markersize',20,'color',col(i*2,:))
+                            set(prev.timeMarkers,'linestyle','none','marker','o','markersize',12,'linewidth',2,'color',col((i-1)*2+1,:))
+                            set(prev.timeMarkers,'linestyle','none','marker','o','markersize',12,'linewidth',2,'color',col(i*2,:))
+                        end
                     end
                 %=======================================
             end
@@ -105,8 +113,8 @@ classdef navDICPlotPreview < navDICPreview
                             xdata = [] ;
                             ydata = [] ;
                             try
-                                xdata = eval(prev.XDataSources{l}) ;
-                                ydata = eval(prev.YDataSources{l}) ;
+                                xdata = squeeze(eval(prev.XDataSources{l})) ;
+                                ydata = squeeze(eval(prev.YDataSources{l})) ;
                                 if ~isempty(xdata) && ~isempty(ydata)
                                     prev.lines(l).XData = xdata' ;
                                     prev.lines(l).YData = ydata' ;
@@ -117,7 +125,13 @@ classdef navDICPlotPreview < navDICPreview
                         end
                     %=======================================
             end
-        
+            
+            function prev = listeSource(prev,hd)
+                % Superclass updating function
+                    prev.sources = {hd.Seeds(:).Name} ;
+                    %=======================================
+            end
+            
         % DESTRUCTOR
             function closePreview(obj)
             end
