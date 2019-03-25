@@ -28,7 +28,7 @@ classdef navDICSeed_3D_Jauge < navDICSeed
 %                         refpts = obj.drawToolH.Geometries(1).Position ;
 %                     end
                     obj.drawToolH = drawingTool('drawROI',true ...
-                                                ,'background', obj.refImgs{cam},'title',['DrawingTool : Placer les jauges de la caméra :', num2str(cam)],'corrSize','corrSize') ;
+                                                ,'background', obj.refImgs{cam},'title',['DrawingTool : Placer les jauges de la cam?ra :', num2str(cam)],'corrSize','corrSize') ;
                     pts = [] ;
                    
                %  obj.drawToolH
@@ -51,9 +51,12 @@ classdef navDICSeed_3D_Jauge < navDICSeed
             % INITIALIZE
                 obj.MovingPoints = ones(size(obj.Points,1),size(obj.Points,2),hd.nFrames,nbCam)*NaN ;
                 obj.Displacements = ones(size(obj.Points,1),size(obj.Points,2),hd.nFrames,nbCam)*NaN ;
-                obj.Strains = ones(size(obj.Points,1)/2,3,hd.nFrames,nbCam)*NaN ;
+                obj.Strains = ones(size(obj.Points,1)/2,2,hd.nFrames,nbCam)*NaN ;
+                
+                refPts = camsTo3d(hd,obj.Points) ;
+
                 for i = 1:nbCam
-                    obj.L0(i) = norm(obj.Points(2:2:end,:,i) - obj.Points(1:2:end,:,i)) ;
+                    obj.L0(:,i) = sqrt(sum((refPts(2:2:end,:,i) - refPts(1:2:end,:,i)).^2,2)) ;
                 end
         end
         

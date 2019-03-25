@@ -4,11 +4,20 @@ disp('------------------------------------------------------------------') ;
 disp(['Setting of position and properties of the camera ', num2str(num),' : ',hd.Cameras(num).Name]) ;
 disp('------------------------------------------------------------------') ;
 
+
+
 if ~isempty(hd.Images)
-    if iscell(hd.Images{1}{num})
-        img = hd.Images{1}{num}{1} ;
+    rep = inputdlg('utiliser image de calibration diff?rente (oui/non)') ;
+    if strcmpi(rep{1},'oui') 
+        [file,path] = uigetfile('*.tif',['selectionner l''image de calibration de la camera : ',...
+            hd.Cameras(num).Name,' ? utiliser. ']) ;
+        img = imread([path,file]) ;
     else
-        img = hd.Images{1}{num} ;
+        if iscell(hd.Images{1}{num})
+            img = hd.Images{1}{num}{1} ;
+        else
+            img = hd.Images{1}{num} ;
+        end
     end
 else
     hd = startAllCameras(hd) ;
@@ -25,9 +34,9 @@ elseif strcmpi(drawToolH.Geometries(1).Class, 'imline')
    pts = drawToolH.Geometries(1).Position(:,:) ;
 end
 refpix = sqrt(sum(diff(pts,1,1).^2,2)) ;
-prompt = {['Entrer la dimension reel de la référence choisie (', num2str(refpix),' pixels) (mm) : '],...
-    'Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (°) : ',...
-    'Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (°) : ',...
+prompt = {['Entrer la dimension reel de la r?f?rence choisie (', num2str(refpix),' pixels) (mm) : '],...
+    'Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (?) : ',...
+    'Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (?) : ',...
     'Entrer le nombre de pixel dans la largeur : ',...
     'Entrer le nombre de pixel dans la hauteur : ',...
     'Entrer la taille d''un pixel: '};
@@ -39,8 +48,8 @@ Camprop = inputdlg(prompt,title,dims,definput) ;
 refO = str2double(Camprop{1}) ; % input('Entrer la dimension reel d''une reference du plan objet (mm) : ') ;
  % input('Entrer la dimension en pixel correspondant dans le plan image (pix) : ') ;
 pixObjratio = refpix/refO ;
-ang = str2double(Camprop{2}) ; % input('Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (°) : ') ;
-angTor = str2double(Camprop{3}) ; % input('Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (°) : ') ;
+ang = str2double(Camprop{2}) ; % input('Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (?) : ') ;
+angTor = str2double(Camprop{3}) ; % input('Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (?) : ') ;
 resX = str2double(Camprop{4}) ; % input('Entrer le nombre de pixel dans la largeur : ') ;
 resY = str2double(Camprop{5}) ; % input('Entrer le nombre de pixel dans la hauteur : ') ;
 ix = str2double(Camprop{6})*resX ; % input('Entrer la largeur du capteur CCD : ') ;

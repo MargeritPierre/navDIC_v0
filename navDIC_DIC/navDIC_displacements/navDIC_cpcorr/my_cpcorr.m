@@ -133,8 +133,8 @@ for icp = 1:ncp
         continue
     end
 
-    moving_fractional_offset = 0 ; %xymoving(icp,:) - round(xymoving(icp,:)/PRECISION)*PRECISION;
-    fixed_fractional_offset = 0 ; %xyfixed_in(icp,:) - round(xyfixed_in(icp,:)/PRECISION)*PRECISION;    
+    moving_fractional_offset = 0 ; %xymoving(icp,:) - round(xymoving(icp,:)) ; %/PRECISION)*PRECISION; %0 ; %
+    fixed_fractional_offset = 0 ; %xyfixed_in(icp,:) - round(xyfixed_in(icp,:) ;%/PRECISION)*PRECISION; %0 ; %
     
     % adjust control point
     xymoving(icp,:) = xymoving_in(icp,:) - moving_fractional_offset - corr_offset + fixed_fractional_offset;

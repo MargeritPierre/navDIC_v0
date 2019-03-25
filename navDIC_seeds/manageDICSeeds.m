@@ -53,8 +53,7 @@ function hd = manageDICSeeds(hd)
             newSeedName = inputdlg('NAME OF THE SEED ?','Input a Name',1,{seedClass.ClassName}) ;
             if isempty(newSeedName) ; return ; end
         % Initialize the new seed
-            hd ;
-            split = strsplit(newSeedName{1},'_') ;
+            split = strsplit(seedClass.ClassName,'_') ;
             if strcmpi(split{1},'3D')
                 if ~isfield(hd.Cameras,'Properties')
                     for i = 1 : length(hd.Cameras)
