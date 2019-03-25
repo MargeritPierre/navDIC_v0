@@ -213,10 +213,11 @@ function H = drawingTool(varargin)
         marg = 3 ; % Pixels
         refImg = H.BackGround ;
         figRelSize = .55 ;
-
+        name = H.title ;
+        
         % Figure
             H.Figure = figure('tag','drawingToolFig'...
-                                ,'Name','drawingTool'...
+                                ,'Name',name...
                                 ,'NumberTitle','off') ;
             H.Figure.CloseRequestFcn = @(src,evt)closeFigure() ;
             % Fix the aspect ratio to image
@@ -350,6 +351,7 @@ function H = drawingTool(varargin)
 
 % CLOSE THE FIGURE
     function closeFigure()
+            
             H.Figure.CloseRequestFcn = @(src,evt)closereq ;
         % Delete Listeners
             try
@@ -381,6 +383,7 @@ function H = drawingTool(varargin)
                     H.updateCallback = @(H)H ;
                     H.uiContextMenu = [] ;
                     H.uiContextMenuData = [] ;
+                    H.title = 'DrawingTool' ;
                 % VARARGIN PROCESS
                     for arg = 1:2:length(varargin)
                         switch upper(varargin{arg})
@@ -397,6 +400,10 @@ function H = drawingTool(varargin)
                                 H.CallbackResult = [] ;
                             case 'UICONTEXTMENU'
                                 H.uiContextMenu = varargin{arg+1} ;
+                            case 'TITLE'
+                                H.title = varargin{arg+1} ;
+                                case 'CORRSIZE'
+                                H.corrSize = varargin{arg+1} ;
                         end
                     end
                 H.Geometries = [] ;

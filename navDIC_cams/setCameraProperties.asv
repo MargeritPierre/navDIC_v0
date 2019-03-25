@@ -22,10 +22,10 @@ if strcmpi(drawToolH.Geometries(1).Class, 'impoint')
         pts(p,:) = obj.drawToolH.Geometries(p).Position ;
    end
 elseif strcmpi(drawToolH.Geometries(1).Class, 'imline')
-   pts = drawToolH.Geometries(1).Position(:,:) ;
+   pts = drawToolH.Geometries(l).Position(:,:) ;
 end
 refpix = sqrt(sum(diff(pts,1,1).^2,2)) ;
-prompt = {['Entrer la dimension reel de la référence choisie (', num2str(refpix),' pixels) (mm) : '],...
+prompt = {'Entrer la dimension reel de la référence du plan objet (mm) : ',...
     'Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (°) : ',...
     'Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (°) : ',...
     'Entrer le nombre de pixel dans la largeur : ',...
@@ -39,12 +39,12 @@ Camprop = inputdlg(prompt,title,dims,definput) ;
 refO = str2double(Camprop{1}) ; % input('Entrer la dimension reel d''une reference du plan objet (mm) : ') ;
  % input('Entrer la dimension en pixel correspondant dans le plan image (pix) : ') ;
 pixObjratio = refpix/refO ;
-ang = str2double(Camprop{2}) ; % input('Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (°) : ') ;
-angTor = str2double(Camprop{3}) ; % input('Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (°) : ') ;
-resX = str2double(Camprop{4}) ; % input('Entrer le nombre de pixel dans la largeur : ') ;
-resY = str2double(Camprop{5}) ; % input('Entrer le nombre de pixel dans la hauteur : ') ;
-ix = str2double(Camprop{6})*resX ; % input('Entrer la largeur du capteur CCD : ') ;
-iy = str2double(Camprop{6})*resY ; % input('Entrer la hauteur du capteur CCD : ') ;
+ang = str2double(Camprop{3}) ; % input('Entrer la valeur de l''angle du plan horizontale de la camera 0 : Cam 1 90 : Cam 2 (°) : ') ;
+angTor = str2double(Camprop{4}) ; % input('Entrer la valeur de l''angle autour de l''axe optique de la camera 0 (°) : ') ;
+resX = str2double(Camprop{5}) ; % input('Entrer le nombre de pixel dans la largeur : ') ;
+resY = str2double(Camprop{6}) ; % input('Entrer le nombre de pixel dans la hauteur : ') ;
+ix = str2double(Camprop{7})*resX ; % input('Entrer la largeur du capteur CCD : ') ;
+iy = str2double(Camprop{7})*resY ; % input('Entrer la hauteur du capteur CCD : ') ;
 
 f = 120 ; % inputdlg('Entrer la valeur de la longueur focale de l''objectif (mm) : ') ;
 
@@ -82,7 +82,7 @@ hd.Cameras(num).Properties.px = resX ; % nombre de pixels en x
 hd.Cameras(num).Properties.py = resY ; % nombre de pixels en y 
 hd.Cameras(num).Properties.ix = ix ; % mm largeur CCD
 hd.Cameras(num).Properties.iy = iy ; % mm hauteur CCD
-hd.Cameras(num).Properties.pixObjratio = pixObjratio ;
+hd.Cameras(num).Properties.pixObjratio = hd.Cameras(num).Properties ;
 di = do * f / ( do - f ) ;
 
 hd.Cameras(num).Properties.fx = di / ix * resX ;

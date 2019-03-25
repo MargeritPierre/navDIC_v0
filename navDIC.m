@@ -12,7 +12,7 @@ function navDIC()
         
         
     % Is navDIC already running ?
-        set(0,'ShowHiddenHandles','on') ; % Force hadle visibility
+        set(0,'ShowHiddenHandles','on') ; % Force handle visibility
         navDICFigs = findobj(groot,'tag',navDICTag) ;
         % If YES, prompt figures to Foreground
             if ~isempty(navDICFigs)
@@ -465,7 +465,7 @@ function navDIC()
        % Put The toolbar at the top of the screen
            drawnow ; % I don't know why, but i'm forced to draw here...
            hd.ToolBar.fig.Position(4) = infosTxtHeight ;
-           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) - infosTxtHeight ;
+           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) - infosTxtHeight*5 ;
            drawnow ;
        % Init the Info textbox
            hd.ToolBar.infosTxt = uicontrol('style','text'...

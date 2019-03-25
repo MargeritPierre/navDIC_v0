@@ -4,6 +4,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
         ROI = [] ;
         corrSize = 8 ;
         L0 = [] ;
+        A = [] ;
     end
     
     methods
@@ -32,7 +33,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
                 obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Strains = ones(size(obj.Points,1)/2,1,hd.nFrames)*NaN ;
-                obj.L0 = norm(diff(obj.Points,1,1)) ;
+                obj.L0 = norm( obj.Points(2:2:end,:) - obj.Points(1:2:end,:) ) ;
         end
         
         function obj = modify(obj,hd)
@@ -54,6 +55,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
             line = findobj(handles,'type','line') ;
             label = findobj(handles,'type','text') ;
             if isempty(line)
+                axes(ax) ;
                 for l = 1:size(obj.Strains,1)
                     line(l) = plot(ax ...
                                     ,NaN,NaN ...
@@ -63,7 +65,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
                                     ,'hittest','off' ...
                                     ,'tag',obj.Name ...
                                     ) ;
-                    axes(ax) ;
+                    
                     label(l) = text(...ax, ...
                                     NaN,NaN,'' ...
                                     ,'color',[0 0 1]+[1 1 0]*.5 ...

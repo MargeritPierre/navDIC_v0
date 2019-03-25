@@ -64,6 +64,7 @@ function hd = manageDICSeeds(hd)
             end
             seed = eval([seedClass.Class,'(hd)']) ; %navDICSeed_2D_DistMesh(hd) ; %
             seed.Name = newSeedName{1} ;
+            
         % Output OK
             valid = seed.isValid ;
     end

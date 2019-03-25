@@ -47,8 +47,12 @@ classdef navDICSeed_2D_Line < navDICSeed_2D_Curve
                                 ) ;
             end
             if hd.CurrentFrame>0
+                n = length(obj.MovingPoints(:,1,hd.CurrentFrame)) ;
                 pts.XData = obj.MovingPoints(:,1,hd.CurrentFrame) ;
                 pts.YData = obj.MovingPoints(:,2,hd.CurrentFrame) ;
+                %cd = single(obj.Strains(:,1,hd.CurrentFrame)) ;
+                %drawnow
+                %set(pts.Edge, 'ColorBinding','interpolate', 'ColorData',cd)
             end
         end
         

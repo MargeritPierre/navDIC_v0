@@ -53,7 +53,7 @@ classdef navDICSeed_3D_Jauge < navDICSeed
                 obj.Displacements = ones(size(obj.Points,1),size(obj.Points,2),hd.nFrames,nbCam)*NaN ;
                 obj.Strains = ones(size(obj.Points,1)/2,3,hd.nFrames,nbCam)*NaN ;
                 for i = 1:nbCam
-                    obj.L0(i) = norm(obj.Points(2:2:end,:,i) - obj.Points(1:2:end,:,i)) ;
+                    obj.L0(i) = norm(obj.Points(2:2:end,:,i)-obj.Points(1:2:end,:,i)) ;
                 end
         end
         

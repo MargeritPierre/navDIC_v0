@@ -64,7 +64,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     if hd.CurrentFrame>1
                         obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
                         obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
-                        obj.Strains= zeros([size(obj.Points) obj.RefFrame]) ;
+                        obj.Strains= zeros([size(obj.Points,1)/2 obj.RefFrame]) ;
                     end
         end
         function obj = modify(obj,hd)
