@@ -5,7 +5,6 @@ classdef navDIC3DSeedPreview < navDICCameraPreview
     end
     
     methods
-        
         % CONSTRUCTOR        
             function prev = navDIC3DSeedPreview(hd)
                 % Choose a seed to preview

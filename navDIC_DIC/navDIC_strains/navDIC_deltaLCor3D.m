@@ -17,10 +17,11 @@ movPts = camsTo3d(hd,movPts2D) ;
 for i = 1:nbCam
     L02D = sqrt(sum( ( obj.Points(2:2:end,:,i) - obj.Points(1:2:end,:,i) ).^2,2) ) ;
     L2D = sqrt(sum( ( movPts2D(2:2:end,:,i) - movPts2D(1:2:end,:,i) ).^2,2) ) ;
-    L0 = sqrt(sum(( refPts(2:2:end,:,i) - refPts(1:2:end,:,i) ).^2,2)) ;
     dz = ( movPts(:,:,cocam(i)) - refPts(:,:,cocam(i)) ) *...
-        [dot(hd.Cameras(cocam(i)).Properties.X,hd.Cameras(i).Properties.Z); dot(hd.Cameras(cocam(i)).Properties.Y,hd.Cameras(i).Properties.Z); 0];
+        [dot(hd.Cameras(cocam(i)).Properties.X,hd.Cameras(i).Properties.Z);...
+        dot(hd.Cameras(cocam(i)).Properties.Y,hd.Cameras(i).Properties.Z); 0];
     movPtsCor(:,:) = ( ones(size(movPts(:,:,i))) + repmat(dz,[1 1]) / hd.Cameras(i).Properties.do ) .* movPts(:,:,i) ;  
+    L0 = sqrt(sum(( refPts(2:2:end,:,i) - refPts(1:2:end,:,i) ).^2,2)) ;
     L = sqrt(sum( ( movPtsCor(2:2:end,:) - movPtsCor(1:2:end,:) ).^2,2) ) ;
     obj.Strains(:,2,hd.CurrentFrame,i) = (L2D-L02D)./L02D ; % 3D
     obj.Strains(:,1,hd.CurrentFrame,i) = (L-L0)./L0 ; % 2D

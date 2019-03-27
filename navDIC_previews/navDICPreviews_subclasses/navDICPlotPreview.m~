@@ -26,10 +26,10 @@ classdef navDICPlotPreview < navDICPreview
                     % Force vs Time
                     plTyp = {'FORCE_TIME','DISP_TIME','STRAIN_TIME','POSITION_TIME','FORCE_STRAIN',...
                         'FORCE_STRAIN3D','FORCE_STRAIN3DVS2D','FORCE_STRAIN_COMP-FIL'} ;
-                    nb = listdlg('PromptString','Select the type of plot that you want : ',...
+                   = listdlg('PromptString','Select the type of plot that you want : ',...
                                 'SelectionMode','single',...
-                                'ListString',plTyp);
-                    plotMachin = plTyp{nb};
+                                'ListString',plTyp) 
+                    plotMachin 
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                     if ~strcmpi(plotMachin,'force_strain_Comp-fil')
                         prev = listeSource(prev,hd) ;

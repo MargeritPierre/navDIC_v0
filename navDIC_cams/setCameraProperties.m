@@ -4,8 +4,6 @@ disp('------------------------------------------------------------------') ;
 disp(['Setting of position and properties of the camera ', num2str(num),' : ',hd.Cameras(num).Name]) ;
 disp('------------------------------------------------------------------') ;
 
-
-
 if ~isempty(hd.Images)
     rep = inputdlg('utiliser image de calibration diff?rente (oui/non)') ;
     if strcmpi(rep{1},'oui') 

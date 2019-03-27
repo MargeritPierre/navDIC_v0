@@ -1,4 +1,4 @@
-classdef navDICSeed_3D_Jauge < navDICSeed
+ classdef navDICSeed_3D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
@@ -14,7 +14,7 @@ classdef navDICSeed_3D_Jauge < navDICSeed
                 obj = obj@navDICSeed(hd,'multiple') ;
                 obj.Class = 'navDICSeed_jauge'  ;
                 obj.displMethod = 'cpcorr3D' ;
-                obj.strainMethod = 'deltaLCor3D' ;
+                obj.strainMethod = 'deltaLCor3DRT' ;
            
                 
            % Draw points
