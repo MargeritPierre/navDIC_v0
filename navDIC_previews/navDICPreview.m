@@ -10,11 +10,11 @@ classdef navDICPreview
         % CONSTRUCTOR
             function prev = navDICPreview(hd,varargin)
                 % Parameters
-                    figRelSize = 0.5 ; % relative size to screen
+                    figRelSize = 0.7 ; % relative size to screen
                 % Figure Creation
                     prev.fig = figure('tag',hd.navDICTag) ;
-                    prev.fig.ToolBar = 'none' ;
-                    prev.fig.MenuBar = 'none' ;
+                    prev.fig.MenuBar = 'none' ; % 'figure' ;
+                    prev.fig.ToolBar = 'figure' ; % 'none' ;
                     prev.fig.NumberTitle = 'off' ;
                     prev.fig.Name = 'navDIC Default Preview' ;
                 % Positionning

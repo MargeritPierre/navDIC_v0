@@ -34,11 +34,14 @@ classdef navDICCameraPreview < navDICPreview
                     prev.CameraID = ID ;
                     prev.fig.Name = [prev.fig.Name,' : ',prev.CameraName] ;
                 % Set the axes
-                    prev.AxesImg = axes('position',[0 0 1 1]) ;
+                    prev.AxesImg = axes('outerposition',[0 0 1 1]) ;
+                        prev.AxesImg.YDir = 'reverse' ;
+                        prev.AxesImg.XTick = [] ;
+                        prev.AxesImg.YTick = [] ;
+                        prev.AxesImg.LooseInset = [1 1 1 1]*0 ;
                         axis tight
                         axis off
                         axis equal
-                        prev.AxesImg.YDir = 'reverse' ;
                 % Set the figure at the right size
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
@@ -62,19 +65,21 @@ classdef navDICCameraPreview < navDICPreview
                 % Try to get the last acquired image on camera
                     img = [] ;
                     try
-                        img = hd.Images{hd.CurrentFrame} ;
-                        img = img{prev.CameraID} ;
+                        img = hd.Images{prev.CameraID}(:,:,:,hd.CurrentFrame) ;
                     end
                     if isempty(img) 
                         prev.Img.CData = 0.5 + 0*prev.Img.CData ;
                         return ;
                     end
                 % Actualize preview image
+                    % Process
+                        %img = single(img) ;
+                        %img = img/range(img(:)) ;
                     nBands = size(img,3) ;
                     if nBands == 1
                         prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
-                        prev.img.CData = img ;
+                        prev.Img.CData = img ;
                     end
             end
         

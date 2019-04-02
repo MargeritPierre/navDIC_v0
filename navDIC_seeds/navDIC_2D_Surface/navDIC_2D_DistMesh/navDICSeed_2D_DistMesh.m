@@ -50,24 +50,29 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'tag',obj.Name ...
                                 ) ;
             % ADD A COLORBAR
-                clrbr = colorbar(ax) ;
-                clrbr.Units = 'pixels' ;
-                ax.Units = 'pixels' ;
-                fig = ax.Parent ;
-                switch fig.Position(3)<fig.Position(4)
-                    case true
-                        clrbr.Location = 'east' ;
-                        fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
-                        clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
-                    case false
-                        clrbr.Location = 'north' ;
-                        fig.Position(4) = fig.Position(4) + 4*clrbr.Position(4) ;
-                        clrbr.Position(2) = ax.Position(4) + clrbr.Position(4)*1 ;
+                if 0
+                    clrbr = colorbar(ax) ;
+                    clrbr.Units = 'pixels' ;
+                    ax.Units = 'pixels' ;
+                    fig = ax.Parent ;
+                    margin = 0.05 ;
+                    switch fig.Position(3)<fig.Position(4)
+                        case true
+                            clrbr.Location = 'eastoutside' ;
+                            %clrbr.Position(2) = ax.Position(2) + margin*ax.Position(4) ;
+                            %clrbr.Position(4) = ax.Position(4) - 2*margin*ax.Position(4) ;
+                            %fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
+                            %clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
+                        case false
+                            clrbr.Location = 'northoutside' ;
+                            %fig.Position(4) = fig.Position(4) + 4*clrbr.Position(4) ;
+                            %clrbr.Position(2) = ax.Position(4) + clrbr.Position(4)*1 ;
+                    end
+                    clrbr.AxisLocation = 'out';
+                    drawnow; pause(0.05) ;
+                    clrbr.Units = 'normalized' ;
+                    ax.Units = 'normalized' ;
                 end
-                clrbr.AxisLocation = 'out';
-                drawnow; pause(0.05) ;
-                clrbr.Units = 'normalized' ;
-                ax.Units = 'normalized' ;
             % ADD THE MENU BAR
                 % Data to plot
                     mData = uimenu(ax.Parent,'text','Data') ;
@@ -77,10 +82,20 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         submenus(end+1) = uimenu(mData,'text','Exx','separator',true) ;
                         submenus(end+1) = uimenu(mData,'text','Eyy') ;
                         submenus(end+1) = uimenu(mData,'text','Exy') ;
-                    % Common Properties
-                        set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
+                % Color Scale
+                    mColors = uimenu(ax.Parent,'text','Colors') ;
+                        mClrScale = uimenu(mColors,'text','Scale') ;
+                            submenus(end+1) = uimenu(mClrScale,'text','Current Frame','checked','on') ;
+                            submenus(end+1) = uimenu(mClrScale,'text','All Frames') ;
+                        mClrLims = uimenu(mColors,'text','Limits') ;
+                            submenus(end+1) = uimenu(mClrLims,'text','0-max','checked','on') ;
+                            submenus(end+1) = uimenu(mClrLims,'text','min-max') ;
+                % Common Properties
+                    set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
                 % UserData in axes to choose the data to plot
-                    ax.UserData.dataLabel = submenus(1).Text ;
+                    ax.UserData.dataLabel = '|U|' ;
+                    ax.UserData.clrScaleLabel = 'Current Frame' ;
+                    ax.UserData.clrLimsLabel = '0-max' ;
         end
         
         function updateSeedMenus(obj,subMenu,ax)
@@ -88,8 +103,15 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 set(subMenu.Parent.Children,'checked','off')
             % Check the selected item
                 subMenu.Checked = 'on' ;
-            % Change the ax userData
-                ax.UserData.dataLabel = subMenu.Text ;
+            % Change the ax userData if needed
+                switch subMenu.Parent.Text
+                    case 'Data'
+                        ax.UserData.dataLabel = subMenu.Text ;
+                    case 'Scale'
+                        ax.UserData.clrScaleLabel = subMenu.Text ;
+                    case 'Limits'
+                        ax.UserData.clrLimsLabel = subMenu.Text ;
+                end
             % Update the preview
                 updateSeedPreview(obj,[],ax)
         end
@@ -131,10 +153,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             triMesh.FaceColor = 'interp' ;
                         end
                         triMesh.CData = Data(:,CurrentFrame) ;
-                        colorData = Data(:,CurrentFrame) ; Data(:,:) ;
                     % Color scale
+                        switch ax.UserData.clrScaleLabel
+                            case 'Current Frame'
+                                colorData = Data(:,CurrentFrame) ;
+                            case 'All Frames'
+                                colorData = Data ;
+                        end
                         minData = min(colorData(:)) ;
                         maxData = max(colorData(:)) ;
+                    % Color Limits
                         if ~any(isnan([minData maxData]))
                             if sign(minData)==sign(maxData)
                                 if sign(minData)==-1

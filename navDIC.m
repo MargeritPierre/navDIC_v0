@@ -1,4 +1,7 @@
-function navDIC()
+function navDIC(varargin)
+% varargin allows to pass some special commands
+% 'exit': close all figures and clear hd
+% 'recover': try to recover the navDIC interface (with an existinf hd)
         
 % ===================================================================================================================    
 % MAIN FUNCTION
@@ -9,17 +12,66 @@ function navDIC()
         navDICTag = 'navDIC' ;
         defaultFrameRate = 1 ; % Hz
         maximumFrameRate = 25 ; % Hz
+        % Graphical parameters
+            infosTxtHeight = 16 ; % Pixels
+            frameSliderWidth = .4 ; % relative to toolbar size
+        
+    % Process the varargin
+        COMMAND = '' ;
+        if ~isempty(varargin)
+            if ischar(varargin{1})
+                COMMAND = varargin ;
+            end
+        end
         
     % Is navDIC already running ?
         set(0,'ShowHiddenHandles','on') ; % Force hadle visibility
         navDICFigs = findobj(groot,'tag',navDICTag) ;
         % If YES, prompt figures to Foreground
-            if ~isempty(navDICFigs)
+            if strcmp(COMMAND,'') && ~isempty(navDICFigs)
                 navDICOnTop() ;
                 return ;
             end
         set(0,'ShowHiddenHandles','off') ;
-
+        
+    % EXIT ?
+        if strcmp(COMMAND,'exit')
+            % Close all figures
+                set(navDICFigs,'closerequestfcn','closereq')
+                close(navDICFigs,'force')
+            % Clear handles
+                hd = [] ;
+                clear hd
+            % Exit
+                return ;
+        end
+        
+    % RECOVER ?
+        if isempty(hd) && strcmp(COMMAND,'recover') % Check if there is HD to recover...
+            warning('NO navDIC CONFIG TO RECOVER. Exiting...')
+            return ;
+        end
+        if ~isempty(hd) % IF there is HD structure
+            recover = true ;
+            if ~strcmp(COMMAND,'recover') % The user has not asked, but...
+                [order] = questdlg({'There is already a navDIC config available !','What do you want to do ?'}...
+                                ,'WARNING !','Recover','Clear','Cancel','Recover') ;
+                switch order
+                    case 'Cancel'
+                        return ;
+                    case 'Clear'
+                        recover = false ;
+                    case 'Recover'
+                        recover = true ;
+                end
+            end
+            if recover % The user wants to recover a preceding session
+                initToolBar() ;
+                updateToolbar() ;
+                return ;
+            end
+        end
+    
     % Initialization of handles 
     % (type "global hd" in cmd to remote debugging access)
         hd = [] ; % Shared handles
@@ -58,11 +110,7 @@ function navDIC()
         hd.hasChangedSinceLastSave = false ;
         
     % Init the Main Toolbar
-        % Graphical parameters
-            infosTxtHeight = 16 ; % Pixels
-            frameSliderWidth = .3 ; % relative to toolbar size
-        % Constructor
-            initToolBar() ;
+        initToolBar() ;
         
         
         
@@ -242,6 +290,29 @@ function navDIC()
 % SAVE THE SETUP DATA
     function saveSetupData()
         hd = saveAllSetupData(hd) ;
+    end
+
+% MAKE AN ANIMATION FROM PREVIEW(S)
+    function makeAnimation()
+        % Update previews to clean the preview list
+            hd = updateAllPreviews(hd) ;
+        % Prepare the animation
+            out = prepareAnimation(hd) ;
+            if ~out.Valid ; warning('ANIMATION ABORTED') ; return ; end
+        % Record the animation
+            open(out.writerObj) ;
+            statusBox = warndlg({'The Animation is Recording...','Press OK or close to stop.'},'RECORDING...') ;
+            for fr = out.params.FramesRecorded
+                if ishandle(statusBox) % One can close it to stop the animation
+                    hd.CurrentFrame = fr ;
+                    updateToolbar() ;
+                    hd = updateAllPreviews(hd) ;
+                    drawnow ; 
+                    writeVideo(out.writerObj,getframe(out.fig)) ;
+                end
+            end
+            close(out.writerObj) ;
+            close(statusBox) ;
     end
 
 
@@ -536,6 +607,12 @@ function navDIC()
                                                         'Label','Save all Acquired Data', ...
                                                         'Enable','off', ...
                                                         'callback',@(src,evt)saveSetupData()) ;
+           % Save All Data
+                hd.ToolBar.MainMenu.exportAnimation = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Export Animation', ...
+                                                        'Enable','on', ...
+                                                        'callback',@(src,evt)makeAnimation()) ;
+                                                    
            % Frame Rate
                 hd.ToolBar.MainMenu.frameRate = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Frame Rate', ...

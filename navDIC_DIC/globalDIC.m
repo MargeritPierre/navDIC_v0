@@ -8,44 +8,73 @@ profile off
 if codeProfile; profile on ; end
 
 % RETRIEVE THE DATA
-    Seed = hd.Seeds(1) ;
-    IMG = [hd.Images{:}] ;
-
-% PROCESS IMAGES
-    nImages = length(IMG) ;
-    img0 = IMG{1} ;
+    IMG = hd.Images{1}(:,:,:,1:1:end) ;
+ 
+% PROCESS IMAGES /!\ STILL NO SUPPORT FOR MULTICOLOR IMAGES YET
+    nImages = size(IMG,4) ;
+    img0 = IMG(:,:,:,1) ;
     [nI,nJ] = size(img0) ;
     [JJ,II] = meshgrid(1:nJ,1:nI) ;
+    %IMG = simple(IMG) ;
     for ii = 1:nImages
-        IMG{ii} = IMG{ii}(:,:) ;
-        IMG{ii} = double(IMG{ii}) ;
-        IMG{ii} = IMG{ii}/norm(IMG{ii}(:)) ;
-        IMG{ii} = IMG{ii}-mean(IMG{ii}(:)) ;
+        %IMG(:,:,:,ii) = IMG(:,:,:,ii)/norm(IMG{ii}(:)) ;
+        %IMG(:,:,:,ii) = IMG{ii}-mean(IMG{ii}(:)) ;
     end
-    img0 = IMG{1} ;
+    img0 = IMG(:,:,:,1) ;
     
-% PLAY VIDEO OF PROCESSED IMAGES
-    if 0
-        clf reset ;
-        axes('position',[0 0 1 1])
-            im = imagesc(1:nJ,1:nI,img0) ; colormap(gray)
-            ttl = title('','interpreter','none') ;
-            axis tight
-            axis equal
-            set(gca,'xtick',[],'ytick',[])
-            set(gca,'xlim',[0 nJ]+.5,'ylim',[0 nI]+.5)
-            set(gca,'ydir','reverse')
-            box on
+% TIME MEANING
+    timeMeanLength = 0 ;
+    if timeMeanLength>0
+        meanTime = 2*timeMeanLength+1 ;
+        TimeKernel = ones(meanTime,1)/meanTime ;
+        IMG0 = IMG ;
+        IMG = IMG*0 ;
+        wtbr = waitbar(0,'Time Averaging') ;
         for ii = 1:nImages
-            im.CData = IMG{ii} ;
-            ttl.String = num2str(ii) ;
-            drawnow
-            %pause(0.01)
+            for tt = -timeMeanLength:timeMeanLength
+                ind = max(1,min(nImages,ii+tt)) ;
+                IMG(:,:,:,ii) = IMG(:,:,:,ii) + IMG0(:,:,:,ind)*TimeKernel(tt+timeMeanLength+1) ;
+            end
+            wtbr = waitbar(ii/nImages,wtbr,['Time Averaging (',num2str(ii),'/',num2str(nImages),')']) ;
+        end
+        delete(wtbr) ;
+        clear IMG0
+    end
+
+% REFERENCE IMAGE
+    firstImage = 1 ;
+    if 1 % AVERAGING THE FIRST IMAGES
+        img0 = IMG(:,:,:,1)*0 ;
+        for ii = 1:firstImage
+            img0 = img0*((ii-1)/ii) + IMG(:,:,:,ii)/ii ;
         end
     end
+    
+%% PLAY VIDEO OF PROCESSED IMAGES
+
+    clf reset ;
+    axes('position',[0 0 1 1])
+        im = imagesc(1:nJ,1:nI,img0) ; colormap(gray)
+        ttl = title('','interpreter','none','units','normalized','position',[.005 0.995],'verticalalignment','top','horizontalalignment','left','color','r') ;
+        axis tight
+        axis equal
+        set(gca,'xtick',[],'ytick',[])
+        set(gca,'xlim',[0 nJ]+.5,'ylim',[0 nI]+.5)
+        set(gca,'ydir','reverse')
+        box on
+    for ii = 1:nImages
+        im.CData = IMG(:,:,:,ii) ;
+        ttl.String = num2str(ii) ;
+        drawnow
+        %pause(0.01)
+    end
+
 
     
 %% PROCESS THE SEED
+
+% Get the Seed
+    Seed = hd.Seeds(1) ;
 
 % Get Infos
     Elems = Seed.Triangles ;
@@ -147,6 +176,8 @@ if codeProfile; profile on ; end
     % INSIDE each Elements
         indValid = vvvIN~=0 ;
         INSIDE = sparse(iiiIN(indValid),jjjIN(indValid),vvvIN(indValid),nI*nJ,nElems) ;
+        nInside = sum(INSIDE,1).' ;
+        DOMAIN = logical(sum(INSIDE,2)) ;
     % SHAPE FUNCTIONS
         % Keep only the positive values and inferior to 1 
             indValid = vvvMAP~=0 ;
@@ -157,15 +188,6 @@ if codeProfile; profile on ; end
     %DOMAIN = reshape(any(INSIDE,2),[nI nJ]) ;
     
 %% COMPUTE CONSTANT OBJECTS
-
-% REFERENCE IMAGE
-    if 1 % AVERAGING THE FIRST IMAGES
-        firstImage = 1 ;
-        img0 = IMG{1}*0 ;
-        for ii = 1:firstImage
-            img0 = (img0*(ii-1) + IMG{ii})/ii ;
-        end
-    end
 
 % Derivation Kernels
     N = 3 ;
@@ -265,17 +287,22 @@ constraint = 'full' ; % 'full' or 'normal'
 
 % INIT FIGURE
     plotEachIteration = true ;
-    fig = clf('reset') ;
+    fig = findobj(groot,'tag','globalDICfigure') ;
+        if isempty(fig)
+            fig = figure ;
+        end
+    fig = clf(fig,'reset') ;
+    fig.Tag = 'globalDICfigure' ;
         ax = [] ;
-        ax(1) = mysubplot((nI<=nJ)+1,(nI>=nJ)+1,1) ;
+        ax(1) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,1) ;
             im = imagesc(1:nJ,1:nI,Func(img0)) ;
             mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,'facecolor','none','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
-        ax(2) = mysubplot((nI<=nJ)+1,(nI>=nJ)+1,2) ;
+        ax(2) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,2) ;
             imRes = imagesc(1:nJ,1:nI,Func(img0)) ; 
             colormap(ax(2),gray)
-            ttl = title('','interpreter','none','units','normalized','color',[1 1 1]*.0,'position',[0 1],'horizontalalignment','left','verticalalignment','top') ;
+            ttl = title('','interpreter','none','units','normalized','color',[1 0 0]*1.0,'position',[0 1],'horizontalalignment','left','verticalalignment','top') ;
         axis(ax,'tight')
         axis(ax,'equal')
         set(ax,'xtick',[],'ytick',[])
@@ -289,23 +316,27 @@ constraint = 'full' ; % 'full' or 'normal'
 
 
 % INITIALIZE
-    % Nodes displacement
-        Up = zeros([nI nJ 2]) ;
-        Un = zeros([nNodes,2,nImages]) ;
-        Xn = zeros([nNodes,2,nImages]) ;
-        Xn(:,:,1) = Nodes ;
+    % Nodes position
+        Xn = ones([nNodes,2,nImages])*NaN ;
+        Xn(:,:,1:firstImage) = repmat(Nodes,[1 1 firstImage]) ;
+    % Displacements
+        % Of Nodes
+            Un = ones([nNodes,2,nImages])*NaN ;
+            Un(:,:,1:firstImage) = 0 ;
+        % Of Pixels
+            Up = zeros([nI nJ 2]) ;
     % Images
         img1 = F ;
     % Mask
         VALID = true(nNodes,1) ;
         validElems = true(nElems,1) ;
         validEdges = true(nEdges,1) ;
-        nakedEdges = sum(tri2edg(:,validElems),2)<2 
+        nakedEdges = sum(tri2edg(:,validElems),2)<2  ;
     
 % RUN !
 for ii = firstImage+1:nImages
     % Import and display image
-        img2 = Func(IMG{ii}) ;
+        img2 = Func(IMG(:,:,:,ii)) ;
         im.CData = repmat((img2-min(img2(:)))/range(img2(:)),[1 1 3]) ;
     % Init
         it = 0 ;
@@ -317,80 +348,113 @@ for ii = firstImage+1:nImages
         end
     % Newton-Raphson
         RMSE_0 = Inf ;
+        lastPlotTime = tic ;
         while ~outFlag && ~stopBtn.Value
-            % Count valid Points
-                nVALID = sum(VALID) ;
-                if nVALID==0 ; break ; end
-            % Compute the displacement at each pixel
-                Up = reshape(MAPPING(:,VALID)*Un(VALID,:,ii),[nI nJ 2]) ;
-            % Warp the image
-                img2w = interp2(JJ,II,img2,JJ+Up(:,:,1),II+Up(:,:,2),'cubic',0) ;
-            % Compute the difference
-                diffImg = img1-img2w ;
-            % Compute the first RMSE derivative
-                dr_da = (diffImg(:)'*dF_da(:,[VALID;VALID]))' ;
-            % Contraint on the SECOND displacement gradient
-                beta = 10*1e-5 ; % penalisation coefficient
-                switch constraint
-                    case 'normal'
-                        vEdg = repmat(~nakedEdges,[2 1]) ;
-                        vEle = [validElems;validElems;validElems] ;
-                        CONS = beta*B(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*B(vEle,:) ;
-                    case 'full'
-                        vEdg = repmat(~nakedEdges,[4 1]) ;
-                        vEle = [validElems;validElems;validElems;validElems] ;
-                        CONS = beta*G(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*G(vEle,:) ;
-                end
-                % Debugging...
-                    %markers.XData = Xn(nodesOnNaked,1,ii); markers.YData = Xn(nodesOnNaked,2,ii);
-                    %if any(~VALID)  disp('STOP!'); pause ; end
-            % Update the DOFs
-                validDOF = [VALID;VALID] ;
-                a = ( ...
-                        Hess(validDOF,validDOF)...
-                        + CONS(validDOF,validDOF)...
-                    )\(...
-                        dr_da...
-                        - CONS(validDOF,validDOF)*[Un(VALID,1,ii);Un(VALID,2,ii)]...
-                    ) ;
-                Un(VALID,1,ii) = Un(VALID,1,ii) + a(1:nVALID) ;
-                Un(VALID,2,ii) = Un(VALID,2,ii) + a(nVALID+(1:sum(VALID))) ;
-            % Compute the positions
-                Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
-            % VALIDATION CRITERION
-                % CULL OUT-OF-FRAME POINTS
-                    VALID = Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
-                % Decorrelated elements
-                    minCorrCoeff = 0 ;
-                    if minCorrCoeff>0
-                        crossCorr = (img2w(:).*img1(:)).'*INSIDE ;
-                        norm1 = sqrt((img1(:).^2).'*INSIDE) ;
-                        norm2 = sqrt((img2w(:).^2).'*INSIDE) ;
-                        corrCoeff = abs(crossCorr./(norm1.*norm2)) ;
-                        VALID = VALID & invValance*tri2nod*corrCoeff(:)>minCorrCoeff ;
-                    end
-                % Process Geometric elements
-                    validEdges = sum(edg2nod(VALID,:),1)==2 ; % edges with still their two ends points valid
-                    validElems = sum(tri2nod(VALID,:),1)==3 ; % triangles with still their three nodes valid
+            % VALID GEOMETRY
+                % Elements
+                    validElems = validElems & sum(tri2nod(VALID,:),1)'==3 ; % triangles with still their three nodes valid
+                % Edges
+                    validEdges = validEdges & sum(edg2nod(VALID,:),1)'==2 ; % edges with still their two ends points valid
                     nakedEdges = sum(tri2edg(:,validElems),2)<2 ; % edges with less than two elements valid
-                    nodesOnNaked = sum(edg2nod(:,nakedEdges),2)~=0 ; 
-            % Set the non-valid values to NaN
-                Xn(~VALID,:,ii) = NaN ;
-                Un(~VALID,:,ii) = NaN ;
-            % Criterions
-                it = it+1 ;
-                %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
-                normA = norm(a)/nNodes ;
-            % Convergence criterion
-                if it>50 ; outFlag = true ; end
-                if normA<1e-5 ; outFlag = true ; end
-                %if RMSE<1e-6 || abs((RMSE-RMSE_0)/RMSE) < 1e-4 ; outFlag = true ; end
-            % Keep the error
-                %RMSE_0 = RMSE ;
-            % Update the display
-                if outFlag || plotEachIteration
+                % Nodes
+                    VALID = VALID & sum(tri2nod(:,validElems),2)>0 ; % nodes must be linked to at least one valid element
+                    VALID = VALID & sum(edg2nod(:,validEdges),2)>0 ; % nodes must be linked to at least one valid edge
+                    nVALID = sum(VALID) ;
+                    if nVALID==0 ; break ; end
+                % DIC Domain
+                    dicDomain = logical(sum(INSIDE(:,validElems),2)) ;
+            % IMAGE WARPING
+                % Compute the displacement at each pixel
+                    Up = reshape(MAPPING(:,VALID)*Un(VALID,:,ii),[nI nJ 2]) ;
+                % Warp the image
+                    img2w = interp2(JJ,II,img2,JJ+Up(:,:,1),II+Up(:,:,2),'cubic',0) ;
+            % IMAGE MOMENTS
+                WEIGHT = INSIDE ; % MAPPING ; %
+                sumWEIGHT = sum(WEIGHT,1).' ;
+                % Mean over elements
+                    meanImg1  = (WEIGHT'*img1(:))./sumWEIGHT(:) ;
+                    meanImg2w  = (WEIGHT'*img2w(:))./sumWEIGHT(:) ;
+                % Zero-local-mean on pixels
+                    img1m = img1(:)-WEIGHT*meanImg1(:) ;
+                    img2wm = img2w(:)-WEIGHT*meanImg2w(:) ;
+                % Norm over element
+                    normImg1 = sqrt(WEIGHT'*(img1m(:).^2)) ;
+                    normImg2w = sqrt(WEIGHT'*(img2wm(:).^2)) ;
+                % Zero-local-mean-normalized images
+                    img1mz = img1m(:)./(WEIGHT*normImg1) ;
+                    img2wmz = img2wm(:)./(WEIGHT*normImg2w) ;
+            % IMAGE FUNCTIONAL
+                diffImg = img1(:)-img2w(:) ; % Simple difference
+                %diffImg = img1m(:)-img2wm(:) ; % Zero-mean difference
+                %diffImg = img1mz(:)-img2wmz(:) ; % Normalized Zero-mean difference
+            % NEWTON-RAPHSON PROCEDURE
+                % Compute the first RMSE derivative
+                    dr_da = (diffImg(dicDomain)'*dF_da(dicDomain,[VALID;VALID]))' ;
+                % Contraint on the SECOND displacement gradient
+                    beta = 0*1e-5 ; % penalisation coefficient
+                    switch constraint
+                        case 'normal'
+                            vEdg = repmat(~nakedEdges,[2 1]) ;
+                            vEle = [validElems;validElems;validElems] ;
+                            CONS = B(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*B(vEle,:) ;
+                        case 'full'
+                            vEdg = repmat(~nakedEdges,[4 1]) ;
+                            vEle = [validElems;validElems;validElems;validElems] ;
+                            CONS = G(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*G(vEle,:) ;
+                    end
+                    % Debugging...
+                        %markers.XData = Xn(nodesOnNaked,1,ii); markers.YData = Xn(nodesOnNaked,2,ii);
+                        %if any(~VALID)  disp('STOP!'); pause ; end
+                % Updating DOFs
+                    validDOF = [VALID;VALID] ;
+                    a = ( ...
+                            Hess(validDOF,validDOF)...
+                            + beta*CONS(validDOF,validDOF)...
+                        )\(...
+                            dr_da...
+                            - beta*CONS(validDOF,validDOF)*[Un(VALID,1,ii);Un(VALID,2,ii)]...
+                        ) ;
+                % Residues
+                    %residueImg = norm(Hess(validDOF,validDOF)*a-dr_da) ;
+                    %residueCONS = norm(CONS(validDOF,validDOF)*a+CONS(validDOF,validDOF)*[Un(VALID,1,ii);Un(VALID,2,ii)]) ;
+                % Displacement
+                    Un(VALID,1,ii) = Un(VALID,1,ii) + a(1:nVALID) ;
+                    Un(VALID,2,ii) = Un(VALID,2,ii) + a(nVALID+(1:sum(VALID))) ;
+                % Positions
+                    Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
+            % CORRELATION COEFFICIENT
+                % CULL OUT-OF-FRAME POINTS
+                    VALID = VALID & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
+                % Decorrelated elements
+                    minCorrCoeff = 0.1 ;
+                    if minCorrCoeff>0
+                        corrCoeff = abs(WEIGHT'*(img1mz(:).*img2wmz(:))) ;
+                        switch size(WEIGHT,2) 
+                            case nElems % Correlation at the element level
+                                %VALID = VALID & (tri2nod*corrCoeff(:))./sum(tri2nod(:,validElems),2) ;
+                                validElems = validElems & corrCoeff(:)>minCorrCoeff ; 
+                            case nNodes % Correlation at the node level
+                                VALID = VALID & corrCoeff(:)>minCorrCoeff ;
+                        end
+                    end
+                % Set the non-valid values to NaN
+                    Xn(~VALID,:,ii) = NaN ;
+                    Un(~VALID,:,ii) = NaN ;
+            % CONVERGENCE CITERIONS
+                % Criterions
+                    it = it+1 ;
+                    %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
+                    normA = norm(a)/nNodes ; max(abs(a)) ;
+                % Convergence criterion
+                    if it>20 ; outFlag = true ; end
+                    if normA<1e-4 ; outFlag = true ; end
+                    %if RMSE<1e-6 || abs((RMSE-RMSE_0)/RMSE) < 1e-4 ; outFlag = true ; end
+                % Keep the error
+                    %RMSE_0 = RMSE ;
+            % DISPLAY
+                if plotEachIteration || (outFlag && toc(lastPlotTime)>0.05)
                     ttl.String = [num2str(ii),'(',num2str(it),')'] ;
-                    imRes.CData = diffImg ;
+                    imRes.CData = reshape(diffImg,[nI nJ]) ;
                     mesh.Vertices = Xn(:,:,ii) ;
                     if 0 % Show Strains
                         % Compute the strains
@@ -400,7 +464,10 @@ for ii = firstImage+1:nImages
                     end
                     %mesh.FaceVertexCData = corrCoeff(:) ; mesh.FaceColor = 'flat' ; caxis(ax(1),[0 1]) ;mesh.FaceAlpha = 1 ; colorbar(ax(1))
                     drawnow ;
+                    lastPlotTime = tic ;
                 end
+            % Pause execution ?
+                %pause
         end
         % Out Criterions
             if stopBtn.Value; break ; end
@@ -444,7 +511,46 @@ return ;
 
 
 
+%% REVERSE THE DISPLACEMENTS (3D PRINTING IMAGES)
 
+% New reference state: just before the 'disparition' of the point
+lastValidFrame = sum(~isnan(Xn(:,1,:)),3) ;
+lastValidPosition = [...
+        reshape(Xn(sub2ind(size(Xn),1:nNodes,ones(1,nNodes),lastValidFrame(:)')),[nNodes 1]) ...
+        reshape(Xn(sub2ind(size(Xn),1:nNodes,2*ones(1,nNodes),lastValidFrame(:)')),[nNodes 1]) ...
+                    ] ;
+revUn = Xn-repmat(lastValidPosition,[1 1 nImages]) ;
+
+% Cull points with a maximum disp. Criterion
+    maxDispCrit = 20 ; Inf ;
+    maxDisp = sqrt(max(sum(revUn.^2,2),[],3)) ;
+    revUn(maxDisp>maxDispCrit,:,:) = NaN ;
+
+% SEND THE RESULT TO navDIC
+
+% Seed number
+    seedNumber = 1 ;
+
+% Displacements/Positions
+    hd.Seeds(seedNumber).MovingPoints = Xn ;
+    hd.Seeds(seedNumber).Displacements = revUn ;
+    
+% Strains
+    An = reshape(revUn,[2*nNodes nImages]) ; 
+    An(isnan(An)) = 1i ; % Propagates false positives
+    dUx_dx = invValance*tri2nod*gradT{1,1}*An ;
+    dUx_dy = invValance*tri2nod*gradT{1,2}*An ;
+    dUy_dx = invValance*tri2nod*gradT{2,1}*An ;
+    dUy_dy = invValance*tri2nod*gradT{2,2}*An ;
+    Strains = [] ;
+    Strains(:,1,:) = dUx_dx + 0.5*(dUx_dx.^2 + dUy_dx.^2) ;
+    Strains(:,2,:) = dUy_dy + 0.5*(dUx_dy.^2 + dUy_dy.^2) ;
+    Strains(:,3,:) = 0.5*(dUx_dy + dUy_dx + dUx_dx.*dUx_dy + dUy_dx.*dUy_dy) ;
+    Strains(imag(Strains)~=0) = NaN ; % Re-set to NaN
+    hd.Seeds(seedNumber).Strains = Strains ;
+    
+    
+if codeProfile; profile viewer ; profile off ; end
 
     
 %% PREVIOUS EXPORT FUNCTIONS

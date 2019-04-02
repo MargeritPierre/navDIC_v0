@@ -1,24 +1,34 @@
 function [setup,hd] = loadSetup(hd,path)
 
+    % HARD-CODED PARAMETERS (for now...)
+        convertWB = true ; % Convert color images to White & Black
+        normalizeLocal = false ; % Normalize each frames
+        normalizeGlobal = false ; % Normalize Frame Sets (see below)
+
     % SET CAMERAS AND IMAGES
+        disp('------ IMAGES LOADING ------')
         % Get Cameras folders
             camFolders = {} ;
             answer = 1 ;
+            disp('  SELECT CAMERA FOLDERS')
             while answer~=0
                 [answer] = uigetdir(path,'SELECT A CAMERA FOLDER OR CANCEL TO CONTINUE') ;
                 if answer==0 ; break ; end
                 camFolders{end+1} = answer ;
+                disp(['    Camera ',num2str(length(camFolders)),' : ',answer])
             end
             nCams = length(camFolders) ;
             if nCams<1
                 warning('NO CAMERA DATA LOADED')
             end
         % Get associated images
-            imgExt = {'png','tif','jpg','jpeg','bmp'} ;
+            imgExt = {'png','tif','tiff','jpg','jpeg','bmp'} ;
             Images = {} ;
             Cameras = struct([]) ;
+            disp('  LOAD IMAGES')
             for cam = 1:nCams    % Possible image extensions
                 % Get files
+                    disp(['    Camera ',num2str(cam)])
                     files = dir('*.anImpossibleExtension') ;
                     for i = 1:length(imgExt)
                         f = dir([camFolders{cam},'/*.',imgExt{i}]) ;
@@ -26,6 +36,9 @@ function [setup,hd] = loadSetup(hd,path)
                     end
                 % Keep file names only
                     fileNames = {files.name} ;
+                    if isempty(fileNames)
+                        warning(['No Valid Image Files Found in ',camFolders{cam}])
+                    end
                 % Get the common name and extension
                     str = strsplit(fileNames{1},'_') ;
                     if length(str)==1
@@ -39,13 +52,14 @@ function [setup,hd] = loadSetup(hd,path)
                         commonName = [strjoin(str(1:end-1),'_'),'_'] ;
                     end
                     [~,~,ext] = fileparts(str{end}) ;
+                    disp(['      Type: ',ext])
                 % Get image ids
                     idSTR = {} ;
                     idNUM = [] ;
                     for i = 1:length(fileNames)
                         idSTR{i} = fileNames{i}(length(commonName)+1:end-length(ext)) ;
-                        if ~isempty(str2num(idSTR{i}))
-                            idNUM(i) = str2num(idSTR{i}) ;
+                        if ~isempty(str2double(idSTR{i}))
+                            idNUM(i) = str2double(idSTR{i}) ;
                         else
                             idNUM(i) = NaN ;
                         end
@@ -53,13 +67,43 @@ function [setup,hd] = loadSetup(hd,path)
                     [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
                     idSTR = idSTR(ind(~isnan(idNUM))) ;
                     nImgs = length(idSTR) ;
+                    disp(['      Frames: ',num2str(nImgs)])
+                % Initialize
+                    % Load function
+                        loadImage = @(id) imread([camFolders{cam},'/',commonName,idSTR{id},ext]) ;
+                        imData = loadImage(1) ;
+                    % Get Infos
+                        [nI,nJ,nColors] = size(imData) ;
+                        dataType = class(imData) ;
+                        disp(['      Class: ',dataType])
+                    % Process function
+                        processImage = {} ;
+                        if convertWB % To Black & White
+                            processImage{end+1} = @(img) sum(img/nColors,3,'native') ;
+                            nColors = 1 ;
+                        end
+                        if normalizeLocal % Normalize each frame
+                            processImage{end+1} = @(img) img-min(img(:)) ;
+                            processImage{end+1} = @(img) img*(double(max(getrangefromclass(img)))/double(max(img(:)))) ;
+                        end
                 % Load images
-                    wtbr = waitbar(0,'Loading Images...') ;
+                    Images{cam} = zeros([nI nJ nColors nImgs],dataType) ;
+                    wtbr = waitbar(0,'Loading images ...') ;
                     for i = 1:nImgs
-                        imData = imread([camFolders{cam},'/',commonName,idSTR{i},ext]) ;
-                        if size(imData,3)>1 ; imData = mean(imData,3) ; end % To Black and White...
-                        Images{cam,i} = {imData} ;
-                        wtbr = waitbar(i/nImgs,wtbr) ;
+                        % Load image
+                            imData = loadImage(i) ;
+                        % Apply Processes
+                            for p = 1:length(processImage)
+                                imData = processImage{p}(imData) ;
+                            end
+                        % Record
+                            Images{cam}(:,:,:,i) = imData ;
+                        % Waitbar
+                            wtbr = waitbar(i/nImgs,wtbr,['Loading images (',num2str(i),'/',num2str(nImgs),')']) ;
+                    end
+                    if normalizeGlobal % Normalize the entire set
+                        Images{cam} = Images{cam}-min(Images{cam}(:)) ;
+                        Images{cam} = Images{cam}*(double(max(getrangefromclass(Images{cam})))/double(max(Images{cam}(:)))) ;
                     end
                     delete(wtbr) ;
                 % SET THE CAMERA
@@ -67,8 +111,7 @@ function [setup,hd] = loadSetup(hd,path)
                     Cameras(cam).Name = CamName{end} ;
                     Cameras(cam).CurrentState = 'ghost' ;
                     Cameras(cam).Adaptator = 'folder' ;
-                    refImg = Images{cam,1} ;
-                    Cameras(cam).VidObj.ROIPosition = [0 0 flip(size(refImg{1}(:,:,1)))] ;
+                    Cameras(cam).VidObj.ROIPosition = [0 0 nJ nI] ;
             end
             
         
@@ -100,7 +143,7 @@ function [setup,hd] = loadSetup(hd,path)
 % Change the handles
     hd.Images = Images ;
     hd.InputData = InputData ;
-    hd.nFrames = max(size(InputData,1),size(Images,2)) ;
+    hd.nFrames = max(size(InputData,1),size(Images{end},4)) ;
     hd.CurrentFrame = 1 ;
     hd.Cameras = Cameras ;
         

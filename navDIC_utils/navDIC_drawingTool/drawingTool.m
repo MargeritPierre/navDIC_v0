@@ -117,7 +117,7 @@ function H = drawingTool(varargin)
         % Update ROI if needed
             if H.drawROI
                 computeROI() ;
-                H.SrfROI.AlphaData = (1-H.ROI)*.5 ;
+                H.SrfROI.AlphaData = (1-H.ROI)*.3 ;
             end
         % Backup Geometries
             H.Geometries = [] ;

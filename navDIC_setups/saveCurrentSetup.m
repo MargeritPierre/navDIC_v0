@@ -1,4 +1,6 @@
 function hd = saveCurrentSetup(hd,varargin) 
+% When the Working Directory has been set, This function is executed at
+% each frame 
 
 % Default Parameters
     frameToSave = hd.nFrames ;
@@ -23,7 +25,7 @@ function hd = saveCurrentSetup(hd,varargin)
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
                 nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-                imwrite(uint8(255*hd.Images{frameToSave}{camID}),nameImg) ;
+                imwrite(uint8(255*hd.Images{camID}(:,:,:,frameToSave)),nameImg) ;
         end
     end
 

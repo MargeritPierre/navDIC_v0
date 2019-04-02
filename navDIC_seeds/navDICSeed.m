@@ -38,12 +38,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     % Get reference Images
                         for id = IDs
                             if ~isempty(hd.Images)
-                                img = hd.Images{id,hd.CurrentFrame} ;
-                                if iscell(img)
-                                    obj.refImgs{end+1} = img{1} ;
-                                else
-                                    obj.refImgs{end+1} = img ;
-                                end
+                                obj.refImgs{end+1} = hd.Images{id}(:,:,:,hd.CurrentFrame) ;
                             else
                                 hd = startAllCameras(hd) ;
                                 obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;
@@ -65,7 +60,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     if hd.CurrentFrame>1
                         obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
                         obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
-                        obj.Strains= zeros([size(obj.Points) obj.RefFrame]) ;
+                        obj.Strains = zeros([size(obj.Points) obj.RefFrame]) ;
                     end
         end
         
