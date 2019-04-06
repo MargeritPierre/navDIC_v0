@@ -17,14 +17,14 @@ function out = prepareAnimation(hd)
         figure(prev.fig)
         
     % Ask for the file to be saved
-        defaultName = [hd.WorkDir.Path,'\',prev.SeedName,'_',char(regexprep(string(datetime),{' ','-',':'},'_')),'.avi'] ;
+        defaultName = [hd.WorkDir.Path,'\','Video','_',char(regexprep(string(datetime),{' ','-',':'},'_')),'.avi'] ;
         [file,path] = uiputfile('*.avi','WHERE TO SAVE THE ANIMATION ?',defaultName) ;
         if file==0 ; warning('THE SELECTED FILE IS NOT VALID') ; return ; end
         VideoFile = [path file] ;
         
     % Other parameters (has to be putted in an interface later...)
         params.VideoQuality = 75 ;
-        params.FramesRecorded = [hd.nFrames:-8:1] ; %[1:1:hd.nFrames] ;
+        params.FramesRecorded = [1:1:hd.nFrames] ; % [hd.nFrames:-8:1] ; %
     
     % Create the Video Writer
         writerObj = VideoWriter(VideoFile) ;

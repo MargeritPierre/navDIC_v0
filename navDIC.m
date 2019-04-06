@@ -1,7 +1,7 @@
 function navDIC(varargin)
 % varargin allows to pass some special commands
 % 'exit': close all figures and clear hd
-% 'recover': try to recover the navDIC interface (with an existinf hd)
+% 'recover': try to recover the navDIC interface (with an existing hd)
         
 % ===================================================================================================================    
 % MAIN FUNCTION
@@ -287,6 +287,23 @@ function navDIC(varargin)
             updateToolbar() ;
     end
 
+% OPEN A SETUP FROM A VIDEO
+    function loadFromVideo
+        % Select the video File
+            [file,path] = uigetfile('*','SELECT THE VIDEO FILE TO IMPORT') ;
+            if path==0 ; return ; end
+        % Load the setup
+            [setup,hd] = loadVideoFrames(hd,[path file]) ;
+            if ~setup.Valid ; return ; end
+        % Set the WorkDir
+            setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
+        % Update handles and displays it
+            clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
+        % Update the navDIC Interface
+            updateMainMenu() ;
+            updateToolbar() ;
+    end
+
 % SAVE THE SETUP DATA
     function saveSetupData()
         hd = saveAllSetupData(hd) ;
@@ -312,7 +329,7 @@ function navDIC(varargin)
                 end
             end
             close(out.writerObj) ;
-            close(statusBox) ;
+            if ishandle(statusBox) ; close(statusBox) ; end
     end
 
 
@@ -487,6 +504,11 @@ function navDIC(varargin)
         hd.Previews{end+1} = navDICPlotPreview(hd) ;
     end
 
+% ADD A PLOT PREVIEW
+    function sliceTool()
+        hd.Previews{end+1} = navDICSlicingTool(hd) ;
+    end
+
 % MANAGE AXES
     function manageViews
     end
@@ -581,6 +603,11 @@ function navDIC(varargin)
                 hd.ToolBar.MainMenu.setDir = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Set the Working Directory', ...
                                                         'callback',@(src,evt)setPath('menu')) ;
+           % Load From a Video
+                hd.ToolBar.MainMenu.loadFromVideo = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Load From Video', ...
+                                                        'callback',@(src,evt)loadFromVideo, ...
+                                                        'Separator','on') ;
            % SAVING
                 hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Saving', ...
@@ -690,10 +717,14 @@ function navDIC(varargin)
                 
         % VIEWS -------------------------------------------------
            hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
-           % Manage Axes
+           % Plot Preview
                 hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Plot Preview', ...
                                                         'callback',@(src,evt)plotPreview) ;
+           % Slicing tool
+                hd.ToolBar.MainMenu.sliceTool = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Slicing', ...
+                                                        'callback',@(src,evt)sliceTool) ;
            % Manage Axes
                 hd.ToolBar.MainMenu.manageViews = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Manage Views', ...
@@ -812,10 +843,9 @@ function navDIC(varargin)
         % STOP ALL CAMERAS
             hd = stopAllCameras(hd) ;
         % Close all figures belonging to navDIC 
-            hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closereq ;
-            figs_navDIC = findobj(0,'tag',navDICTag) ;
-            delete(figs_navDIC) ;
-            clear('hd') ;
+            figsToClose = [hd.ToolBar.fig,findobj(0,'tag',navDICTag)] ;
+            set(figsToClose,'CloseRequestFcn','closereq')
+            close(figsToClose) ;
     end
 
 end

@@ -4,7 +4,7 @@ classdef navDICCameraPreview < navDICPreview
         % Camera Infos
             CameraName = [] ;
             CameraID = [] ;
-        % Axes where the image is displayed
+        % Axes where the camera image is displayed
             AxesImg = [] ;
         % Handles to the Image Display
             Img = [] ;
@@ -52,9 +52,11 @@ classdef navDICCameraPreview < navDICPreview
                     newSizeFig = posFig.*ratios ;
                     prev.fig.Position = [prev.fig.Position(1:2)+(posFig-newSizeFig)/2 newSizeFig] ;
                 % Create an empty image
-                    prev.Img = image(ones([fliplr(resCam) 3])*.5) ;
+                    prev.Img = imagesc(ones([fliplr(resCam) 3])*.5) ;
                 % Contrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
+                % Update the preview
+                    %prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE
@@ -74,7 +76,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Actualize preview image
                     % Process
                         %img = single(img) ;
-                        %img = img/range(img(:)) ;
+                        img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
                     nBands = size(img,3) ;
                     if nBands == 1
                         prev.Img.CData = repmat(img,[1 1 3]) ;

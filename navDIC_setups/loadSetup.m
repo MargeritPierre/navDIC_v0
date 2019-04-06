@@ -3,7 +3,7 @@ function [setup,hd] = loadSetup(hd,path)
     % HARD-CODED PARAMETERS (for now...)
         convertWB = true ; % Convert color images to White & Black
         normalizeLocal = false ; % Normalize each frames
-        normalizeGlobal = false ; % Normalize Frame Sets (see below)
+        normalizeGlobal = true ; % Normalize Frame Sets (see below)
 
     % SET CAMERAS AND IMAGES
         disp('------ IMAGES LOADING ------')

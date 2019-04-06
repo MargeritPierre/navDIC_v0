@@ -42,7 +42,7 @@ if codeProfile; profile on ; end
     end
 
 % REFERENCE IMAGE
-    firstImage = 1 ;
+    firstImage = 50 ;
     if 1 % AVERAGING THE FIRST IMAGES
         img0 = IMG(:,:,:,1)*0 ;
         for ii = 1:firstImage
@@ -285,8 +285,15 @@ constraint = 'full' ; % 'full' or 'normal'
     
 %% PERFORM DIC !
 
+% PARAMETERS
+    plotEachIteration = false ;
+    plotRate = Inf;
+    beta = 0*1e-5 ; % Strain gradient penalisation coefficient
+    maxIt = 20 ;
+    minNorm = 1e-4 ;
+    minCorrCoeff = 0.1 ;
+
 % INIT FIGURE
-    plotEachIteration = true ;
     fig = findobj(groot,'tag','globalDICfigure') ;
         if isempty(fig)
             fig = figure ;
@@ -426,7 +433,6 @@ for ii = firstImage+1:nImages
                 % CULL OUT-OF-FRAME POINTS
                     VALID = VALID & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
                 % Decorrelated elements
-                    minCorrCoeff = 0.1 ;
                     if minCorrCoeff>0
                         corrCoeff = abs(WEIGHT'*(img1mz(:).*img2wmz(:))) ;
                         switch size(WEIGHT,2) 
@@ -446,13 +452,13 @@ for ii = firstImage+1:nImages
                     %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
                     normA = norm(a)/nNodes ; max(abs(a)) ;
                 % Convergence criterion
-                    if it>20 ; outFlag = true ; end
-                    if normA<1e-4 ; outFlag = true ; end
+                    if it>maxIt ; outFlag = true ; end
+                    if normA<minNorm ; outFlag = true ; end
                     %if RMSE<1e-6 || abs((RMSE-RMSE_0)/RMSE) < 1e-4 ; outFlag = true ; end
                 % Keep the error
                     %RMSE_0 = RMSE ;
             % DISPLAY
-                if plotEachIteration || (outFlag && toc(lastPlotTime)>0.05)
+                if plotEachIteration || (outFlag && toc(lastPlotTime)>1/plotRate)
                     ttl.String = [num2str(ii),'(',num2str(it),')'] ;
                     imRes.CData = reshape(diffImg,[nI nJ]) ;
                     mesh.Vertices = Xn(:,:,ii) ;
