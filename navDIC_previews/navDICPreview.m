@@ -13,7 +13,7 @@ classdef navDICPreview
                     figRelSize = 0.5 ; % relative size to screen
                 % Figure Creation
                     prev.fig = figure('tag',hd.navDICTag) ;
-                    prev.fig.ToolBar = 'none' ;
+                    prev.fig.ToolBar = 'figure' ;
                     prev.fig.MenuBar = 'none' ;
                     prev.fig.NumberTitle = 'off' ;
                     prev.fig.Name = 'navDIC Default Preview' ;

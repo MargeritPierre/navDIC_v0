@@ -5,12 +5,14 @@ function hd = startAllCameras(hd)
         
     % Stop all cams
         for c = 1:length(hd.Cameras)
-            cam = hd.Cameras(c).VidObj ;
-            cam.FramesPerTrigger = 1 ;
-            cam.TriggerRepeat = Inf ;
-            if strcmp(cam.Running,'on') ; continue ; end
-            start(cam)
-            while strcmp(cam.Running,'off') ; end
+            if ~strcmpi(hd.Cameras(c).CurrentState,'ghost')
+                cam = hd.Cameras(c).VidObj ;
+                cam.FramesPerTrigger = 1 ;
+                cam.TriggerRepeat = Inf ;
+                if strcmp(cam.Running,'on') ; continue ; end
+                start(cam)
+                while strcmp(cam.Running,'off') ; end
+            end
         end
         
 end

@@ -130,6 +130,58 @@ function H = drawingTool(varargin)
                 H.Geometries(end).Bool = get(H.Shapes{s},'DisplayName') ;
                 H.Geometries(end).Position = getPosition(H.Shapes{s}) ;
                 H.Geometries(end).isValid = true ;
+                lines = get(H.Shapes{s},'Children') ; 
+                corrSizeX = str2double(H.uiContextMenuData(end).CORRSIZEX) ;
+                corrSizeY = str2double(H.uiContextMenuData(end).CORRSIZEY) ;
+                switch class(H.Shapes{s})
+                    case 'imline'
+                        lines(1).Marker = 'none' ;
+                        xp = H.Geometries(end).Position(1,1) ;
+                        yp = H.Geometries(end).Position(1,2) ;
+                        lines(1).XData = [xp - corrSizeX/2,xp - corrSizeX/2,xp + corrSizeX/2,...
+                            xp + corrSizeX/2,xp - corrSizeX/2] ;
+                        lines(1).YData = [yp - corrSizeY/2,yp + corrSizeY/2,yp + corrSizeY/2,...
+                            yp - corrSizeY/2,yp - corrSizeY/2] ;
+                        lines(2).Marker = 'none' ;
+                        xp = H.Geometries(end).Position(2,1) ;
+                        yp = H.Geometries(end).Position(2,2) ;
+                        lines(2).XData = [xp - corrSizeX/2,xp - corrSizeX/2,xp + corrSizeX/2,...
+                            xp + corrSizeX/2,xp - corrSizeX/2] ;
+                        lines(2).YData = [yp - corrSizeY/2,yp + corrSizeY/2,yp + corrSizeY/2,...
+                            yp - corrSizeY/2,yp - corrSizeY/2] ;
+                    case 'impoint'
+                        lines(1).Marker = 'none' ;
+                        xp = H.Geometries(end).Position(1) ;
+                        yp = H.Geometries(end).Position(2) ;
+                        lines(1).XData = [xp - corrSizeX/2,xp - corrSizeX/2,xp + corrSizeX/2,...
+                            xp + corrSizeX/2,xp - corrSizeX/2] ;
+                        lines(1).YData = [yp - corrSizeY/2,yp + corrSizeY/2,yp + corrSizeY/2,...
+                            yp - corrSizeY/2,yp - corrSizeY/2] ;
+                        lines(2).Marker = 'o' ;
+                        lines(2).MarkerSize = 1 ;
+                    case 'imrect'
+                        pts(1,1) = H.Geometries(end).Position(1) + H.Geometries(end).Position(3) ;
+                        pts(1,2) = H.Geometries(end).Position(2) ;
+                        pts(2,1) = H.Geometries(end).Position(1) + H.Geometries(end).Position(3);
+                        pts(2,2) = H.Geometries(end).Position(2) + H.Geometries(end).Position(4);
+                        pts(3,1) = H.Geometries(end).Position(1) ;
+                        pts(3,2) = H.Geometries(end).Position(2) + H.Geometries(end).Position(4) ;
+                        pts(4,1) = H.Geometries(end).Position(1) ;
+                        pts(4,2) = H.Geometries(end).Position(2);
+                        for i = 1:length(lines)
+                            if i<=4
+                                lines(i).Marker = 'none' ;
+                                xp = pts(i,1) ;
+                                yp = pts(i,2) ;
+                                lines(i).XData = [xp - corrSizeX/2,xp - corrSizeX/2,xp + corrSizeX/2,...
+                                  xp + corrSizeX/2,xp - corrSizeX/2] ;
+                                lines(i).YData = [yp - corrSizeY/2,yp + corrSizeY/2,yp + corrSizeY/2,...
+                                  yp - corrSizeY/2,yp - corrSizeY/2] ;
+                            end
+                        end
+                    case 'imellipse' 
+                end
+                H.corrSize = [corrSizeX,corrSizeY] ;
             end
         % Callback
             if strcmp(H.btnCallback.State,'on') 
@@ -384,6 +436,7 @@ function H = drawingTool(varargin)
                     H.uiContextMenu = [] ;
                     H.uiContextMenuData = [] ;
                     H.title = 'DrawingTool' ;
+                    H.corrSize = [] ;
                 % VARARGIN PROCESS
                     for arg = 1:2:length(varargin)
                         switch upper(varargin{arg})
@@ -402,7 +455,7 @@ function H = drawingTool(varargin)
                                 H.uiContextMenu = varargin{arg+1} ;
                             case 'TITLE'
                                 H.title = varargin{arg+1} ;
-                                case 'CORRSIZE'
+                            case 'CORRSIZE'
                                 H.corrSize = varargin{arg+1} ;
                         end
                     end

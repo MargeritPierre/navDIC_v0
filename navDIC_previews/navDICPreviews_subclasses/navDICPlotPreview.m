@@ -25,7 +25,7 @@ classdef navDICPlotPreview < navDICPreview
                 % TEMPORARY CODE =======================
                     % Force vs Time
                     plTyp = {'FORCE_TIME','DISP_TIME','STRAIN_TIME','POSITION_TIME','FORCE_STRAIN',...
-                        'FORCE_STRAIN3D','FORCE_STRAIN3DVS2D','FORCE_STRAIN_COMP-FIL'} ;
+                        'FORCE_STRAIN3D','FORCE_STRAIN3DVS2D','FORCE_STRAIN_COMP-FIL','FORCE_THROUGH_DEF'} ;
                     nb = listdlg('PromptString','Select the type of plot that you want : ',...
                                 'SelectionMode','single',...
                                 'ListString',plTyp);
@@ -38,6 +38,12 @@ classdef navDICPlotPreview < navDICPreview
                                 'ListString',prev.sources) ;
                     end
                     switch upper(plotMachin)
+                        case 'FORCE_THROUGH_DEF'
+                            prev.XDataSources{1} = timeString ;
+                            prev.YDataSources{1} = ['meanNoNaN((hd.Seeds(end).Strains(:,',num2str(1),',:)),1)*hd.Seeds(end).K'] ;
+                            prev.lines(1) = plot(NaN,NaN,'tag','Force/Time') ;
+                            prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                            prev.timeMarkers(1) = plot(NaN,NaN) ;
                         case 'FORCE_TIME'
                             prev.XDataSources{1} = timeString ;
                             prev.YDataSources{1} = 'hd.InputData-hd.InputData(1)' ;

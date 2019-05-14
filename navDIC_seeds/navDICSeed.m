@@ -15,14 +15,16 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
             Strains = [] ;
         % Displ. Computation Method
             displMode = 'abs' ;
-            RefFrame = 1;
-            displMethod = 'cpcorr' ...
+            RefFrame = 1 ;
+            displMethod = 'ICGN' ...
                           ...  'fftdisp' ...
                           ;
         % Strain Computation Method
             strainMethod = 'planefit' ;
         % drawingTool retrurns
             drawToolH = [] ;
+        % fenetre de correlation
+            corrSize = [10; 10] ;
     end
     
     methods
@@ -37,12 +39,17 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
                     % Get reference Images
                         for id = IDs
                             if ~isempty(hd.Images)
-                                img = hd.Images{1}{id} ;
-                                if iscell(img)
-                                    obj.refImgs{end+1} = img{1} ;
-                                else
-                                    obj.refImgs{end+1} = img ;
+                                nIm = length(hd.Images) ;
+                                numRef = nIm ;
+                                while isempty(numRef) || numRef>=nIm 
+                                    numRef = str2double(inputdlg(['Entrer le numero de l''image de reference /',...
+                                        num2str(nIm)],'NUMERO REFERENCE',1,{num2str(hd.CurrentFrame)})) ;
                                 end
+                                img = hd.Images{numRef}{id} ;
+                                while iscell(img)
+                                    img = img{1} ;
+                                end
+                                obj.refImgs{end+1} = img ;
                             else
                                 hd = startAllCameras(hd) ;
                                 obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;

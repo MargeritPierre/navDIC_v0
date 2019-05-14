@@ -4,6 +4,7 @@ function hd = saveCurrentSetup(hd,varargin)
     frameToSave = hd.nFrames ;
     camsFolderName = 'Images' ; 
     inputsFolderName = 'Inputs' ; 
+    outputsFolderName = 'Outputs' ; 
 
 % Maybe an other frame has to be saved ?
     if ~isempty(varargin)
@@ -23,6 +24,9 @@ function hd = saveCurrentSetup(hd,varargin)
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
                 nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                while iscell(hd.Images{frameToSave}{camID})
+                    hd.Images{frameToSave}{camID} = hd.Images{frameToSave}{camID}{1} ;
+                end
                 imwrite(uint8(255*hd.Images{frameToSave}{camID}),nameImg) ;
         end
     end
@@ -45,6 +49,25 @@ function hd = saveCurrentSetup(hd,varargin)
             nameData = [folderName,'/','Time','.mat'] ;
             time = sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 3600*24 3600 60 1]),2) ;
             save(nameData,'time') ;
+            
+    end
+    
+% Save Seeds Data as Outputs    
+    if ~isempty(hd.Seeds) && strcmp(hd.ToolBar.MainMenu.saveSeeds.Checked,'on')
+        % Folder of inputs data
+            folderName = [wd.Path,outputsFolderName] ;
+        % Is the folder exists ?
+            if ~exist(folderName,'dir') ; mkdir(folderName) ; end
+        % Saving... 
+            for seID = 1:length(hd.Seeds)
+                seName = hd.Seeds(seID).Name ;
+                % Save the Data
+                    nameData = [folderName,'/',seName,'.mat'] ;
+                    movPoints = hd.Seeds(seID).MovingPoint ;
+                    Displacements = hd.Seeds(seID).Displacements ;
+                    Strains = hd.Seeds(seID).Strains ;
+                    save(nameData,movPoints,Displacements,Strains) ;
+            end
             
     end
         

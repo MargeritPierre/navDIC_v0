@@ -55,12 +55,13 @@ function [setup,hd] = loadSetup(hd,path)
                     nImgs = length(idSTR) ;
                 % Load images
                     for i = 1:nImgs
-                        Images{i}{cam} = {imread([camFolders{cam},'/',commonName,idSTR{i},ext])} ;
+                        Images{i}{cam} = {double(imread([camFolders{cam},'/',commonName,idSTR{i},ext]))/255} ;
                     end
                 % SET THE CAMERA
                     CamName = strsplit(camFolders{cam},{'/','\'}) ;
                     Cameras(cam).Name = CamName{end} ;
                     Cameras(cam).CurrentState = 'ghost' ;
+                    Cameras(cam).Path = camFolders{cam} ;
                     Cameras(cam).Adaptator = 'folder' ;
                     refImg = Images{1}{cam} ;
                     Cameras(cam).VidObj.ROIPosition = [0 0 flip(size(refImg{1}))] ;

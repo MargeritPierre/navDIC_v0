@@ -11,13 +11,14 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         if isempty(CAMERAS) 
             imaqreset ;
             CAMERAS = [] ;
+            camsHasChanged = false ;
         end
     
     % Init CAMERA List
         adaptors = [] ;
         availableCams = [] ;
         getAvailableCams() ;
-        if isempty(availableCams) ; return ; end
+        %if isempty(availableCams) ; disp('No cameras to connect'); return ; end
         usedCams = [] ;
         freeCams = [] ;
         % UsedInputs
@@ -212,12 +213,15 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                 % Cameras connected with this adaptor
                     adaptCams = imaqhwinfo(adaptName) ;
                     nC = length(adaptCams.DeviceIDs) ;
-                    if ~nC ; disp('      NO CONNECTED CAMERAS') ; continue ; end
+                    if ~nC ; disp('NO CONNECTED CAMERAS') ; continue ; end
                         for c = 1:nC
                             availableCams(end+1).Infos = adaptCams.DeviceInfo(c) ;
                             availableCams(end).Adaptor = adaptName ;
                         end
             end
+            % Cameras virtuelles through folder
+                    availableCams(end+1).Infos.DeviceName = 'Folder' ;
+                    availableCams(end).Adaptor = 'ghost' ;
     end
 
 

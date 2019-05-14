@@ -87,10 +87,11 @@ hd.Cameras(num).Properties.do = do ;
 hd.Cameras(num).Properties.f = f ; % mm
 hd.Cameras(num).Properties.px = resX ; % nombre de pixels en x 
 hd.Cameras(num).Properties.py = resY ; % nombre de pixels en y 
+hd.Cameras(num).Properties.PPL = [ resX/2; resY/2] ;
 hd.Cameras(num).Properties.ix = ix ; % mm largeur CCD
 hd.Cameras(num).Properties.iy = iy ; % mm hauteur CCD
 hd.Cameras(num).Properties.pixObjratio = pixObjratio ;
 di = do * f / ( do - f ) ;
 
-hd.Cameras(num).Properties.fx = di / ix * resX ;
-hd.Cameras(num).Properties.fy = di / iy * resY ;
+hd.Cameras(num).Properties.fpix = [di / ix * resX ; di / iy * resY ] ;
+

@@ -2,9 +2,9 @@ classdef navDICSeed_2D_Jauge < navDICSeed
    
     properties
         ROI = [] ;
-        corrSize = 8 ;
         L0 = [] ;
         A = [] ;
+        K = [] ;
     end
     
     methods
@@ -14,10 +14,18 @@ classdef navDICSeed_2D_Jauge < navDICSeed
                 obj = obj@navDICSeed(hd,'single') ;
                 obj.Class = 'navDICSeed_jauge' ;
                 obj.strainMethod = 'deltaL' ;
-                
-           % Draw points       
+                obj.K = input('Entrer la raideur de la jauge virtuelle') ;
+           % Draw points 
+                uiContextMenu = {'h0',num2cell(num2str(round((1.4).^(1:15)')),2),{'15'};...
+                'h',num2cell(num2str(round((1.4).^(1:15)')),2),{'15'};...
+                'l',num2cell(num2str(round((1.4).^(8:23)')),2),{'79'};...
+                'CORRSIZEX',num2cell(num2str((5:40)'),2),{'10'};...
+                'CORRSIZEY',num2cell(num2str((5:40)'),2),{'10'};...
+                } ;
                 obj.drawToolH = drawingTool('drawROI',true ...
-                                            ,'background', obj.refImgs{1}) ;
+                                            ,'background', obj.refImgs{1} ...
+                                            ,'uicontextmenu',uiContextMenu ...
+                                            ) ;
            %  obj.drawToolH
                
                if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')
@@ -30,6 +38,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
                    end
                end
             % INITIALIZE
+                obj.corrSize = obj.drawToolH.corrSize ;
                 obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
                 obj.Strains = ones(size(obj.Points,1)/2,1,hd.nFrames)*NaN ;
