@@ -7,8 +7,8 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
 
 % Retrieve Infos
     frame = hd.CurrentFrame ;
-    camID = obj.CamIDs ;
-    nbCam = length(hd.Cameras) ;
+    camIDs = obj.CamIDs ;
+    nbCam = length(camIDs) ;
     %refFrame = obj.RefFrame ; % needed to know which picture is the actual start of the test
     
     for i = 1:nbCam
@@ -20,7 +20,7 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
 
         if 0 && hd.CurrentFrame>1
             obj.RefFrame = frame;
-            obj.MovingPoints(:,:,1:frame,i) = repmat(obj.Points(:,:,1),[1 1 frame 1]) ;
+            obj.MovingPoints(:,:,1:frame,i) = repmat(obj.Points(:,:,i),[1 1 frame 1]) ;
             obj.Displacements(:,:,1:frame,i) = zeros([size(obj.Points,1) size(obj.Points,2) frame nbCam]) ;
         end
         
@@ -63,15 +63,15 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
         switch obj.displMode
             case 'abs'
                 PtsRef = obj.Points ;
-                imgRef = hd.Images{obj.RefFrame}{camID} ;%obj.refImgs{1} 
+                imgRef = hd.Images{obj.RefFrame}{i} ;%obj.refImgs{1} 
                 PtsMov = obj.MovingPoints(:,:,frame-obj.RefFrame) ; % round() ?
-                imgMov = hd.Images{frame}{camID} ;
+                imgMov = hd.Images{frame}{i} ;
                 
             case 'rel'
                 PtsRef = obj.MovingPoints(:,:,frame-1) ;
-                imgRef = hd.Images{frame-1}{camID} ;
+                imgRef = hd.Images{frame-1}{i} ;
                 PtsMov = obj.MovingPoints(:,:,frame-1) ;
-                imgMov = hd.Images{frame}{camID} ;
+                imgMov = hd.Images{frame}{i} ;
         end
         while iscell(imgMov)
             imgMov = imgMov{1} ;
@@ -80,8 +80,8 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
             imgRef = imgRef{1} ;
         end
         valid = ~any(isnan(PtsMov),2) ;
-        obj.MovingPoints(:,:,frame) = obj.Points*NaN ;
-        obj.MovingPoints(valid,:,frame) = icgnCorrMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
+        obj.MovingPoints(:,:,frame,i) = obj.Points*NaN ;
+        obj.MovingPoints(valid,:,frame,i) = icgnCorrMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
     end
     
 % Compute Displacements

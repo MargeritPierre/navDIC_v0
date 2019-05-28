@@ -41,7 +41,7 @@ PtsPixFilCor = PixCor2cam(PtsPixFil, Cam, imRef) ;
 %%
 
 nbIm = size(PtsPixFil,3) ;
-Lech = 10 ;
+Lech = 20 ;
 
 for i = 1:length(Cam)
 % pixel apparent
@@ -54,6 +54,9 @@ for i = 1:length(Cam)
     LFil(:,i) = sum( ( squeeze(PtsPixFil(2,:,:,i))' - squeeze(PtsPixFil(1,:,:,i))' ).^2, 2 ).^0.5 ;
     dLFil(:,i) = LFil(:,i) - repmat(L0Fil(1,i),[nbIm 1]) ;
     defFil(:,i) = dLFil(:,i) ./ repmat(L0Fil(1,i),[nbIm 1]) ;
+    
+    defCompReel(:,i) = defComp(:,i) * L0Comp(1,i) / (Lech * Cam(i).pixObjratio) -...
+        defFil(:,i) * ( L0Comp(1,i) - (Lech * Cam(i).pixObjratio) ) / (Lech * Cam(i).pixObjratio) ;
 % pixel corrig?s
     L0CompCor(1,i) = sum( ( PtsPixCompCor(2,:,imRef,i) - PtsPixCompCor(1,:,imRef,i) ).^2, 2 ).^0.5 ;
     LCompCor(:,i) = sum( ( squeeze(PtsPixCompCor(2,:,:,i))' - squeeze(PtsPixCompCor(1,:,:,i))' ).^2, 2 ).^0.5 ;
@@ -83,10 +86,10 @@ plot(defFil)
 %% Plots 
 %path = uigetdir('Choisissez le fichier d''enregistrement des plots : ') ;
 mkdir(hd.WorkDir.Path,'/output-matLab-GOM')
-ruin = 200 ;
+ruin = 180 ;
 path = [ hd.WorkDir.Path,'/output-matLab-GOM','/'] ;
 
-save([path,'defvalue'],'defFil','defComp','defFilCor','defCompCor','defCompCorReel')
+save([path,'defvalue'],'defFil','defComp','defCompReel','defFilCor','defCompCor','defCompCorReel')
 % Trace defomation non corrig?e vs corrig?e cam 1 
 %fil
 fig(1) = figure ;
@@ -146,9 +149,9 @@ xlabel('Deformation') ;
 ylabel('Force (N)') ;
 legend({'\epsilon_{f} camera 1','\epsilon_{c} camera 1','\epsilon_{f} camera 2','\epsilon_{c} camera 2'},...
     'Location','southeast','Interpreter','tex') ;
-title('Force vs Deformations corrig?es des deux cameras')
+title('Force vs Deformations corrigees des deux cameras')
 
-savefig(fig(5),[path,'Force vs Deformations corrig?es des deux cameras']) ;
+savefig(fig(5),[path,'Force vs Deformations corrigees des deux cameras']) ;
 
 % 
 fig(6) = figure ;
@@ -161,6 +164,18 @@ legend({'\epsilon_{f}','\epsilon_{c}'},...
 title('Force vs deformation corrigees, moyennes des deux cameras')
 
 savefig(fig(6),[path,'Force vs deformation corrigees, moyennes des deux cameras']) ;
+
+%
+fig(7) = figure ;
+plot(mean([defFil(1:ruin,1),defFil(1:ruin,2)],2),hd.InputData(1:ruin)-hd.InputData(1))
+plot(mean([defCompReel(1:ruin,1),defCompReel(1:ruin,2)],2),hd.InputData(1:ruin)-hd.InputData(1))
+xlabel('Deformation') ;
+ylabel('Force (N)') ;
+legend({'\epsilon_{f}','\epsilon_{c}'},...
+    'Location','southeast','Interpreter','tex') ;
+title('Force vs deformation brute, moyennes des deux cameras')
+
+savefig(fig(7),[path,'Force vs deformation brute, moyennes des deux cameras']) ;
 
 %%
 

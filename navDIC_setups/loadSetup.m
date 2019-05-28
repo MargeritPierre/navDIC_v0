@@ -17,11 +17,17 @@ function [setup,hd] = loadSetup(hd,path)
             imgExt = {'png','tif','jpg','jpeg','bmp'} ;
             Images = {} ;
             Cameras = struct([]) ;
+            nImgs = inputdlg('Entrer le nombre d''imagez a charger dans la memoire vive, enter 0 for all') ;
+            nImgs = str2double(nImgs{1}) ;
             for cam = 1:nCams    % Possible image extensions
                 % Get files
                     files = dir('*.anImpossibleExtension') ;
                     for i = 1:length(imgExt)
-                        f = dir([camFolders{cam},'/*.',imgExt{i}]) ;
+                        try
+                            f = dir([camFolders{cam},'/*.',imgExt{i}]) ;
+                        catch
+                            f = dir([camFolders{cam},'\*.',imgExt{i}]) ;
+                        end
                         files(end+(1:length(f))) = f ;
                     end
                 % Keep file names only
@@ -52,7 +58,10 @@ function [setup,hd] = loadSetup(hd,path)
                     end
                     [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
                     idSTR = idSTR(ind(~isnan(idNUM))) ;
-                    nImgs = length(idSTR) ;
+                    if nImgs == 0 || nImgs >=length(idSTR)
+                        nImgs = length(idSTR) ;
+                    end
+                    
                 % Load images
                     for i = 1:nImgs
                         Images{i}{cam} = {double(imread([camFolders{cam},'/',commonName,idSTR{i},ext]))/255} ;
