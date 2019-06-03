@@ -550,7 +550,7 @@ function navDIC(varargin)
                                     ) ;
            hd.ToolBar.fig.ButtonDownFcn = @(src,evt)navDICOnTop() ;
        % Close Callback
-        hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closeAll() ;
+           hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closeAll() ;
        % Add the main menu
            addMainMenu() ;
            updateMainMenu() ;
@@ -580,12 +580,13 @@ function navDIC(varargin)
                 addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)changeFrame());
         % MAKE THE FIGURE VISIBLE
             drawnow ;
-            hd.ToolBar.fig.Visible = 'on' ;
        % Add shortcuts buttons
             addButtons() ;
             setMainMenuShortcuts() ;
+            hd.ToolBar.fig.KeyPressFcn = @(src,evt)keyPressed(src,evt) ;
             drawnow ;
         % Set the figure handle invisible
+            hd.ToolBar.fig.Visible = 'on' ;
             hd.ToolBar.fig.HandleVisibility = 'off' ;
     end
 
@@ -594,20 +595,22 @@ function navDIC(varargin)
     function addMainMenu()
         
         % NAVDIC ----------------------------------------------------------
-           hd.ToolBar.MainMenu.navDIC = uimenu(hd.ToolBar.fig,'Label',navDICTag) ;
-           % Open a setup
-                hd.ToolBar.MainMenu.openSetup = uimenu(hd.ToolBar.MainMenu.navDIC, ...
-                                                        'Label','Open a Setup', ...
-                                                        'callback',@(src,evt)openSetup) ;
+           hd.ToolBar.MainMenu.navDIC = uimenu(hd.ToolBar.fig...
+                                                ,'Label',navDICTag ...
+                                                ) ;
            % Set working dir
                 hd.ToolBar.MainMenu.setDir = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Set the Working Directory', ...
                                                         'callback',@(src,evt)setPath('menu')) ;
+           % Open a setup
+                hd.ToolBar.MainMenu.openSetup = uimenu(hd.ToolBar.MainMenu.navDIC, ...
+                                                        'Label','Open a Setup', ...
+                                                        'callback',@(src,evt)openSetup) ;
            % Load From a Video
                 hd.ToolBar.MainMenu.loadFromVideo = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Load From Video', ...
                                                         'callback',@(src,evt)loadFromVideo, ...
-                                                        'Separator','on') ;
+                                                        'Separator','off') ;
            % SAVING
                 hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Saving', ...
@@ -750,6 +753,12 @@ function navDIC(varargin)
                                                     
     end
 
+% KEY PRESSED FUNCTION
+    function keyPressed(src,evt)
+        disp('Key Pressed !')
+        disp(evt.Key)
+    end
+
 % SET THE MAIN TOOLBAR SHORTCUTS
     function setMainMenuShortcuts()
         % Define Shortcuts
@@ -757,20 +766,29 @@ function navDIC(varargin)
                          'Set the Working Directory','shift S'; ...
                          'START','shift ENTER'; ...
                          'Take a Snapshot','shift SPACE'; ...
+                         'Load From Video','shift V'; ...
+                         'Frame Rate','shift F'; ...
+                         'Preview a Camera','shift C'; ...
+                         'Preview an Input','shift I'; ...
+                         'Preview a Seed','shift D'; ...
+                         'Plot Preview','shift P'; ...
                          } ;
-        % The Java container objects has extended possibilities for shortcuts
-        % Get java Objects linked to the main menu
-            jHandles = findjobj(hd.ToolBar.fig,'class','menu') ;
-            jHandles = jHandles(2:end) ; % Delete the first global handle
-        % Get jLabels
-            jHandlesLabels = jHandles(:).get('Text') ;
+        % Get Menus Handles
+            hMenus = findobj(hd.ToolBar.fig,'type','uimenu') ; 
+            menuLabels = {hMenus.Label} ;
         % Set "accelerators" (or shortcuts)
             for s = 1:size(shortcuts,1)
-                idHandle = ismember(jHandlesLabels,{shortcuts{s,1}}) ;
+                idHandle = ismember(menuLabels,{shortcuts{s,1}}) ;
                 if any(idHandle)
-                    jAccelerator = javax.swing.KeyStroke.getKeyStroke(shortcuts{s,2}) ;
-                    jHandles(idHandle).setAccelerator(jAccelerator);
-                end
+                    for it = 1:5 % Try multiple times to find the java object
+                    jHandle = findjobj(hMenus(idHandle)) ;
+                        if ~isempty(jHandle)
+                            jAccelerator = javax.swing.KeyStroke.getKeyStroke(shortcuts{s,2}) ;
+                            jHandle.setAccelerator(jAccelerator) ;
+                            continue
+                        end
+                    end
+               end
             end
     end
 

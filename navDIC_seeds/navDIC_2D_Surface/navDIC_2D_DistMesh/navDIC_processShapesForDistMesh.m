@@ -1,7 +1,7 @@
 function H = navDIC_processShapesForDistMesh(H)
 
     % Parameters
-        nPtsInt = 300 ; % num of pts for the intersection computation
+        nPtsInt = 10000 ; % num of pts for the intersection computation
         minH0 = 1 ; % default mean bar length
         maxH0 = 200 ;
 
@@ -14,7 +14,7 @@ function H = navDIC_processShapesForDistMesh(H)
         end
         
     % Retrieve custom Data
-        customData = H.uiContextMenuData ;
+        customData = H.uiContextMenuData(1:length(H.Geometries)) ;
         % Convert to double
             for s = 1:length(customData)
                 customData(s).h0 = str2num(customData(s).h0) ;
@@ -134,11 +134,11 @@ function H = navDIC_processShapesForDistMesh(H)
         bboxROI = [min(i)-margin min(j)-margin ; max(i)+margin max(j)+margin] ;
         
     % Bar Length Distribution
-        [jj,ii] = meshgrid(1:size(H.ROI,2),1:size(H.ROI,1)) ;
-        pij = [jj(:),ii(:)] ;
-        hh = fh(pij) ;
-        hh(fd(pij)>0) = NaN ;
         if 0 % Density map for debug
+            [jj,ii] = meshgrid(1:size(H.ROI,2),1:size(H.ROI,1)) ;
+            pij = [jj(:),ii(:)] ;
+            hh = fh(pij) ;
+            hh(fd(pij)>0) = NaN ;
             hh = reshape(hh,size(ii)) ;
             img = imagesc(repmat(hh,[1 1 1]),'tag','DistMeshPreview') ;
             img.AlphaData = double(~isnan(hh)) ;
@@ -147,8 +147,9 @@ function H = navDIC_processShapesForDistMesh(H)
             delete(findobj(H.Figure,'tag','DistMeshPreview'))
             return ;
         end
+        
     % Initial density of points 
-        D0 = min(min(hh(~isnan(hh)))) ;
+        D0 = min([h(:);h0]) ;
         
     % Compute the mesh
         mesh = navDIC_computeDistMesh2D(fd,fh,D0,bboxROI,pFix,H.Axes) ;

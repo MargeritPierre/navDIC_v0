@@ -5,14 +5,15 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
 
 % Parameters for convergence of the mesh
     maxCount = 1000 ; % max number of iterations
-    dptol = .0001; % point displacement tolerance (convergence criterion)
-    ttol = .005; % re-triangulation tolerance
+    dptol = .001; % point displacement tolerance (convergence criterion, relative to mean density)
+    ttol = .2; % re-triangulation tolerance
     Fscale = 1.2; % spring L0 relative to bar length
-    deltat = .03; % explicite time increment
+    deltat = .3; % explicite time increment
     geps = .01*h0; % maximum distance function allowed (remove pts)
     deps = sqrt(eps)*h0; % discrete gradient estim. step
-    densityctrlfreq = 30 ; % control if points too close every (.) iterations
-    plotFreq = 30 ; % update plot frequency
+    densityctrlfreq = Inf ; % control if points too close every (.) iterations
+    tooCloseThrs = 0.75 ;
+    plotFreq = 10 ; % update plot frequency
 
 % 1. Create initial distribution in bounding box (equilateral triangles)
     [x,y]=meshgrid(bbox(1,1):h0:bbox(2,1),bbox(1,2):h0*sqrt(3)/2:bbox(2,2));
@@ -38,24 +39,47 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
     nReTri = 0 ;
     infos = {}; % to print informations at the end
     
+% Delete previous graphic handles
+    gHandles = findobj(Axes,'tag','DistMeshPreview') ;
+    delete(gHandles) ;
+
 % Initialize mesh
-    triMesh = findobj(Axes,'tag','DistMeshPreview') ;
-    delete(triMesh) ;
     p0 = p ;
     t0 = computeMesh(p0) ;
     triMesh = patch('vertices',p0...
                     ,'faces',t0...
-                    ,'edgecolor','b'...
-                    ,'facecolor',flip([.8,.9,1])...
+                    ,'edgecolor',[1 1 1]*0 ...
+                    ,'facecolor','interp'...
                     ,'tag','DistMeshPreview'...
-                    ,'facealpha',0.7 ...
+                    ,'facealpha',0.5 ...
                     ,'hittest','off' ...
                     ) ;
     uistack(triMesh,'bottom') ;
     uistack(findobj(Axes,'type','image'),'bottom') 
     
+% Superimposing Interaction Axes
+    infosText = uicontrol(Axes.Parent,'style','Text'...
+                        ,'tag','DistMeshPreview' ...
+                        ,'string',''...
+                        ,'backgroundcolor','w' ...
+                        ,'foregroundcolor','b' ...
+                        ,'fontsize',10 ...
+                        ,'fontweight','bold' ...
+                        ,'units','normalized'...
+                        ,'position',[0.005 1-0.045 0.99 .04]...
+                        ,'horizontalalignment','left' ...
+                        ) ;
+    stopBtn = uicontrol(Axes.Parent,'style','togglebutton'...
+                        ,'tag','DistMeshPreview' ...
+                        ,'string','STOP'...
+                        ,'units','normalized'...
+                        ,'position',[1-0.055 1-0.055 .05 .05]...
+                        ,'callback',@(src,evt)disp('Stop!')) ;
+    
 while 1
-  count=count+1;
+    % Initialize
+        p0 = p ;
+        count=count+1;
   % 3. Retriangulation by the Delaunay algorithm
       %if max(sqrt(sum((p-pold).^2,2))/h0)>ttol           % Any large movement?
       if any(abs(sqrt(sum((p-pold).^2,2))./fh(p))>ttol)          % Any large movement?
@@ -65,19 +89,18 @@ while 1
         % 4. Describe each bar by a unique pair of nodes
             bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
             bars=unique(sort(bars,2),'rows');                % Bars as node pairs
-        % 5. Graphical output of the current mesh
-            updateMeshPlot(p,t) ;
       end
 
   % 6. Move mesh points based on bar lengths L and forces F
       barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
       L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
-      hbars=fh((p(bars(:,1),:)+p(bars(:,2),:))/2) ;
-      L0=hbars*Fscale*sqrt(sum(L.^2)/sum(hbars.^2));     % L0 = Desired lengths
+      Lt=fh((p(bars(:,1),:)+p(bars(:,2),:))/2) ;         % Lt = desired bar length
+      L0=Lt*Fscale*sqrt(sum(L.^2)/sum(Lt.^2));           % L0 = target lengths for update
   
   % Density control - remove points that are too close
-      if mod(count,densityctrlfreq)==0 && any(L0>2*L)
-          p(setdiff(reshape(bars(L0>2*L,:),[],1),1:nfix),:)=[];
+      tooClose = L./Lt<tooCloseThrs ;
+      if mod(count,densityctrlfreq)==0 && any(tooClose)
+          p(setdiff(reshape(bars(tooClose,:),[],1),1:nfix),:)=[];
           N=size(p,1); pold=inf;
           continue;
       end
@@ -87,7 +110,7 @@ while 1
       Fvec=F./L*[1,1].*barvec;                           % Bar forces (x,y components)
       Ftot=full(sparse(bars(:,[1,1,2,2]),ones(size(F))*[1,2,1,2],[Fvec,-Fvec],N,2));
       Ftot(1:size(pfix,1),:)=0;                          % Force = 0 at fixed points
-      p=p+deltat*Ftot;                                   % Update node positions
+      p=p+deltat*Ftot ;                                  % Update node positions
 
   % 7. Bring outside points back to the boundary
       d=fd(p) ; ix=d>0;                 % Find points outside (d>0)
@@ -98,10 +121,16 @@ while 1
 
   % 8. Termination criterion: All interior nodes move less than dptol
   % (scaled)navDIC
-      dP = max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/h0) ;
+      dp = p-p0 ;
+      %dP = max(sqrt(sum(deltat*Ftot(d<-geps,:).^2,2))/h0) ;
+      dP = max(sqrt(sum(dp.^2,2))/h0) ;
       if dP<dptol ; infos{end+1} = {'out criterion: |dP|<tol'} ; break; end
       if ~isvalid(triMesh) ; infos{end+1} = {'out criterion: TriMesh not valid'} ; break ; end
       if count>=maxCount ; infos{end+1} = {'out criterion: iteration count'} ; break ; end 
+      if stopBtn.Value ; infos{end+1} = {'out criterion: user stop'} ; break ; end 
+
+  % 5. Graphical output of the current mesh
+     updateMeshPlot(p,t) ;
 end
 infos{end+1} = {[num2str(count),' iterations']} ;
 infos{end+1} = {['last dP: ',num2str(dP)]} ;
@@ -114,6 +143,8 @@ infos{end+1} = {[num2str(nReTri),' re-triangulations']} ;
     updateMeshPlot(p,t) ;
     triMesh.EdgeColor = 'b' ;
     triMesh.FaceColor = [.8,.9,1] ;
+    delete(infosText) ;
+    delete(stopBtn) ;
     drawnow ;
     
 
@@ -149,9 +180,17 @@ disp('----------------')
 
     function updateMeshPlot(p,t)
         if isvalid(triMesh) 
-            triMesh.Vertices = p ;
-            triMesh.Faces = t ;
             if toc(lastPlotTime)>1/plotFreq
+                triMesh.FaceVertexCData = sqrt(sum(dp.^2,2)) ;
+                triMesh.Vertices = p ;
+                triMesh.Faces = t ;
+                infosText.String = ['Infos: ' ...
+                                     , ' | it: ' , num2str(count),'/',num2str(maxCount) ...
+                                     , ' | Nodes: ' , num2str(length(p)) ...
+                                     , ' | Triangles: ' , num2str(size(t,1)) ...
+                                     , ' | Re-Tri: ' , num2str(nReTri) ...
+                                     , ' | dP: ' , num2str(dP,3),'/',num2str(dptol,3) ...
+                                    ] ; 
                 drawnow
                 lastPlotTime = tic ;
             end

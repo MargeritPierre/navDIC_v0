@@ -117,7 +117,7 @@ function H = drawingTool(varargin)
         % Update ROI if needed
             if H.drawROI
                 computeROI() ;
-                H.SrfROI.AlphaData = (1-H.ROI)*.3 ;
+                H.SrfROI.AlphaData = (1-H.ROI)*0.1 ;
             end
         % Backup Geometries
             H.Geometries = [] ;
@@ -329,7 +329,7 @@ function H = drawingTool(varargin)
                                 delete(theBtn) ;
                                 theBtn = uitoggletool(H.ToolBar) ;
                                 H.btnCallback = theBtn ;
-                                theBtn.State = 'on' ;
+                                theBtn.State = 'off' ;
                             theBtn.TooltipString = 'Auto Update' ;
                             theBtn.ClickedCallback = @(src,evt)updateDrawing(0) ;
                             icon = 'help_fx.png' ;
