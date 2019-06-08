@@ -43,11 +43,13 @@ classdef navDICPlotPreview < navDICPreview
                                 prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                                 prev.timeMarkers(1) = plot(NaN,NaN) ;
                             case 'DISP_TIME'
-                                prev.XDataSources{1} = timeString ;
-                                prev.YDataSources{1} = ['meanNoNaN((',seedStr,'.Displacements(:,2,:)),1)'] ;
-                                prev.lines(1) = plot(NaN,NaN,'tag','Displacement/Time') ;
-                                prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
-                                prev.timeMarkers(1) = plot(NaN,NaN) ;
+                                for e = 1:2
+                                    prev.XDataSources{e} = timeString ;
+                                    prev.YDataSources{e} = ['meanNoNaN((',seedStr,'.Displacements(:,',num2str(e),',:)),1)'] ;
+                                    prev.lines(e) = plot(NaN,NaN,'tag','Displacement/Time') ;
+                                    prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
+                                    prev.timeMarkers(e) = plot(NaN,NaN) ;
+                                end
                             case 'STRAIN_TIME'
                                 for e = 1:3
                                     prev.XDataSources{e} = timeString ;

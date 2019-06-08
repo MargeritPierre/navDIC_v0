@@ -12,8 +12,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 obj = obj@navDICSeed_2D_Surface(hd) ;
                 obj.Class = 'navDICSeed_2D_DistMesh' ;
             % Draw the Shapes defining the region to mesh
-                uiContextMenu = {'h0',num2cell(num2str(round((1.4).^(1:15)')),2),{'29'};...
-                    'h',num2cell(num2str(round((1.4).^(1:15)')),2),{'29'};...
+                uiContextMenu = {'h0',num2cell(num2str(round((1.4).^(1:17)')),2),{'29'};...
+                    'h',num2cell(num2str(round((1.4).^(1:17)')),2),{'29'};...
                     'l',num2cell(num2str(round((1.4).^(8:23)')),2),{'79'};...
                     } ;
                 obj.drawToolH = drawingTool('drawROI',true ...
@@ -110,26 +110,18 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             % ADD A COLORBAR
                 if 1
                     clrbr = colorbar(ax) ;
-                    %clrbr.Units = 'pixels' ;
-                    %ax.Units = 'pixels' ;
                     fig = ax.Parent ;
-                    %margin = 0.05 ;
                     switch fig.Position(3)<fig.Position(4)
                         case true
                             clrbr.Location = 'east' ;
-                            %clrbr.Position(2) = ax.Position(2) + margin*ax.Position(4) ;
-                            %clrbr.Position(4) = ax.Position(4) - 2*margin*ax.Position(4) ;
-                            %fig.Position(3) = fig.Position(3) + 5*clrbr.Position(3) ;
-                            %clrbr.Position(1) = ax.Position(3) + clrbr.Position(3)*1 ;
                         case false
                             clrbr.Location = 'north' ;
-                            %fig.Position(4) = fig.Position(4) + 4*clrbr.Position(4) ;
-                            %clrbr.Position(2) = ax.Position(4) + clrbr.Position(4)*1 ;
                     end
-                    %clrbr.AxisLocation = 'out';
-                    %drawnow; pause(0.05) ;
-                    %clrbr.Units = 'normalized' ;
-                    %ax.Units = 'normalized' ;
+                    clrbr.Ruler.Exponent = 0 ;
+                    clrbr.FontWeight = 'bold' ;
+                    if mean(obj.refImgs{1}(:))/max(getrangefromclass(obj.refImgs{1}))<0.5
+                        clrbr.Color = 'w' ;
+                    end
                 end
             % ADD THE MENU BAR
                 % Data to plot
@@ -140,6 +132,10 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         submenus(end+1) = uimenu(mData,'Label','Exx','separator','on') ;
                         submenus(end+1) = uimenu(mData,'Label','Eyy') ;
                         submenus(end+1) = uimenu(mData,'Label','Exy') ;
+                        submenus(end+1) = uimenu(mData,'Label','Major E','separator','on') ;
+                        submenus(end+1) = uimenu(mData,'Label','Minor E') ;
+                        submenus(end+1) = uimenu(mData,'Label','Max. Shear') ;
+                        submenus(end+1) = uimenu(mData,'Label','Princ. Angle') ;
                 % Color Scale
                     mColors = uimenu(ax.Parent,'Label','Colors') ;
                         mClrScale = uimenu(mColors,'Label','Scale') ;
@@ -189,9 +185,10 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     % Deform the mesh
                         triMesh.Vertices = obj.MovingPoints(:,:,CurrentFrame) ;
                     % Retrieve the data
+                        Data = [] ;
                         switch ax.UserData.dataLabel
                             case '|U|'
-                                Data =  sqrt(sum(obj.Displacements(:,:,:).^2,2)) ;
+                                Data =  sqrt(sum(obj.Displacements.^2,2)) ;
                             case 'Ux'
                                 Data = obj.Displacements(:,1,:) ;
                             case 'Uy'
@@ -202,7 +199,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 Data = obj.Strains(:,2,:) ;
                             case 'Exy'
                                 Data = obj.Strains(:,3,:) ;
+                            case 'Major E'
+                                Data = obj.MajorStrains ;
+                            case 'Minor E'
+                                Data = obj.MinorStrains ;
+                            case 'Max. Shear'
+                                Data = obj.MaxShear ;
+                            case 'Princ. Angle'
+                                Data = obj.PrincipalAngle ;
                         end
+                        if isempty(Data) ; return ; end
                         Data = squeeze(Data) ;
                     % Apply data to mesh
                         if size(Data,1) == size(triMesh.Faces,1) % Facet data

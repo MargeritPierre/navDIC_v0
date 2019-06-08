@@ -84,6 +84,9 @@ function navDIC(varargin)
                 [hd.RootPath,~,~] = fileparts(which('navDIC.m')) ;
             % Working Directory
                 hd.WorkDir = [] ;
+                    hd.WorkDir.Path = pwd ;
+                    hd.WorkDir.CommonName = 'img' ;
+                    hd.WorkDir.ImagesExtension = '.tif' ;
         % SOURCES
             hd.Sources = [] ;
         % DEVICES
@@ -319,17 +322,90 @@ function navDIC(varargin)
         % Record the animation
             open(out.writerObj) ;
             statusBox = warndlg({'The Animation is Recording...','Press OK or close to stop.'},'RECORDING...') ;
-            for fr = out.params.FramesRecorded
+            for fr = out.FramesRecorded
                 if ishandle(statusBox) % One can close it to stop the animation
-                    hd.CurrentFrame = fr ;
-                    updateToolbar() ;
-                    hd = updateAllPreviews(hd) ;
-                    drawnow ; 
-                    writeVideo(out.writerObj,getframe(out.fig)) ;
+                    % Update navDIC
+                        hd.CurrentFrame = fr ;
+                        updateToolbar() ;
+                        hd = updateAllPreviews(hd) ;
+                        drawnow ; 
+                    % Get the individual frames
+                        FR = {} ;
+                        defaultColor = 1 ;
+                        for ff = 1:length(out.figs)
+                            FR{end+1} = getframe(out.figs(ff)) ;
+                            FR{end} = FR{end}.cdata ;
+                            switch out.stack
+                                case 'vertical'
+                                    FR{end}(:,end:max(out.sizes(:,2)),:) = defaultColor ;
+                                case 'horizontal'
+                                    FR{end}(end:max(out.sizes(:,1)),:,:) = defaultColor ;
+                            end
+                        end
+                    % Create the image to record
+                        switch out.stack
+                            case 'vertical'
+                                IMG = cat(1,FR{:}) ;
+                            case 'horizontal'
+                                IMG = cat(2,FR{:}) ;
+                        end
+                    % Add to the animation
+                        writeVideo(out.writerObj,IMG) ;
                 end
             end
             close(out.writerObj) ;
             if ishandle(statusBox) ; close(statusBox) ; end
+    end
+
+
+% IMPORT GENERAL DATA
+    function import(dataType)
+        % Depending on the data type...
+            switch dataType
+                case 'ImageFolder'
+                    [valid,hd] = loadFrames(hd,dataType) ;
+                case 'Video'
+                    [valid,hd] = loadFrames(hd,dataType) ;
+                case 'MATFile'
+                    [valid,hd] = loadData(hd,dataType) ;
+                case 'CSVFile'
+                    [valid,hd] = loadData(hd,dataType) ;
+            end
+            if ~valid ; return ; end
+        % Update handles and displays it
+            clc ; disp('CURRENT navDIC HANDLES : ') ; display(hd) ;
+        % Update the navDIC Interface
+            updateMainMenu() ;
+            updateToolbar() ;
+    end
+
+
+% EXPORT GENERAL DATA
+    function export(dataType)
+        % Depending on the data type...
+            switch dataType
+                case 'Images'
+                    % Let the user choose a camera
+                        [valid,camID] = selectCameras(hd,'single') ;
+                        if ~valid ; return ; end
+                    % Let the user choose an image file name
+                        [file,path] = uiputfile('*',...
+                                        'SELECT THE COMMON IMAGE PATH', ... 
+                                        [hd.WorkDir.Path,hd.Cameras(camID).Name,'/img',hd.WorkDir.ImagesExtension] ...
+                                        ) ;
+                        if path==0 ; return ; end
+                        [path,commonName,ext] = fileparts([path,file]) ;
+                    % Save All Images
+                        wtbr = waitbar(0,'Writing Images...') ;
+                        for fr = 1:hd.nFrames
+                            filename = [path,'/',commonName,'_',num2str(fr),ext] ;
+                            imwrite(hd.Images{camID}(:,:,:,fr),filename) ;
+                            wtbr = waitbar(fr/hd.nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
+                        end
+                        delete(wtbr) ;
+                case 'Animation'
+                case 'Data'
+            end
     end
 
 
@@ -582,7 +658,7 @@ function navDIC(varargin)
             drawnow ;
        % Add shortcuts buttons
             addButtons() ;
-            setMainMenuShortcuts() ;
+            %setMainMenuShortcuts() ;
             hd.ToolBar.fig.KeyPressFcn = @(src,evt)keyPressed(src,evt) ;
             drawnow ;
         % Set the figure handle invisible
@@ -611,6 +687,50 @@ function navDIC(varargin)
                                                         'Label','Load From Video', ...
                                                         'callback',@(src,evt)loadFromVideo, ...
                                                         'Separator','off') ;
+           % DATA IMPORT
+                hd.ToolBar.MainMenu.import = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Import', ...
+                                                        'Enable','on', ...
+                                                        'Separator','on') ;
+                    hd.ToolBar.MainMenu.importFrames = uimenu(hd.ToolBar.MainMenu.import,...
+                                                            'Label','Frames', ...
+                                                            'Enable','on') ;
+                        hd.ToolBar.MainMenu.importImagesFolder = uimenu(hd.ToolBar.MainMenu.importFrames,...
+                                                                'Label','Image Folder', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('ImageFolder')) ;
+                        hd.ToolBar.MainMenu.importVideoFrames = uimenu(hd.ToolBar.MainMenu.importFrames,...
+                                                                'Label','Video', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('Video')) ;
+                    hd.ToolBar.MainMenu.importData = uimenu(hd.ToolBar.MainMenu.import,...
+                                                            'Label','Data', ...
+                                                            'Enable','on') ;
+                        hd.ToolBar.MainMenu.importMatFile = uimenu(hd.ToolBar.MainMenu.importData,...
+                                                                'Label','MAT File', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('MATFile')) ;
+                        hd.ToolBar.MainMenu.importCSV = uimenu(hd.ToolBar.MainMenu.importData,...
+                                                                'Label','CSV File', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('CSVFile')) ;
+           % DATA EXPORT
+                hd.ToolBar.MainMenu.export = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Export', ...
+                                                        'Enable','on', ...
+                                                        'Separator','off') ;
+                    hd.ToolBar.MainMenu.exportImages = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Images', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Images')) ;
+                    hd.ToolBar.MainMenu.exportAnimation = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Animation', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Animation')) ;
+                    hd.ToolBar.MainMenu.exportData = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Data', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Data')) ;
            % SAVING
                 hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.navDIC,...
                                                         'Label','Saving', ...
@@ -671,9 +791,11 @@ function navDIC(varargin)
                 
         % CAMERAS ---------------------------------------------------------
            hd.ToolBar.MainMenu.cameras = uimenu(hd.ToolBar.fig,'Label','Cameras') ;
+           
            % Set Cameras
                 hd.ToolBar.MainMenu.manageCameras = uimenu(hd.ToolBar.MainMenu.cameras,...
                                                         'Label','Manage Cameras', ...
+                                                        'Separator','on', ...
                                                         'callback',@(src,evt)manageCameras) ;
            % Preview a Camera
                 hd.ToolBar.MainMenu.camPreview = uimenu(hd.ToolBar.MainMenu.cameras,...

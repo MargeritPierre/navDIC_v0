@@ -47,7 +47,7 @@ for ii = dicFrames
                     dicDomain(outOfFrame) = [] ;
                     JJp(outOfFrame) = [] ;
                     IIp(outOfFrame) = [] ;
-                % Selection matrix (image frame to domain frame)
+                % Selection matrix (image pixels to domain pixels)
                     selectDomain = sparse(1:length(dicDomain),dicDomain,1,length(dicDomain),nI*nJ) ;
             % IMAGE WARPING
                 % Reduce the interpolation frame
@@ -141,7 +141,7 @@ for ii = dicFrames
                     end
                 % DECORRELATED ELEMENTS
                     if minCorrCoeff>0 && (outFlag || alwaysCheckCorrCoeff)
-                        corrCoeff = abs(WEIGHT'*(img1mz(:).*img2mz(:))) ;
+                        corrCoeff = abs(WEIGHT'*(img1mz(dicDomain).*img2mz)) ;
                         %mesh.FaceVertexCData = zeros(nElems,1) ;
                         %mesh.FaceVertexCData(validElems) = corrCoeff(:) ;
                         %mesh.FaceColor = 'flat' ; caxis(ax(1),[0 1])
@@ -166,8 +166,8 @@ for ii = dicFrames
                                          ] ;
                 % Heavy Plots
                     if plotEachIteration || (outFlag && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (outFlag && toc(lastPlotTime)>1/plotRate)
-                        ttl.String = [num2str(frames(ii)),'(',num2str(it),')'] ;
-                        imRes.CData = reshape(sparse(dicDomain,1,diffImg,nI*nJ,1),[nI nJ]) ;
+                        %ttl.String = [num2str(frames(ii)),'(',num2str(it),')'] ;
+                        imRes.CData = reshape(sparse(dicDomain,1,abs(diffImg),nI*nJ,1),[nI nJ]) ;
                         mesh.Vertices = Xn(:,:,ii) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ; 
                         lastPlotTime = tic ;

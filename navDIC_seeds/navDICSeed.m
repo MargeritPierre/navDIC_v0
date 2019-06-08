@@ -13,6 +13,10 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
             MovingPoints = [] ;
             Displacements = [] ;
             Strains = [] ;
+            MajorStrains = [] ;
+            MinorStrains = [] ;
+            MaxShear = [] ;
+            PrincipalAngle = [] ;
         % Displ. Computation Method
             displMode = 'abs' ;
             RefFrame = 1 ;

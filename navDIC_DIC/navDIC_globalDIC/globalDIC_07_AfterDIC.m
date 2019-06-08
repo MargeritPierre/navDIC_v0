@@ -1,5 +1,5 @@
 %% IF BACKWARD MODE, SOME POST-PROCESSING ARE NEEDED
-    if dicDir<0
+    if reverseReference && dicDir<0
         % Backup Old Nodes
             oldNodes = Nodes ;
         % Reverse the displacements
@@ -44,7 +44,7 @@
             
             
 %% IF BACKWARD MODE, RESET TO THE ORIGINAL SEED MESH
-    if dicDir<0
+    if reverseReference && dicDir<0
         % Retrieve Old Nodes
             Nodes = oldNodes ;
         % Re-process the reference geometry

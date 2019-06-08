@@ -1,82 +1,17 @@
-function [setup,hd] = loadVideoFrames(hd,filename)
-            
-    % Initialize the setup
-        [path,file,ext] = fileparts(filename) ;
-        setup.Valid = false ;
-        setup.Path = path ;
-        setup.CommonName = file ;
-        setup.ImagesExtension = ext ;
-        
-    % Initialize the nested variables
-        video = [] ;
-        H = [] ;
-        
-    % Try to load the file
-        disp('------ VIDEO LOADING ------')
-        disp(['   File: ',filename])
-        disp(['   Loading...']) ;
-        video = VideoReader(filename) ;
-        
-    % Display Video Informations
-        get(video)
-        
-    % Prompt the figure to choose options
-        initOptionsFigure ;
-        
-    % Wait for the user to close the figure
-        while isvalid(H.fig) && ~H.btnOK.Value
-            drawnow ;
-        end
-        if ~isvalid(H.fig) ; return ; end % The figure has been closed, cancel the operation
-    
-    % Ask the User one last time
-        if H.estimSizeOnMemory>1e8 % More than 100MB of Data wil be loaded
-            answer = questdlg({['The estimated data size to be loaded is ',num2str(H.estimSizeOnMemory*1e-6,'%.0f'),'MB'],...
-                                'Are you sure you want to proceed ?'}...
-                                ,'WARNING','OK','Cancel','Cancel'...
-                                ) ;
-            if strcmp(answer,'Cancel') ; return ; end
-            drawnow ;
-        end
-        
-    % Load the images
-        IMG = zeros([size(H.processImg(:,:,1)) size(H.processImg,3) length(H.loadedFrames)],class(H.processImg)) ;
-        wtbr = waitbar(0,'Loading Frames...') ;
-        for fr = 1:length(H.loadedFrames)
-            % Load the frame
-                currentImg = read(video,H.loadedFrames(fr)) ;
-            % Process the frame
-                for p = 1:length(H.imgProcesses)
-                    currentImg = H.imgProcesses{p}(currentImg) ;
-                end
-            % Push it on the images
-                IMG(:,:,:,fr) = currentImg ;
-            % Waitbar
-                wtbr = waitbar(fr/length(H.loadedFrames),wtbr,['Loading Frames... (',num2str(fr),'/',num2str(length(H.loadedFrames)),')']) ;
-        end
-        delete(wtbr)
-        
-        
-    % SET THE CAMERA
-        Camera.Name = file ;
-        Camera.CurrentState = 'ghost' ;
-        Camera.Adaptator = 'folder' ;
-        Camera.VidObj.ROIPosition = [0 0 flip(size(IMG(:,:,1)))] ;
+function [valid,hd] = loadData(hd,dataType)
 
-    % Change the handles
-        hd.Images = {} ;
-        hd.Images{1} = IMG ;
-        hd.InputData = [] ;
-        hd.nFrames = max(size(IMG,4)) ;
-        hd.CurrentFrame = 1 ;
-        hd.Cameras = Camera ;
+    % Initialize the output
+        valid = false ;
 
-    % DEFAULT TIMELINE
-        hd.TimeLine = 1/video.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
-            
-    % Validate the setup
-        setup.Valid = true ;
-        close(H.fig) ;
+    % Choose the file
+        switch dataType
+            case 'MATFile'
+                [path] = uigetdir('*','SELECT A .MAT FILE') ;
+            case 'CSVFile'
+                [file,path] = uigetfile('*','SELECT A .CSV FILE') ;
+        end
+        if path==0 ; return ; end
+        %filename = [path,file] ;
 
         
         
