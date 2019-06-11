@@ -18,12 +18,14 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
             MaxShear = [] ;
             PrincipalAngle = [] ;
         % Displ. Computation Method
+            compDisp = true ;
             displMode = 'abs' ;
             RefFrame = 1 ;
             displMethod = ... 'cpcorr' ...
                            'fftdisp' ...
                           ;
         % Strain Computation Method
+            compStrains = true ;
             strainMethod = 'planefit' ;
         % drawingTool retrurns
             drawToolH = [] ;
@@ -74,12 +76,14 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
         
         
         function obj = computeDisplacements(obj,hd)
+            if ~obj.compDisp ; return ; end
             script = ['navDIC_',obj.displMethod] ;
             eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end
         
         
         function obj = computeStrains(obj,hd)
+            if ~obj.compStrains ; return ; end
             script = ['navDIC_',obj.strainMethod] ;
             eval(['[obj,hd] = ',script,'(obj,hd) ;']) ;
         end

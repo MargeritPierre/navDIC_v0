@@ -35,7 +35,7 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
     mesh = [] ;
     lastPlotTime = tic ;
     count=0;
-    pold=inf; % For first iteration
+    pold=-inf; % For first iteration
     nReTri = 0 ;
     infos = {}; % to print informations at the end
     
@@ -78,20 +78,24 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
     
 while 1
     % Initialize
+        dP = 0 ;
         p0 = p ;
         count=count+1;
-  % 3. Retriangulation by the Delaunay algorithm
+        
+  % Retriangulation by the Delaunay algorithm
       %if max(sqrt(sum((p-pold).^2,2))/h0)>ttol           % Any large movement?
-      if any(abs(sqrt(sum((p-pold).^2,2))./fh(p))>ttol)          % Any large movement?
+      if any(isinf(pold(:))) || any(abs(sqrt(sum((p-pold).^2,2))./fh(p))>ttol)          % Any large movement?
         nReTri = nReTri+1 ;
         pold=p;                                          % Save current positions
         t = computeMesh(p) ;
         % 4. Describe each bar by a unique pair of nodes
             bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
             bars=unique(sort(bars,2),'rows');                % Bars as node pairs
+        % If only fixed points remains, break
+            if size(p,1)<=size(pfix,1) ; break ; end
       end
 
-  % 6. Move mesh points based on bar lengths L and forces F
+  % Move mesh points based on bar lengths L and forces F
       barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
       L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
       Lt=fh((p(bars(:,1),:)+p(bars(:,2),:))/2) ;         % Lt = desired bar length

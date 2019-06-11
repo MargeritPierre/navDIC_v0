@@ -115,9 +115,9 @@ function H = navDIC_processShapesForDistMesh(H)
                     end
                 end
         end
-    % Final dist. Function
+    % Final distance Function
         fd = dFrecurs{end} ;
-    % Final dist. Function
+    % Final bar length Function
         FH = @(p)hFrecurs{end}(p) ;
         fh = @(p)FH(p) ; %min(max(FH(p),huniform(p)*minH0),maxH0*huniform(p)) ;
     % Add intersection points to fixed ppoints
@@ -148,7 +148,7 @@ function H = navDIC_processShapesForDistMesh(H)
             return ;
         end
         
-    % Initial density of points 
+    % Initial density of points
         D0 = min([h(:);h0]) ;
         
     % Compute the mesh

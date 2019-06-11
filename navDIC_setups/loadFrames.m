@@ -1,4 +1,4 @@
-function [valid,hd] = loadFrames(hd,dataType)
+function [valid,hd] = loadFrames(hd,dataType,camID)
 
     % Initialize the output
         valid = false ;
@@ -70,26 +70,27 @@ function [valid,hd] = loadFrames(hd,dataType)
         delete(wtbr)
         
         
-    % SET THE CAMERA
-        Camera.Name = H.CamName ;
-        Camera.CurrentState = 'ghost' ;
-        Camera.Adaptator = 'folder' ;
-        Camera.VidObj.ROIPosition = [0 0 flip(size(IMG(:,:,1)))] ;
-
-    % Change the handles
-        camID = length(hd.Cameras)+1 ;
-        if camID==1 % First image source to be created
-            hd.Cameras = Camera ;
-            hd.Images = {} ;
-            hd.Images{1} = IMG ;
-        else
-            hd.Cameras(camID) = Camera ;
-            hd.Images{camID} = IMG ;
+    % CHANGE THE HANDLES IF A NEW CAMERA HAS BEEN ASKED FOR
+        if camID == length(hd.Cameras)+1
+            % New Camera
+                Camera = [] ;
+                Camera.Name = H.CamName ;
+                Camera.CurrentState = 'ghost' ;
+                Camera.Adaptator = 'folder' ;
+                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG(:,:,1)))] ;
+                if camID==1
+                    hd.Cameras = Camera ; % Initialize the camera list
+                else
+                    hd.Cameras(camID) = Camera ;
+                end
+            % New Default Timeline
+                hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+            % New number of frames
+                hd.nFrames = max(size(IMG,4)) ;
         end
-        hd.nFrames = max(size(IMG,4)) ;
 
-    % DEFAULT TIMELINE
-        hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+    % Add the images
+        hd.Images{camID} = IMG ;
             
     % Validate the setup
         valid = true ;

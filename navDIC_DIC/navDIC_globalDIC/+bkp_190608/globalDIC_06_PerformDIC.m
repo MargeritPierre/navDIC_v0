@@ -5,9 +5,8 @@ for ii = dicFrames
     % Init
         it = 0 ;
         outFlag = false ;
-    % Import and display current image
-        img2 = Smooth(IMG(:,:,:,ii)) ;
-        %im.CData = repmat(img2,[1 1 3]) ;
+    % Import and display image
+        img2 = Func(IMG(:,:,:,ii)) ;
         im.CData = repmat((img2-min(img2(:)))/range(img2(:)),[1 1 3]) ;
     % First Guess for the displacement if needed
         if ~startWithNavDICPositions || all(isnan(Xn(:,1,ii)))
@@ -38,22 +37,18 @@ for ii = dicFrames
             % PIXEL-WISE DISPLACEMENT AND DIC DOMAIN
                 % VALID DIC Domain
                     dicDomain = find(any(INSIDE(:,validElems),2)) ; 
-                    selectDomain = sparse(1:length(dicDomain),dicDomain,1,length(dicDomain),nI*nJ) ;
-                    dicMAPPING = selectDomain*MAPPING(:,VALID) ;
                 % Compute the displacement 
-                    Up = dicMAPPING*Un(VALID,:,ii) ;
+                    Up = MAPPING(dicDomain,VALID)*Un(VALID,:,ii) ;
                 % New position of each pixel
                     JJp = JJ(dicDomain)+Up(:,1) ;
                     IIp = II(dicDomain)+Up(:,2) ;
                 % Cull out-of-frame pixels
-                    if ~cullOutOfFrame % pixels can be outside only if Nodes are outside
-                        outOfFrame = IIp<1 | IIp>nI | JJp<1 | JJp>nJ ;
-                        dicDomain(outOfFrame) = [] ;
-                        JJp(outOfFrame) = [] ;
-                        IIp(outOfFrame) = [] ;
-                        selectDomain(outOfFrame,:) = [] ;
-                        dicMAPPING(outOfFrame,:) = [] ;
-                    end
+                    outOfFrame = IIp<1 | IIp>nI | JJp<1 | JJp>nJ ;
+                    dicDomain(outOfFrame) = [] ;
+                    JJp(outOfFrame) = [] ;
+                    IIp(outOfFrame) = [] ;
+                % Selection matrix (image pixels to domain pixels)
+                    selectDomain = sparse(1:length(dicDomain),dicDomain,1,length(dicDomain),nI*nJ) ;
             % IMAGE WARPING
                 % Reduce the interpolation frame
                     iii = floor(min(IIp)):ceil(max(IIp)) ;
@@ -61,98 +56,74 @@ for ii = dicFrames
                 % Warp the image
                     img2v = interp2(JJ(iii,jjj),II(iii,jjj),img2(iii,jjj),JJp,IIp,imWarpInterpOrder) ;
             % IMAGE MOMENTS
-                % Select the part of the reference image of interest
-                    img1v = img1(dicDomain) ;
                 % Integration weights
                     switch size(localWEIGHT,2)
                         case nNodes
                             WEIGHT = localWEIGHT(:,VALID) ;
+                            ww = 1./normImg1(VALID) ;
                         case nElems
                             WEIGHT = localWEIGHT(:,validElems) ;
+                            ww = 1./bsxfun(@(x,y)x./y,tri2nod(VALID,validElems)*normImg1(validElems),sum(tri2nod(VALID,validElems),2)) ;
                     end
                     WEIGHT = selectDomain*WEIGHT ;
                     sumWEIGHT = sum(WEIGHT,1).' ;
                 % Mean over elements
-                    meanImg1 = (WEIGHT'*img1v)./sumWEIGHT ;
                     meanImg2 = (WEIGHT'*img2v)./sumWEIGHT ;
                 % Zero-local-mean on pixels
-                    img1m = img1v-WEIGHT*meanImg1 ;
                     img2m = img2v-WEIGHT*meanImg2 ;
                 % Norm over element
-                    normImg1 = sqrt(WEIGHT'*(img1m.^2)) ;
                     normImg2 = sqrt(WEIGHT'*(img2m.^2)) ;
                 % Zero-local-mean-normalized images
-                    img1mz = img1m./(WEIGHT*normImg1) ;
                     img2mz = img2m./(WEIGHT*normImg2) ;
             % IMAGE FUNCTIONAL
                 switch diffCriterion
                     case 'Diff' % Simple difference
-                        diffImg = img1v-img2v ;
+                        diffImg = img1v(dicDomain)-img2v ;
                         weight = speye(2*nVALID) ;
                     case 'ZM_Diff' % Zero-mean difference
-                        diffImg = img1m-img2m ;
+                        diffImg = img1m(dicDomain)-img2m ;
                         weight = speye(2*nVALID) ;
                     case 'ZM_N_Diff' % Normalized Zero-mean difference
-                        diffImg = img1mz-img2mz ;
-                        switch size(localWEIGHT,2)
-                            case nNodes
-                                ww = 1./normImg1(VALID) ;
-                            case nElems
-                                ww = 1./bsxfun(@(x,y)x./y,tri2nod(VALID,validElems)*normImg1,sum(tri2nod(VALID,validElems),2)) ;
-                        end
+                        diffImg = img1mz(dicDomain)-img2mz ;
                         weight = sparse(1:2*nVALID,1:2*nVALID,[ww;ww]) ;
                 end
             % NEWTON-RAPHSON PROCEDURE
-                % Recompute Jacobian and Hessian if needed
-                    if refImageChanged
-                        % Image gradients
-                            dImg1_dx = dI_dx(img1) ;
-                            dImg1_dy = dI_dy(img1) ;
-                        % Jacobian
-                            dImg1_da = [...
-                                    spdiag(dImg1_dx(dicDomain))*dicMAPPING ...
-                                    spdiag(dImg1_dy(dicDomain))*dicMAPPING ...
-                                    ] ;
-                        % Hessian
-                            Hess = dImg1_da'*dImg1_da ;
-                    end
                 % Compute the first RMSE derivative
-                    dr_da = (dImg1_da'*diffImg) ;
+                    dr_da = ((selectDomain*dF_da(:,[VALID;VALID]))'*diffImg) ;
                 % Contraint on the SECOND displacement gradient
-                    validDOF = [VALID;VALID] ;
                     switch strainCriterion
                         case 'normal'
                             vEdg = repmat(~nakedEdges,[2 1]) ;
                             vEle = [validElems;validElems;validElems] ;
-                            CONS = B(vEle,validDOF)'*(E(vEdg,vEle)'*E(vEdg,vEle))*B(vEle,validDOF) ;
+                            CONS = B(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*B(vEle,:) ;
                         case 'full'
                             vEdg = repmat(~nakedEdges,[4 1]) ;
                             vEle = [validElems;validElems;validElems;validElems] ;
-                            CONS = G(vEle,validDOF)'*(E(vEdg,vEle)'*E(vEdg,vEle))*G(vEle,validDOF) ;
+                            CONS = G(vEle,:)'*(E(vEdg,vEle)'*E(vEdg,vEle))*G(vEle,:) ;
                     end
                     % Debugging...
                         %markers.XData = Xn(nodesOnNaked,1,ii); markers.YData = Xn(nodesOnNaked,2,ii);
                         %if any(~VALID)  disp('STOP!'); pause ; end
                 % Updating DOFs, X*a=b
+                    validDOF = [VALID;VALID] ;
                     X = ( ...
-                            weight*Hess*weight...
-                            + beta*CONS...
+                            weight*Hess(validDOF,validDOF)*weight...
+                            + beta*CONS(validDOF,validDOF)...
                         ) ; 
                     b = (...
                             weight*dr_da...
-                            - beta*CONS*[Un(VALID,1,ii);Un(VALID,2,ii)]...
+                            - beta*CONS(validDOF,validDOF)*[Un(VALID,1,ii);Un(VALID,2,ii)]...
                         ) ;
                     a = X\b ;
+                % Residues
+                    %residueImg = norm(Hess(validDOF,validDOF)*a-dr_da) ;
+                    %residueCONS = norm(CONS(validDOF,validDOF)*a+CONS(validDOF,validDOF)*[Un(VALID,1,ii);Un(VALID,2,ii)]) ;
                 % Displacement
                     Un(VALID,1,ii) = Un(VALID,1,ii) + a(1:nVALID) ;
                     Un(VALID,2,ii) = Un(VALID,2,ii) + a(nVALID+(1:sum(VALID))) ;
                 % Positions
                     Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
             % CONVERGENCE CITERIONS
-                % Residues Maps
-                    resid = abs(diffImg) ;
-                    meanSquaredElemResid = sqrt((WEIGHT'*abs(diffImg).^2)) ;
-                    corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
                 % Criterions
                     it = it+1 ;
                     %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
@@ -169,12 +140,16 @@ for ii = dicFrames
                         VALID = VALID & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
                     end
                 % DECORRELATED ELEMENTS
-                    if (outFlag || alwaysValidGeometry)
+                    if minCorrCoeff>0 && (outFlag || alwaysCheckCorrCoeff)
+                        corrCoeff = abs(WEIGHT'*(img1mz(dicDomain).*img2mz)) ;
+                        %mesh.FaceVertexCData = zeros(nElems,1) ;
+                        %mesh.FaceVertexCData(validElems) = corrCoeff(:) ;
+                        %mesh.FaceColor = 'flat' ; caxis(ax(1),[0 1])
+                        %;mesh.FaceAlpha = 1 ; colorbar(ax(1)) ; drawnow ;
                         switch size(localWEIGHT,2) 
                             case nElems % Correlation at the element level
                                 %VALID = VALID & (tri2nod*corrCoeff(:))./sum(tri2nod(:,validElems),2) ;
-                                cullElems = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
-                                validElems(validElems) = validElems(validElems) & ~cullElems ; 
+                                validElems(validElems) = validElems(validElems) & corrCoeff(:)>minCorrCoeff ; 
                             case nNodes % Correlation at the node level
                                 VALID(VALID) = VALID(VALID) & corrCoeff(:)>minCorrCoeff ;
                         end
@@ -192,17 +167,12 @@ for ii = dicFrames
                 % Heavy Plots
                     if plotEachIteration || (outFlag && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (outFlag && toc(lastPlotTime)>1/plotRate)
                         %ttl.String = [num2str(frames(ii)),'(',num2str(it),')'] ;
-                        residues = ... WEIGHT*abs(WEIGHT'*(img1mz.*img2mz)) ... Correlation coeffient
-                                   ... abs(diffImg) ... NR residues
-                                    WEIGHT*sqrt((WEIGHT'*abs(diffImg).^2)) ... Sum of squared NR residues
-                                   ;
-                        imRes.CData = reshape(sparse(dicDomain,1,residues,nI*nJ,1),[nI nJ]) ;
+                        imRes.CData = reshape(sparse(dicDomain,1,abs(diffImg),nI*nJ,1),[nI nJ]) ;
                         mesh.Vertices = Xn(:,:,ii) ;
-                        mesh.Faces = Elems(validElems,:) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ; 
                         lastPlotTime = tic ;
-                        drawnow ;
                     end
+                    drawnow ;
             % Pause execution ?
                 if pauseAtPlot && ~continueBtn.Value
                     while ~stopBtn.Value && ~nextBtn.Value && ~continueBtn.Value
@@ -215,11 +185,6 @@ for ii = dicFrames
                     end
                 end
         end
-        % Modify the reference image if needed
-            if weightCurrentImage>0
-                img1(dicDomain) = img1(dicDomain)*(1-weightCurrentImage) + img2v*weightCurrentImage ;
-                refImageChanged = true ;
-            end
         % Out Criterions
             if stopBtn.Value; break ; end
             if nVALID==0; break ; end

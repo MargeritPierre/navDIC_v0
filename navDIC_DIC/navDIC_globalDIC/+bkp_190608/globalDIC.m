@@ -7,40 +7,33 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 1 ;
+        seedNumber = 4 ;
         frames = '[1:295]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
-        refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
         normToImageClassRange = true ; % Normalize images to their dataclass range
         timeMeanLength = 0 ; % Time averaging of images
         strainCriterion = 'full' ; % strain gradient penalization: 'full' or 'normal'
-        showInit = false ;
+        playVideo = false ;
         codeProfile = false ; % Code timing
 
     % Perform Initialization
         globalDIC_01_LoadFrames ;
         globalDIC_02_0_ProcessSeed ;
-        globalDIC_03_0_StrainCriterion
-        if showInit ; globalDIC_03_1_ShowInitialization ; end
+        globalDIC_03_StrainCriterion
         
 end % END OF INITIALIZATION
     
 %% PERFORM DIC !
 
 % PARAMETERS
+    exportTOnavDIC = true ;
+    reverseReference = false ;
+    strainOnNodes = true ;
     % Displacement guess
         startWithNavDICPositions = true ; % Use a preceding computation as guess
         addPreviousVelocity = true ; % When possible ans no navDIC results available (or not used), add the previous motion as convergence help
-    % Reference Image 
-        weightCurrentImage = 0.3 ; % After convergence, add the current image to the reference image ([0->1])
-    % Image gradient estimation and smoothing
-        kernelModel =   ... 'finiteDiff' ... first order finite difference
-                         'gaussian' ... optimized gaussian
-                        ... 'cos2' ... hamming window
-                        ;
-        sizeImageKernel = 3 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'cubic' ;
     % Image difference criterion
@@ -49,27 +42,22 @@ end % END OF INITIALIZATION
                          'ZM_N_Diff' ... Normalized Zero-mean difference
                          ;
     % Geometry validation criteria
-        cullOutOfFrame = true ; % Cull out of frame points
+        cullOutOfFrame = false ; % Cull out of frame points
         localWEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
         minCorrCoeff = .0 ; % Below this, elements are culled
-        maxMeanElemResidue = .5 ; % Above this, elements are culled
-        alwaysValidGeometry = false ; % Check corr. coeffs at each iteration or only after convergence ?
+        alwaysCheckCorrCoeff = false ; % Check corr. coeffs at each iteration or only after convergence ?
     % Regularization
-        beta = 1*1e2 ; % Strain gradient penalisation coefficient
+        beta = 5*1e4 ; % Strain gradient penalisation coefficient
     % Convergence Criteria
-        maxIt = 200 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-3 ; % Maximum displacement of a node
-    % Displacement Processing
-        exportTOnavDIC = false ;
-        reverseReference = true ;
-        strainOnNodes = false ;
+        maxIt = 100 ; % Maximum number of Newton-Raphson iterations
+        minNorm = 1e-4 ; % Maximum displacement of a node
     % Plotting
         plotRate = 1 ; % Plot Refresh Frequency 
-        plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
+        plotEachIteration = true ; % Plot at every iteration (without necessary pausing, bypass plotRate)
         plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
-        codeProfile = true ;
+        codeProfile = false ;
     
     
 % RUN DIC

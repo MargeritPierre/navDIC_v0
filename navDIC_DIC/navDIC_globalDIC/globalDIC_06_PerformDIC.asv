@@ -151,7 +151,7 @@ for ii = dicFrames
             % CONVERGENCE CITERIONS
                 % Residues Maps
                     resid = abs(diffImg) ;
-                    meanSquaredElemResid = sqrt((WEIGHT'*abs(diffImg).^2)) ;
+                    meanSquaredElemResid = WEIGHT*sqrt((WEIGHT'*abs(diffImg).^2)) ;
                     corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
                 % Criterions
                     it = it+1 ;
@@ -169,12 +169,11 @@ for ii = dicFrames
                         VALID = VALID & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
                     end
                 % DECORRELATED ELEMENTS
-                    if (outFlag || alwaysValidGeometry)
+                    if (minCorrCoeff>0 || maxMeanElemResidue>0) && (outFlag || alwaysValidGeometry)
                         switch size(localWEIGHT,2) 
                             case nElems % Correlation at the element level
                                 %VALID = VALID & (tri2nod*corrCoeff(:))./sum(tri2nod(:,validElems),2) ;
-                                cullElems = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
-                                validElems(validElems) = validElems(validElems) & ~cullElems ; 
+                                validElems(validElems) = validElems(validElems) & corrCoeff(:)>minCorrCoeff ; 
                             case nNodes % Correlation at the node level
                                 VALID(VALID) = VALID(VALID) & corrCoeff(:)>minCorrCoeff ;
                         end
@@ -198,7 +197,6 @@ for ii = dicFrames
                                    ;
                         imRes.CData = reshape(sparse(dicDomain,1,residues,nI*nJ,1),[nI nJ]) ;
                         mesh.Vertices = Xn(:,:,ii) ;
-                        mesh.Faces = Elems(validElems,:) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ; 
                         lastPlotTime = tic ;
                         drawnow ;

@@ -11,14 +11,14 @@
         ax = gobjects(0) ;
         ax(1) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,1) ;
             ax(1).Position = ax(1).Position.*[1 1-infosHeight 1 1-infosHeight] ;
-            im = imagesc(1:nJ,1:nI,Smooth(img0)) ;
+            im = imagesc(1:nJ,1:nI,Func(img0)) ;
             mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,'facecolor','none','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
             set(ax(1),'Clipping','off') ;
         ax(2) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,2) ;
             ax(2).Position = ax(2).Position.*[1 1-infosHeight 1 1-infosHeight] ;
-            imRes = imagesc(1:nJ,1:nI,Smooth(img0)) ; 
+            imRes = imagesc(1:nJ,1:nI,Func(img0)) ; 
             colormap(ax(2),gray)
             %ttl = title('','interpreter','none','units','normalized','color',[1 0 0]*1.0,'position',[0 1],'horizontalalignment','left','verticalalignment','top') ;
         axis(ax,'tight')
@@ -81,10 +81,22 @@
             Un = Xn - Nodes ;
         % Of Pixels
             Up = zeros([nI nJ 2]) ;
-    % Reference Image
-        img1 = Smooth(img0) ;
-        refImageChanged = true ;
-    % Valid geometry masks
+    % Reference ImageGeome
+        img1 = F ;
+        % Image Vector
+            img1v = img1(:) ;
+        % Moments
+            % Integration weights
+                sumWEIGHT = sum(localWEIGHT,1).' ;
+            % Mean over elements
+                meanImg1 = (localWEIGHT'*img1v)./sumWEIGHT(:) ;
+            % Zero-local-mean on pixels
+                img1m = img1v-localWEIGHT*meanImg1(:) ;
+            % Norm over element
+                normImg1 = sqrt(localWEIGHT'*(img1m(:).^2)) ;
+            % Zero-local-mean-normalized images
+                img1mz = img1m(:)./(localWEIGHT*normImg1) ;
+    % Mask
         VALID = true(nNodes,1) ;
         validElems = true(nElems,1) ;
         validEdges = true(nEdges,1) ;

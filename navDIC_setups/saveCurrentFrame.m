@@ -1,4 +1,4 @@
-function hd = saveCurrentSetup(hd,varargin) 
+function hd = saveCurrentFrame(hd,varargin) 
 % When the Working Directory has been set, This function is executed at
 % each frame 
 

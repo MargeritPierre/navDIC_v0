@@ -12,12 +12,12 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 obj = obj@navDICSeed_2D_Surface(hd) ;
                 obj.Class = 'navDICSeed_2D_DistMesh' ;
             % Draw the Shapes defining the region to mesh
-                uiContextMenu = {'h0',num2cell(num2str(round((1.4).^(1:17)')),2),{'29'};...
+                uiContextMenu = {'h0',num2cell(num2str(round((1.4).^([1:17,Inf])')),2),{'29'};...
                     'h',num2cell(num2str(round((1.4).^(1:17)')),2),{'29'};...
                     'l',num2cell(num2str(round((1.4).^(8:23)')),2),{'79'};...
                     } ;
                 obj.drawToolH = drawingTool('drawROI',true ...
-                                            ,'background', obj.refImgs{1} ...
+                                            ,'background',obj.refImgs{1} ...
                                             ,'uicontextmenu',uiContextMenu ...
                                             ,'updateCallback',@(H)navDIC_processShapesForDistMesh(H)...
                                             ) ;
@@ -62,12 +62,29 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             % Enclosing element and barycentric positions
                                 [elmt,weights] = pointLocation(tri,Points) ; 
                             % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
-                                outsideNodes = isnan(elmt) ;
-                                % Assign the nearest old vertex
-                                    indPts(outsideNodes,:) = repmat(nearestNeighbor(tri,Points(outsideNodes,:)),[1 3]) ;
-                                    weights(outsideNodes,:) = 1/3 ;
+                                outside = isnan(elmt) ;
+                                outsidePts = Points(outside,:) ;
+                                if any(outside)
+                                    % Find the closest element
+                                        C = circumcenter(tri) ;
+                                        [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
+                                        elmt(outside) = clstElmt ;
+                                    % Find the (extended) coordinates of the new point in each old closest element frame
+                                        elmtNodes = obj.Triangles(clstElmt,:) ;
+                                        p1 = obj.Points(elmtNodes(:,1),:)' ; 
+                                        p2 = obj.Points(elmtNodes(:,2),:)' ; 
+                                        p3 = obj.Points(elmtNodes(:,3),:)' ; 
+                                        v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
+                                        m = [] ; % coordinates in this frame
+                                        for pp = 1:length(clstElmt)
+                                            m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
+                                        end
+                                    % Assign the weights
+                                        indPts(outside,:) = elmtNodes ;
+                                        weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
+                                end
                             % Inside nodes
-                                indPts(~outsideNodes,:) = obj.Triangles(elmt(~outsideNodes),:) ;
+                                indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
                         % Transfer Matrix
                             nodes = (1:size(Points,1))'*[1 1 1] ;
                             T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(obj.Points,1)) ;
@@ -78,8 +95,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             if size(obj.Strains,1)==size(obj.Points,1) % Strains defined on nodes
                                 Strains = reshape(T*reshape(obj.Strains,size(obj.Points,1),[]),size(Points,1),3,hd.nFrames) ;
                             else % Strains defined on elements
-                                elmt(outsideNodes) = 1 ;
-                                weights(outsideNodes,:) = NaN ;
+                                elmt(outside) = 1 ;
+                                weights(outside,:) = 1 ;
                                 Ts = sparse(1:size(Points,1),elmt,weights(:,1),size(Points,1),size(obj.Triangles,1)) ;
                                 Strains = reshape(Ts*reshape(obj.Strains,size(obj.Triangles,1),[]),size(Points,1),3,hd.nFrames) ;
                             end

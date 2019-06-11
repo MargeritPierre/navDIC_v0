@@ -15,6 +15,9 @@ function navDIC(varargin)
         % Graphical parameters
             infosTxtHeight = 16 ; % Pixels
             frameSliderWidth = .4 ; % relative to toolbar size
+        % Handles Saving Parameters
+            canBeSaved = {'WorkDir','Cameras','DAQInputs'...
+                            ,'TimeLine','Images','InputData','Seeds'} ;
         
     % Process the varargin
         COMMAND = '' ;
@@ -87,8 +90,6 @@ function navDIC(varargin)
                     hd.WorkDir.Path = pwd ;
                     hd.WorkDir.CommonName = 'img' ;
                     hd.WorkDir.ImagesExtension = '.tif' ;
-        % SOURCES
-            hd.Sources = [] ;
         % DEVICES
             % Cameras
                 hd.Cameras = [] ;
@@ -117,73 +118,16 @@ function navDIC(varargin)
         
         
         
-
+        
+        
         
         
 % ===================================================================================================================    
-% UTIL FUNCTIONS
+% INITIALIZATION FUNCTIONS
 % ===================================================================================================================
 
-% FUNCTION EXECUTED BY THE TIMER TO TAKE A SHOT
-    function timerFunction()
-        % Set toolbar in red
-            hd.ToolBar.infosTxt.BackgroundColor = [1 0.3 0.3] ;
-            drawnow ;
-        % MAIN FUNCTION
-            startTime = tic ;
-            disp('----- Timer Fcn -----') ;
-            % Add a frame
-                hd.nFrames = hd.nFrames+1 ;
-                hd.CurrentFrame = hd.nFrames ;
-            % Capture
-                lastTime = toc(startTime) ;
-                disp(' - Get Data') ;
-                % Time
-                    hd.TimeLine(hd.nFrames,:) = clock() ;
-                    t = toc(startTime)-lastTime ;
-                    disp(['      Clock : ' num2str(t*1000,'%.1f'),' ms']) ;
-                    lastTime = toc(startTime) ;
-                % Images
-                    hd = captureCameras(hd) ;
-                    t = toc(startTime)-lastTime ;
-                    disp(['      Cameras : ' num2str(t*1000,'%.1f'),' ms']) ;
-                    lastTime = toc(startTime) ;
-                % Inputs
-                    hd = captureInputs(hd) ;
-                    t = toc(startTime)-lastTime ;
-                    disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
-                    lastTime = toc(startTime) ;
-            % Save Acquired Data
-                hd = saveCurrentSetup(hd) ;
-                t = toc(startTime)-lastTime ;
-                disp([' - Save : ' num2str(t*1000,'%.1f'),' ms']) ;
-                lastTime = toc(startTime) ;
-            % Processing
-                % DIC
-                    hd = updateDIC(hd) ;
-                    t = toc(startTime)-lastTime ;
-                    disp([' - Compute DIC : ' num2str(t*1000,'%.1f'),' ms']) ;
-                    lastTime = toc(startTime) ;
-            % Previews
-                hd = updateAllPreviews(hd) ;
-                t = toc(startTime)-lastTime ;
-                disp([' - Update Previews : ' num2str(t*1000,'%.1f'),' ms']) ;
-                lastTime = toc(startTime) ;
-        % Update Infos
-            %pause(0.005) ;
-            updateToolbar() ;
-            t = toc(startTime)-lastTime ;
-            disp([' - Update Toolbar : ' num2str(t*1000,'%.1f'),' ms']) ;
-            lastTime = toc(startTime) ;
-        % Time
-            disp(['Total Time : ' num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
-            disp('------------------------') ;
-            disp('') ;
-        % Reset toolbar Color
-            hd.ToolBar.infosTxt.BackgroundColor = hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor ;
-    end
-
-% CLEAR DATA IN HANDLES
+  
+% INITIALIZE/CLEAR DATA IN HANDLES
     function initHandleData(confirm)
         % If needed, answer the user to confirm
             if confirm
@@ -206,55 +150,312 @@ function navDIC(varargin)
                 updateToolbar() ; 
                 hd = updateAllPreviews(hd) ;
             end
+    end    
+
+
+% CREATES THE MAIN FIGURE FOR MENU AND TOOLBAR
+    function initToolBar()
+       % Figure creation
+           screenPos = get(groot,'monitorpositions') ;
+           hd.ToolBar.fig = figure('Name','navDIC v0.0',...
+                                    'toolbar','none',...
+                                    'menubar','none',...
+                                    'outerposition',screenPos(end,:),...
+                                    'dockcontrols','off',...
+                                    'NumberTitle','off',...
+                                    'Visible','off',...
+                                    'tag',navDICTag...
+                                    ) ;
+           hd.ToolBar.fig.ButtonDownFcn = @(src,evt)navDICOnTop() ;
+       % Close Callback
+           hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closeAll() ;
+       % Add the main menu
+           addMainMenu() ;
+           updateMainMenu() ;
+       % Put The toolbar at the top of the screen
+           drawnow ; % I don't know why, but i'm forced to draw here...
+           hd.ToolBar.fig.Position(4) = infosTxtHeight ;
+           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) + screenPos(end,2) - hd.ToolBar.fig.OuterPosition(4) ;
+           drawnow ;
+       % Init the Info textbox
+           hd.ToolBar.infosTxt = uicontrol('style','text'...
+                                            ,'fontname','Consolas'...
+                                            ,'string',''...
+                                            ,'units','normalized'...
+                                            ,'position',[0 0 1 1]...
+                                            ,'fontunits','pixels'...
+                                            ,'fontsize',0.8*infosTxtHeight...
+                                            ,'horizontalalignment','left'...
+                                            ) ;
+           hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor = hd.ToolBar.infosTxt.BackgroundColor ;
+       % Init the step Slider
+           hd.ToolBar.frameSlider = uicontrol('style','slider'...
+                                            ,'units','normalized'...
+                                            ,'enable','off'...
+                                            ,'position',[1-frameSliderWidth 0 frameSliderWidth 1]...
+                                            ) ;
+           % Listener for continuous slider
+                addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)sliderFunction());
+        % MAKE THE FIGURE VISIBLE
+            drawnow ;
+       % Add shortcuts buttons
+            addButtons() ;
+            %setMainMenuShortcuts() ;
+            hd.ToolBar.fig.KeyPressFcn = @(src,evt)keyPressed(src,evt) ;
+            drawnow ;
+        % Set the figure handle invisible
+            hd.ToolBar.fig.Visible = 'on' ;
+            hd.ToolBar.fig.HandleVisibility = 'off' ;
     end
 
-% UPDATE INFOS TEXT
-    function updateToolbar()
-        % Is There any inputs ?
-            nIn = 0 ; if ~isempty(hd.DAQInputs) ; nIn = length(hd.DAQInputs.Inputs) ; end
-        % Infos String
-            strInfos = [] ;
-            strInfos = [strInfos,' ',num2str(length(hd.Cameras)),' Cameras'] ;
-            strInfos = [strInfos,' | ',num2str(nIn),' DAQ.Inputs'] ;
-            strInfos = [strInfos,' | ',num2str(length(hd.Seeds)),' DIC.Seeds'] ;
-            strInfos = [strInfos,' | ',num2str(length(hd.Previews)),' Previews'] ;
-            strInfos = [strInfos,' | Frame ',num2str(hd.CurrentFrame),'/',num2str(hd.nFrames)] ;
-            hd.ToolBar.infosTxt.String = strInfos ;
-        % Frame Slider
-            minVal = min(1,hd.nFrames) ;
-            maxVal = max(hd.nFrames,1) ;
-            hd.ToolBar.frameSlider.Min = minVal ;
-            hd.ToolBar.frameSlider.Max = maxVal ;
-            hd.ToolBar.frameSlider.Value = min([max(minVal,hd.CurrentFrame),maxVal,hd.nFrames]) ;
-            minSliderStep = 1/max(2,hd.nFrames) ;
-            maxSliderStep = max(minSliderStep,1/10) ;
-            hd.ToolBar.frameSlider.SliderStep = [minSliderStep maxSliderStep] ;
-            % Enable or not
-                if hd.nFrames>1 %&& strcmp(hd.TIMER.Running,'off') 
-                    hd.ToolBar.frameSlider.Enable = 'on' ;
-                else
-                    hd.ToolBar.frameSlider.Enable = 'off' ;
-                end
-        % Menus
-            updateMainMenu()
+
+% BUILD THE MAIN MENU
+    function addMainMenu()
+        
+        % NAVDIC ----------------------------------------------------------
+           hd.ToolBar.MainMenu.navDIC = uimenu(hd.ToolBar.fig...
+                                                ,'Label',navDICTag ...
+                                                ) ;
+           % Open a setup
+                hd.ToolBar.MainMenu.openSetup = uimenu(hd.ToolBar.MainMenu.navDIC, ...
+                                                        'Label','Open a Setup', ...
+                                                        'callback',@(src,evt)openSetup) ;
+           % Set working dir
+                hd.ToolBar.MainMenu.setDir = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Set the Working Directory', ...
+                                                        'callback',@(src,evt)setPath('menu')) ;
+           % DATA IMPORT
+                hd.ToolBar.MainMenu.import = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Import', ...
+                                                        'Enable','on', ...
+                                                        'Separator','on') ;
+                    hd.ToolBar.MainMenu.importFrames = uimenu(hd.ToolBar.MainMenu.import,...
+                                                            'Label','Frames', ...
+                                                            'Enable','on') ;
+                        hd.ToolBar.MainMenu.importImagesFolder = uimenu(hd.ToolBar.MainMenu.importFrames,...
+                                                                'Label','Image Folder', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('ImageFolder')) ;
+                        hd.ToolBar.MainMenu.importVideoFrames = uimenu(hd.ToolBar.MainMenu.importFrames,...
+                                                                'Label','Video', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('Video')) ;
+                    hd.ToolBar.MainMenu.importData = uimenu(hd.ToolBar.MainMenu.import,...
+                                                            'Label','Data', ...
+                                                            'Enable','on') ;
+                        hd.ToolBar.MainMenu.importMatFile = uimenu(hd.ToolBar.MainMenu.importData,...
+                                                                'Label','MAT File', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('MATFile')) ;
+                        hd.ToolBar.MainMenu.importCSV = uimenu(hd.ToolBar.MainMenu.importData,...
+                                                                'Label','CSV File', ...
+                                                                'Enable','on', ...
+                                                                'callback',@(src,evt)import('CSVFile')) ;
+           % DATA EXPORT
+                hd.ToolBar.MainMenu.export = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Export', ...
+                                                        'Enable','on', ...
+                                                        'Separator','off') ;
+                    hd.ToolBar.MainMenu.exportImages = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Images', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Images')) ;
+                    hd.ToolBar.MainMenu.exportAnimation = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Animation', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Animation')) ;
+                    hd.ToolBar.MainMenu.exportData = uimenu(hd.ToolBar.MainMenu.export,...
+                                                            'Label','Data', ...
+                                                            'Enable','on',...
+                                                            'callback',@(src,evt)export('Data')) ;
+           % SAVE SETUP
+                hd.ToolBar.MainMenu.saveSetup = uimenu(hd.ToolBar.MainMenu.navDIC,...
+                                                        'Label','Save the Setup', ...
+                                                        'Enable','on', ...
+                                                        'Separator','on',...
+                                                        'callback',@(src,evt)saveSetup()) ;
+        
+        % REAL-TIME ACQUISITION ----------------------------------------------------------
+           hd.ToolBar.MainMenu.realTime = uimenu(hd.ToolBar.fig...
+                                                ,'Label','Real-Time' ...
+                                                ) ;
+           % CAMERA CONNECTIONS
+                hd.ToolBar.MainMenu.manageCameras = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Manage Cameras', ...
+                                                        'Separator','off', ...
+                                                        'callback',@(src,evt)manageCameras) ;
+           % DATA ACQUISITION INPUTS
+                hd.ToolBar.MainMenu.manageInputs = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Manage Inputs', ...
+                                                        'callback',@(src,evt)manageInputs) ;
+           % SAVING
+                hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Saving', ...
+                                                        'Enable','off', ...
+                                                        'Checked','on', ...
+                                                        'Separator','on') ;
+                    hd.ToolBar.MainMenu.saveImages = uimenu(hd.ToolBar.MainMenu.saving,...
+                                                            'Label','Images', ...
+                                                            'Enable','off', ...
+                                                            'Checked','on', ...
+                                                            'callback',@(src,evt)setSaving(src)) ;
+                    hd.ToolBar.MainMenu.saveInputs = uimenu(hd.ToolBar.MainMenu.saving,...
+                                                            'Label','Input Data', ...
+                                                            'Enable','off', ...
+                                                            'Checked','on', ...
+                                                            'callback',@(src,evt)setSaving(src)) ;
+                    hd.ToolBar.MainMenu.saveSeeds = uimenu(hd.ToolBar.MainMenu.saving,...
+                                                            'Label','Seed Data', ...
+                                                            'Enable','off', ...
+                                                            'Checked','on', ...
+                                                            'callback',@(src,evt)setSaving(src)) ;
+           % Save All Data
+                hd.ToolBar.MainMenu.saveSetupData = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Save all Acquired Data', ...
+                                                        'Enable','off', ...
+                                                        'callback',@(src,evt)saveSetupData()) ;
+                                                    
+           % Frame Rate
+                hd.ToolBar.MainMenu.frameRate = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Frame Rate', ...
+                                                        ...'Enable','off', ...
+                                                        'Separator','on', ...
+                                                        'callback',@(src,evt)setFrameRate) ;
+                
+           % Start and Stop navDIC
+                hd.ToolBar.MainMenu.startStop = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','START', ...
+                                                        ...'Enable','off', ...
+                                                        'Separator','on', ...
+                                                        'callback',@(src,evt)startContinuous) ;
+                
+           % Snapshot
+                hd.ToolBar.MainMenu.singleShot = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Take a Snapshot', ...
+                                                        ...'Enable','off', ...
+                                                        'callback',@(src,evt)singleShot) ;
+                
+           % RESET FRAMES
+                hd.ToolBar.MainMenu.reset = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','RESET', ...
+                                                        'Separator','on', ...
+                                                        'callback',@(src,evt)initHandleData(true)) ;
+                
+        % DIC -------------------------------------------------
+           hd.ToolBar.MainMenu.DIC = uimenu(hd.ToolBar.fig,'Label','DIC','Enable','off') ;
+           % Manage DIC Seeds
+                hd.ToolBar.MainMenu.manageDICZones = uimenu(hd.ToolBar.MainMenu.DIC,...
+                                                        'Label','Manage DIC Seeds', ...
+                                                        'callback',@(src,evt)manageDICZones) ;
+           % Compute DIC
+                hd.ToolBar.MainMenu.computeDIC = uimenu(hd.ToolBar.MainMenu.DIC,...
+                                                        'Label','Compute DIC'...
+                                                        ...,'Enable','off'...
+                                                        ,'Separator','on'...
+                                                        ) ;
+               % Only Non-Computed Zones
+                    hd.ToolBar.MainMenu.computeSomeDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...
+                                                            'Label','Non-Computed Zones Only', ...
+                                                            'callback',@(src,evt)computeDIC) ;
+               % All Zones
+                    hd.ToolBar.MainMenu.computeAllDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...
+                                                            'Label','All Zones', ...
+                                                            'callback',@(src,evt)computeAllDIC) ;
+                
+        % VIEWS -------------------------------------------------
+           hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
+           % Preview a Camera
+                hd.ToolBar.MainMenu.camPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Image Preview', ...
+                                                        ...'Enable','off', ...
+                                                        'callback',@(src,evt)camPreview) ;
+           % Preview an Input
+                hd.ToolBar.MainMenu.inputPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Input Preview', ...
+                                                        ...'Enable','off', ...
+                                                        'callback',@(src,evt)inputPreview) ;
+           % Preview a DIC Seed
+                hd.ToolBar.MainMenu.seedPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Seed Preview', ...
+                                                        'callback',@(src,evt)previewSeed()) ;
+           % Plot Preview
+                hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Plot', ...
+                                                        'Separator','on', ...
+                                                        'callback',@(src,evt)plotPreview) ;
+           % Slicing tool
+                hd.ToolBar.MainMenu.sliceTool = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Images Slicing', ...
+                                                        'callback',@(src,evt)sliceTool) ;
+           % Auto Layout
+                hd.ToolBar.MainMenu.autoLayout = uimenu(hd.ToolBar.MainMenu.views,...
+                                                        'Label','Auto Layout', ...
+                                                        ...'Enable','off', ...
+                                                        'Separator','on', ...
+                                                        'callback',@(src,evt)autoLayout) ;
+                
+        % HELP -------------------------------------------------
+           hd.ToolBar.MainMenu.help = uimenu(hd.ToolBar.fig,'Label','?');%,'Enable','off') ;
+           % Manage Axes
+                hd.ToolBar.MainMenu.about = uimenu(hd.ToolBar.MainMenu.help,...
+                                                        'Label','About', ...
+                                                        'callback',@(src,evt){}) ;
+           % DebugMode
+                hd.ToolBar.MainMenu.debugMode = uimenu(hd.ToolBar.MainMenu.help,...
+                                                        'Label','Debug', ...
+                                                        ...'Enable','on', ...
+                                                        'callback',@(src,evt)debugMode) ;
+                                                     
     end
 
-% CHANGE THE FRAME FOR PREVIEW
-    function changeFrame()
-        hd.ToolBar.frameSlider.Value = round(hd.ToolBar.frameSlider.Value) ;
-        if hd.CurrentFrame==hd.ToolBar.frameSlider.Value ; return ; end
-        hd.CurrentFrame = hd.ToolBar.frameSlider.Value ;
-        hd = updateAllPreviews(hd) ;
-        updateToolbar() ;
+
+% SET THE MAIN TOOLBAR SHORTCUTS
+    function setMainMenuShortcuts()
+        % Define Shortcuts
+            shortcuts = {'Open a Setup','shift O'; ...
+                         'Set the Working Directory','shift S'; ...
+                         'START','shift ENTER'; ...
+                         'Take a Snapshot','shift SPACE'; ...
+                         'Load From Video','shift V'; ...
+                         'Frame Rate','shift F'; ...
+                         'Preview a Camera','shift C'; ...
+                         'Preview an Input','shift I'; ...
+                         'Preview a Seed','shift D'; ...
+                         'Plot Preview','shift P'; ...
+                         } ;
+        % Get Menus Handles
+            hMenus = findobj(hd.ToolBar.fig,'type','uimenu') ; 
+            menuLabels = {hMenus.Label} ;
+        % Set "accelerators" (or shortcuts)
+            for s = 1:size(shortcuts,1)
+                idHandle = ismember(menuLabels,{shortcuts{s,1}}) ;
+                if any(idHandle)
+                    for it = 1:5 % Try multiple times to find the java object
+                    jHandle = findjobj(hMenus(idHandle)) ;
+                        if ~isempty(jHandle)
+                            jAccelerator = javax.swing.KeyStroke.getKeyStroke(shortcuts{s,2}) ;
+                            jHandle.setAccelerator(jAccelerator) ;
+                            continue
+                        end
+                    end
+               end
+            end
     end
 
-% SWITCH IN DEBUG MODE
-    function debugMode()
-        hd.debug = true ;
-        % Enable all Menus
-            set(findobj(hd.ToolBar.fig,'type','uimenu'),'enable','on') ;
+
+% ADDS BUTTONS TOOLBAR
+    function addButtons()
     end
 
+
+
+
+
+% ===================================================================================================================    
+% CONFIGURATION/IMPORT/EXPORT FUNCTIONS
+% ===================================================================================================================
+  
+ 
 % SET THE WORKING DIRECTORY
     function setPath(src,varargin)
         % Open a dialog box if needed
@@ -276,41 +477,113 @@ function navDIC(varargin)
 
 % OPEN A SETUP
     function openSetup
-        % Select the folder of an existing setup
-            [path] = uigetdir('SELECT THE DIRECTORY OF A SAVED SETUP') ;
+%         % Select the folder of an existing setup
+%             [path] = uigetdir('SELECT THE DIRECTORY OF A SAVED SETUP') ;
+%             if path==0 ; return ; end
+%         % Load the setup
+%             [setup,hd] = loadSetup(hd,path) ;
+%         % Set the WorkDir
+%             setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
+        % Select the file to load
+            [file,path] = uigetfile('.mat','Select the navDIC Setup File to Load',hd.WorkDir.Path) ;
             if path==0 ; return ; end
-        % Load the setup
-            [setup,hd] = loadSetup(hd,path) ;
-        % Set the WorkDir
-            setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
+            filename = [path,file] ;
+        % Load the file as a temporary structure
+            newHD = load(filename) ;
+            if isfield(newHD,'hd') ; newHD = newHD.hd ; end % old versions
+        % Add/Replace the loaded fields to the current handles
+            fieldsToLoad = fieldnames(newHD).' ;
+            fieldsToLoad = intersect(canBeSaved,fieldsToLoad) ;
+            for f = 1:length(fieldsToLoad)
+                field = fieldsToLoad{f} ;
+                hd.(field) = newHD.(field) ;
+            end
+        % If cameras are here but no Images, offer to load them
+            for camID = 1:length(hd.Cameras)
+                if ~isfield(newHD,'Images') ... No images where available at all
+                    || length(hd.Images)<camID ... the list of was too short
+                    || isempty(hd.Images{camID}) % the list contained no images for this camera
+                    cam = hd.Cameras(camID) ;
+                    msg = {['Camera: ',cam.Name ...
+                            ,' | State: ',cam.CurrentState ...
+                            ,' | Resolution: ',num2str(cam.VidObj.ROIPosition(3)),' x ' num2str(cam.VidObj.ROIPosition(4))...
+                            ],'NO corresponding Images has been loaded, choose the Image Source.'} ;
+                    answer = questdlg(msg,'Image Source','Image Folder','Video','Skip','Skip') ;
+                    switch answer
+                        case 'Image Folder'
+                            [~,hd] = loadFrames(hd,'ImageFolder',camID) ;
+                        case 'Video'
+                            [~,hd] = loadFrames(hd,'Video',camID) ;
+                    end
+                end
+            end
+        % Update the handles
+            if numel(hd.Images)==0
+                hd.nFrames = 0 ;
+                hd.currentFrame = 0 ;
+            else
+                hd.nFrames = size(hd.Images{end},4) ;
+                hd.currentFrame = 1 ;
+            end
+        % Update the navDIC Interface
+            updateMainMenu() ;
+            updateToolbar() ;
+        % Display infos
+            disp(newline) ; disp('NEW SETUP HANDLES : ') ; display(hd) ;
+    end
+
+
+% IMPORT GENERAL DATA
+    function import(dataType)
+        % Depending on the data type...
+            switch dataType
+                case 'ImageFolder'
+                    [valid,hd] = loadFrames(hd,dataType,length(hd.Cameras)+1) ;
+                case 'Video'
+                    [valid,hd] = loadFrames(hd,dataType,length(hd.Cameras)+1) ;
+                case 'MATFile'
+                    [valid,hd] = loadData(hd,dataType) ;
+                case 'CSVFile'
+                    [valid,hd] = loadData(hd,dataType) ;
+            end
+            if ~valid ; return ; end
         % Update handles and displays it
-            clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
+            clc ; disp('CURRENT navDIC HANDLES : ') ; display(hd) ;
         % Update the navDIC Interface
             updateMainMenu() ;
             updateToolbar() ;
     end
 
-% OPEN A SETUP FROM A VIDEO
-    function loadFromVideo
-        % Select the video File
-            [file,path] = uigetfile('*','SELECT THE VIDEO FILE TO IMPORT') ;
-            if path==0 ; return ; end
-        % Load the setup
-            [setup,hd] = loadVideoFrames(hd,[path file]) ;
-            if ~setup.Valid ; return ; end
-        % Set the WorkDir
-            setPath('open',setup.Path,setup.CommonName,setup.ImagesExtension) ;
-        % Update handles and displays it
-            clc ; disp('CURRENT SETUP HANDLES : ') ; display(hd) ;
-        % Update the navDIC Interface
-            updateMainMenu() ;
-            updateToolbar() ;
-    end
 
-% SAVE THE SETUP DATA
-    function saveSetupData()
-        hd = saveAllSetupData(hd) ;
-    end
+% EXPORT GENERAL DATA
+    function export(dataType)
+        % Depending on the data type...
+            switch dataType
+                case 'Images'
+                    % Let the user choose a camera
+                        [valid,camID] = selectCameras(hd,'single') ;
+                        if ~valid ; return ; end
+                    % Let the user choose an image file name
+                        [file,path] = uiputfile('*',...
+                                        'SELECT THE COMMON IMAGE PATH', ... 
+                                        [hd.WorkDir.Path,hd.Cameras(camID).Name,'/img',hd.WorkDir.ImagesExtension] ...
+                                        ) ;
+                        if path==0 ; return ; end
+                        [path,commonName,ext] = fileparts([path,file]) ;
+                    % Save All Images
+                        wtbr = waitbar(0,'Writing Images...') ;
+                        for fr = 1:hd.nFrames
+                            filename = [path,'/',commonName,'_',num2str(fr),ext] ;
+                            imwrite(hd.Images{camID}(:,:,:,fr),filename) ;
+                            wtbr = waitbar(fr/hd.nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
+                        end
+                        delete(wtbr) ;
+                case 'Animation'
+                    makeAnimation()
+                case 'Data'
+            end
+    end      
+
 
 % MAKE AN ANIMATION FROM PREVIEW(S)
     function makeAnimation()
@@ -358,560 +631,67 @@ function navDIC(varargin)
     end
 
 
-% IMPORT GENERAL DATA
-    function import(dataType)
-        % Depending on the data type...
-            switch dataType
-                case 'ImageFolder'
-                    [valid,hd] = loadFrames(hd,dataType) ;
-                case 'Video'
-                    [valid,hd] = loadFrames(hd,dataType) ;
-                case 'MATFile'
-                    [valid,hd] = loadData(hd,dataType) ;
-                case 'CSVFile'
-                    [valid,hd] = loadData(hd,dataType) ;
+% SAVE THE SETUP
+    function saveSetup()
+        % Get the path and file 
+            defName = [hd.WorkDir.Path,'/navDIC_HD.mat'] ;
+            [file,path] = uiputfile('.mat','Save the navDIC Setup in a File',defName) ;
+            if path==0 ; return ; end
+            filename = [path,file] ;
+        % Initialize the fields to be saved
+            fields = canBeSaved ;
+        % Estimate the size of the handles and ask to save images
+            if ~isempty(hd.Images)
+                bytes = getfield(whos('hd'),'bytes') ;
+                answer = questdlg(...
+                    {'Do you want to include the Images ?',['Estimated Size: ',num2str(round(bytes/1e6)),' MB']}...
+                    ,'Saving the Setup...','Yes','No','Cancel','No') ;
+                if answer==0 ; return ; end
+                if strcmp(answer,'Cancel') ; return ; end
+                if strcmp(answer,'No') ; fields(ismember(fields,'Images')) = [] ; end
             end
-            if ~valid ; return ; end
-        % Update handles and displays it
-            clc ; disp('CURRENT navDIC HANDLES : ') ; display(hd) ;
-        % Update the navDIC Interface
-            updateMainMenu() ;
-            updateToolbar() ;
+        % Saving
+            save(filename,'-struct','hd',fields{:}) ;
     end
+        
 
-
-% EXPORT GENERAL DATA
-    function export(dataType)
-        % Depending on the data type...
-            switch dataType
-                case 'Images'
-                    % Let the user choose a camera
-                        [valid,camID] = selectCameras(hd,'single') ;
-                        if ~valid ; return ; end
-                    % Let the user choose an image file name
-                        [file,path] = uiputfile('*',...
-                                        'SELECT THE COMMON IMAGE PATH', ... 
-                                        [hd.WorkDir.Path,hd.Cameras(camID).Name,'/img',hd.WorkDir.ImagesExtension] ...
-                                        ) ;
-                        if path==0 ; return ; end
-                        [path,commonName,ext] = fileparts([path,file]) ;
-                    % Save All Images
-                        wtbr = waitbar(0,'Writing Images...') ;
-                        for fr = 1:hd.nFrames
-                            filename = [path,'/',commonName,'_',num2str(fr),ext] ;
-                            imwrite(hd.Images{camID}(:,:,:,fr),filename) ;
-                            wtbr = waitbar(fr/hd.nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
-                        end
-                        delete(wtbr) ;
-                case 'Animation'
-                case 'Data'
-            end
-    end
-
-
-% START CONTINUOUS SETUP
-    function startContinuous()
-        hd.ToolBar.frameSlider.Enable = 'off' ;
-        hd.ToolBar.MainMenu.startStop.Label = 'STOP' ;
-        hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)stopContinuous ;
-        start(hd.TIMER) ;
-    end
-
-% STOP CONTINUOUS SETUP
-    function stopContinuous() 
-        if strcmp(hd.TIMER.Running,'on')
-            stop(hd.TIMER) ;
-            while strcmp(hd.TIMER.Running,'on') ; end
-        end  
-        hd.ToolBar.MainMenu.startStop.Label = 'START' ;
-        hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)startContinuous ;
-    end
-
-% TAKE A SINGLE SHOT AND PROCESS
-    function singleShot()
-        if strcmp(hd.TIMER.Running,'on') ; return ; end
-        timerFunction() ;     
-    end
-
-
-% SET THE CAMERAS
-    function manageCameras
-        % Stop all cameras
-            hd = stopAllCameras(hd) ;
-        % Open the manageMultiCameras Tool
-            [hd.Cameras,camsHasChanged] = manageMultiCameras(hd.Cameras) ;
-        % Re-start all cameras
-            hd = startAllCameras(hd) ;
-        % If nothing changed...
-            if ~camsHasChanged ; return ; end
-        % Ask to clear the data
-            initHandleData(true) ;
-        % Update Infos
-            updateToolbar() ;
-    end
-
-% PREVIEW A CAMERA
-    function camPreview
-        prev = navDICCameraPreview(hd) ;
-        if prev.isValid
-            hd.Previews{end+1} = prev ;
-        end
-    end
-
-% SET THE EXTERNAL INPUTS
-    function manageInputs
-        % Open the manageDAQInputs Tool
-            [hd.DAQInputs,inputsHasChanged] = manageDAQInputs(hd.DAQInputs) ;
-            if ~inputsHasChanged ; return ; end
-        % Ask to clear the data
-            initHandleData(true) ;
-        % Update Infos
-            updateToolbar() ;
-    end
-
-% SET THE EXTERNAL INPUTS
-    function inputPreview
-    end
-
-% SET THE FRAME RATE
-    function setFrameRate()
-        frameRate = evalMaxFrameRate() ;
-        if isempty(frameRate)
-            frameRate = inputdlg('Set the Frame Rate (Hz)','navDIC Frame Rate',1,{num2str(hd.FrameRate)}) ;
-            if isempty(frameRate) ; return ; end
-            frameRate = str2num(frameRate{1}) ;
-            if frameRate>maximumFrameRate 
-                errordlg(['Maximum Frame Rate is ',num2str(maximumFrameRate),' Hz']) ;
-                return ;
-            end
-        end
-        hd.FrameRate = frameRate ;
-        hd.TIMER.Period = round(1/frameRate*1000)/1000 ; % millisecond precision
-    end
-
-% EVALUATE THE MAXIMUM FRAME RATE
-    function avisedFR = evalMaxFrameRate()
-        % Evaluate the maximumFrameRate by iterating the global timerFunction
-            evalTime = 3 ; % seconds
-        % Backup the config
-            hd_Bkp = hd ;
-        % Stop the timer
-            stopContinuous() ;
-        % Execute it while it last less than evalTime
-            startTime = tic ;
-            maxItTime = 0 ;
-            it = 0 ;
-            while toc(startTime)<evalTime
-                t = tic ;
-                timerFunction() ;
-                it = it+1 ;
-                maxItTime = max(maxItTime,toc(t)) ;
-            end
-        % Evaluate the maxFrameRate
-            maxFR = 1/maxItTime ; % maxFR = it/toc(startTime) ;
-            avisedFR = min(0.8*maxFR,maximumFrameRate) ;
-        % Reset all data OK
-            hd = hd_Bkp ;
-        % Update toolbar and previews ;
-            updateToolbar() ;
-            hd = updateAllPreviews(hd) ;
-        % Prompt the maxFrameRate
-            answer = questdlg({['The Maximum Frame Rate is ',num2str(maxFR,'%.2f'),' Hz'],...
-                                ['Set the Frame Rate to ',num2str(avisedFR,'%.2f'),' Hz ?']},'Evaluated Frame rate','Yes','No','No') ;
-            if strcmp(answer,'No')
-                avisedFR = [] ;
-            end
-            
-    end
-
-% SET THE FRAME RATE
-    function setSaving(src)
-        switch src.Checked
-            case 'off' % The user wants to activate
-                switch src.Label
-                    case 'Images'
-                        if isempty(hd.Cameras) ; warning('No image will be saved until a camera is added') ; end
-                    case 'Input Data'
-                        if isempty(hd.DAQInputs) || isempty(hd.DAQInputs.Inputs) ; warning('No data will be saved until a DAQ input is added') ; end
-                    case 'Seed Data'
-                        if isempty(hd.Seeds) ; warning('No data will be saved until a seed is added') ; end
-                end
-                src.Checked = 'on' ;
-            case 'on' % The user wants to desactivate
-                src.Checked = 'off' ;
-        end
-    end
-
-% MANAGE DIC ZONES
-    function manageDICZones
-        hd = manageDICSeeds(hd) ;
-        % Update Infos
-            updateToolbar() ;
-    end
-
-% PREVIEW AN INDIVIDUAL DIC SEED
-    function previewSeed()
-        if isempty(hd.Seeds) ; return ; end
-        prev = navDIC2DSeedPreview(hd) ;
-        if prev.isValid
-            hd.Previews{end+1} = prev ;
-        end
-    end
-
-% COMPUTE NON-COMPUTED DIC ZONES
-    function computeDIC
-        disp('computeDIC')
-    end
-
-% COMPUTE ALL DIC ZONES
-    function computeAllDIC
-        disp('computeAllDIC')
-        for fr = 1:hd.nFrames
-            hd.CurrentFrame = fr ;
-            hd = updateDIC(hd) ;
-            hd = updateAllPreviews(hd) ;
-            updateToolbar() ;
-            drawnow ;
-        end
-    end
-
-% ADD A PLOT PREVIEW
-    function plotPreview()
-        hd.Previews{end+1} = navDICPlotPreview(hd) ;
-    end
-
-% ADD A PLOT PREVIEW
-    function sliceTool()
-        hd.Previews{end+1} = navDICSlicingTool(hd) ;
-    end
-
-% MANAGE AXES
-    function manageViews
-    end
-
-% AUTO LAYOUT
-    function autoLayout
-    end
-
-
-
+        
         
 % ===================================================================================================================    
-% GRAPHICAL FUNCTIONS
+% UPDATING FUNCTIONS
 % ===================================================================================================================
 
-% BRING ALL NAVDIC FIGURES TO FRONT
-    function navDICOnTop()
-        disp('tofront') ;
-        navDICFigs = findobj(groot,'tag',navDICTag) ;
-        if ~isempty(navDICFigs)
-            for f = 1:length(navDICFigs)
-                figure(navDICFigs(f)) ;
-            end
-        end
-    end
-
-% CREATES THE MAIN FIGURE FOR MENU AND TOOLBAR
-    function initToolBar()
-       % Figure creation
-           screenPos = get(groot,'monitorpositions') ;
-           hd.ToolBar.fig = figure('Name','navDIC v0.0',...
-                                    'toolbar','none',...
-                                    'menubar','none',...
-                                    'outerposition',screenPos(end,:),...
-                                    'dockcontrols','off',...
-                                    'NumberTitle','off',...
-                                    'Visible','off',...
-                                    'tag',navDICTag...
-                                    ) ;
-           hd.ToolBar.fig.ButtonDownFcn = @(src,evt)navDICOnTop() ;
-       % Close Callback
-           hd.ToolBar.fig.CloseRequestFcn = @(src,evt)closeAll() ;
-       % Add the main menu
-           addMainMenu() ;
-           updateMainMenu() ;
-       % Put The toolbar at the top of the screen
-           drawnow ; % I don't know why, but i'm forced to draw here...
-           hd.ToolBar.fig.Position(4) = infosTxtHeight ;
-           hd.ToolBar.fig.OuterPosition(2) = screenPos(end,4) + screenPos(end,2) - hd.ToolBar.fig.OuterPosition(4) ;
-           drawnow ;
-       % Init the Info textbox
-           hd.ToolBar.infosTxt = uicontrol('style','text'...
-                                            ,'fontname','Consolas'...
-                                            ,'string',''...
-                                            ,'units','normalized'...
-                                            ,'position',[0 0 1 1]...
-                                            ,'fontunits','pixels'...
-                                            ,'fontsize',0.8*infosTxtHeight...
-                                            ,'horizontalalignment','left'...
-                                            ) ;
-           hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor = hd.ToolBar.infosTxt.BackgroundColor ;
-       % Init the step Slider
-           hd.ToolBar.frameSlider = uicontrol('style','slider'...
-                                            ,'units','normalized'...
-                                            ,'enable','off'...
-                                            ,'position',[1-frameSliderWidth 0 frameSliderWidth 1]...
-                                            ) ;
-           % Listener for continuous slider
-                addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)changeFrame());
-        % MAKE THE FIGURE VISIBLE
-            drawnow ;
-       % Add shortcuts buttons
-            addButtons() ;
-            %setMainMenuShortcuts() ;
-            hd.ToolBar.fig.KeyPressFcn = @(src,evt)keyPressed(src,evt) ;
-            drawnow ;
-        % Set the figure handle invisible
-            hd.ToolBar.fig.Visible = 'on' ;
-            hd.ToolBar.fig.HandleVisibility = 'off' ;
-    end
 
 
-% BUILD THE MAIN MENU
-    function addMainMenu()
-        
-        % NAVDIC ----------------------------------------------------------
-           hd.ToolBar.MainMenu.navDIC = uimenu(hd.ToolBar.fig...
-                                                ,'Label',navDICTag ...
-                                                ) ;
-           % Set working dir
-                hd.ToolBar.MainMenu.setDir = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Set the Working Directory', ...
-                                                        'callback',@(src,evt)setPath('menu')) ;
-           % Open a setup
-                hd.ToolBar.MainMenu.openSetup = uimenu(hd.ToolBar.MainMenu.navDIC, ...
-                                                        'Label','Open a Setup', ...
-                                                        'callback',@(src,evt)openSetup) ;
-           % Load From a Video
-                hd.ToolBar.MainMenu.loadFromVideo = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Load From Video', ...
-                                                        'callback',@(src,evt)loadFromVideo, ...
-                                                        'Separator','off') ;
-           % DATA IMPORT
-                hd.ToolBar.MainMenu.import = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Import', ...
-                                                        'Enable','on', ...
-                                                        'Separator','on') ;
-                    hd.ToolBar.MainMenu.importFrames = uimenu(hd.ToolBar.MainMenu.import,...
-                                                            'Label','Frames', ...
-                                                            'Enable','on') ;
-                        hd.ToolBar.MainMenu.importImagesFolder = uimenu(hd.ToolBar.MainMenu.importFrames,...
-                                                                'Label','Image Folder', ...
-                                                                'Enable','on', ...
-                                                                'callback',@(src,evt)import('ImageFolder')) ;
-                        hd.ToolBar.MainMenu.importVideoFrames = uimenu(hd.ToolBar.MainMenu.importFrames,...
-                                                                'Label','Video', ...
-                                                                'Enable','on', ...
-                                                                'callback',@(src,evt)import('Video')) ;
-                    hd.ToolBar.MainMenu.importData = uimenu(hd.ToolBar.MainMenu.import,...
-                                                            'Label','Data', ...
-                                                            'Enable','on') ;
-                        hd.ToolBar.MainMenu.importMatFile = uimenu(hd.ToolBar.MainMenu.importData,...
-                                                                'Label','MAT File', ...
-                                                                'Enable','on', ...
-                                                                'callback',@(src,evt)import('MATFile')) ;
-                        hd.ToolBar.MainMenu.importCSV = uimenu(hd.ToolBar.MainMenu.importData,...
-                                                                'Label','CSV File', ...
-                                                                'Enable','on', ...
-                                                                'callback',@(src,evt)import('CSVFile')) ;
-           % DATA EXPORT
-                hd.ToolBar.MainMenu.export = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Export', ...
-                                                        'Enable','on', ...
-                                                        'Separator','off') ;
-                    hd.ToolBar.MainMenu.exportImages = uimenu(hd.ToolBar.MainMenu.export,...
-                                                            'Label','Images', ...
-                                                            'Enable','on',...
-                                                            'callback',@(src,evt)export('Images')) ;
-                    hd.ToolBar.MainMenu.exportAnimation = uimenu(hd.ToolBar.MainMenu.export,...
-                                                            'Label','Animation', ...
-                                                            'Enable','on',...
-                                                            'callback',@(src,evt)export('Animation')) ;
-                    hd.ToolBar.MainMenu.exportData = uimenu(hd.ToolBar.MainMenu.export,...
-                                                            'Label','Data', ...
-                                                            'Enable','on',...
-                                                            'callback',@(src,evt)export('Data')) ;
-           % SAVING
-                hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Saving', ...
-                                                        'Enable','off', ...
-                                                        'Checked','on', ...
-                                                        'Separator','on') ;
-                    hd.ToolBar.MainMenu.saveImages = uimenu(hd.ToolBar.MainMenu.saving,...
-                                                            'Label','Images', ...
-                                                            'Enable','off', ...
-                                                            'Checked','on', ...
-                                                            'callback',@(src,evt)setSaving(src)) ;
-                    hd.ToolBar.MainMenu.saveInputs = uimenu(hd.ToolBar.MainMenu.saving,...
-                                                            'Label','Input Data', ...
-                                                            'Enable','off', ...
-                                                            'Checked','on', ...
-                                                            'callback',@(src,evt)setSaving(src)) ;
-                    hd.ToolBar.MainMenu.saveSeeds = uimenu(hd.ToolBar.MainMenu.saving,...
-                                                            'Label','Seed Data', ...
-                                                            'Enable','off', ...
-                                                            'Checked','on', ...
-                                                            'callback',@(src,evt)setSaving(src)) ;
-           % Save All Data
-                hd.ToolBar.MainMenu.saveSetupData = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Save all Acquired Data', ...
-                                                        'Enable','off', ...
-                                                        'callback',@(src,evt)saveSetupData()) ;
-           % Save All Data
-                hd.ToolBar.MainMenu.exportAnimation = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Export Animation', ...
-                                                        'Enable','on', ...
-                                                        'callback',@(src,evt)makeAnimation()) ;
-                                                    
-           % Frame Rate
-                hd.ToolBar.MainMenu.frameRate = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Frame Rate', ...
-                                                        ...'Enable','off', ...
-                                                        'Separator','on', ...
-                                                        'callback',@(src,evt)setFrameRate) ;
-                
-           % Start and Stop navDIC
-                hd.ToolBar.MainMenu.startStop = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','START', ...
-                                                        ...'Enable','off', ...
-                                                        'Separator','on', ...
-                                                        'callback',@(src,evt)startContinuous) ;
-                
-           % Snapshot
-                hd.ToolBar.MainMenu.singleShot = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','Take a Snapshot', ...
-                                                        ...'Enable','off', ...
-                                                        'callback',@(src,evt)singleShot) ;
-                
-           % RESET FRAMES
-                hd.ToolBar.MainMenu.reset = uimenu(hd.ToolBar.MainMenu.navDIC,...
-                                                        'Label','RESET', ...
-                                                        'Separator','on', ...
-                                                        'callback',@(src,evt)initHandleData(true)) ;
-                
-        % CAMERAS ---------------------------------------------------------
-           hd.ToolBar.MainMenu.cameras = uimenu(hd.ToolBar.fig,'Label','Cameras') ;
-           
-           % Set Cameras
-                hd.ToolBar.MainMenu.manageCameras = uimenu(hd.ToolBar.MainMenu.cameras,...
-                                                        'Label','Manage Cameras', ...
-                                                        'Separator','on', ...
-                                                        'callback',@(src,evt)manageCameras) ;
-           % Preview a Camera
-                hd.ToolBar.MainMenu.camPreview = uimenu(hd.ToolBar.MainMenu.cameras,...
-                                                        'Label','Preview a Camera', ...
-                                                        ...'Enable','off', ...
-                                                        'callback',@(src,evt)camPreview) ;
-                
-        % EXTERNAL INPUTS -------------------------------------------------
-           hd.ToolBar.MainMenu.extInputs = uimenu(hd.ToolBar.fig,'Label','Inputs') ;
-           % Set Inputs
-                hd.ToolBar.MainMenu.manageInputs = uimenu(hd.ToolBar.MainMenu.extInputs,...
-                                                        'Label','Manage Inputs', ...
-                                                        'callback',@(src,evt)manageInputs) ;
-           % Preview an Input
-                hd.ToolBar.MainMenu.inputPreview = uimenu(hd.ToolBar.MainMenu.extInputs,...
-                                                        'Label','Preview an Input', ...
-                                                        ...'Enable','off', ...
-                                                        'callback',@(src,evt)inputPreview) ;
-                
-        % DIC -------------------------------------------------
-           hd.ToolBar.MainMenu.DIC = uimenu(hd.ToolBar.fig,'Label','DIC','Enable','off') ;
-           % Manage DIC Seeds
-                hd.ToolBar.MainMenu.manageDICZones = uimenu(hd.ToolBar.MainMenu.DIC,...
-                                                        'Label','Manage DIC Seeds', ...
-                                                        'callback',@(src,evt)manageDICZones) ;
-           % Preview a DIC Seed
-                hd.ToolBar.MainMenu.previewSeed = uimenu(hd.ToolBar.MainMenu.DIC,...
-                                                        'Label','Preview a Seed', ...
-                                                        'callback',@(src,evt)previewSeed()) ;
-           % Compute DIC
-                hd.ToolBar.MainMenu.computeDIC = uimenu(hd.ToolBar.MainMenu.DIC,...
-                                                        'Label','Compute DIC'...
-                                                        ...,'Enable','off'...
-                                                        ,'Separator','on'...
-                                                        ) ;
-               % Only Non-Computed Zones
-                    hd.ToolBar.MainMenu.computeSomeDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...
-                                                            'Label','Non-Computed Zones Only', ...
-                                                            'callback',@(src,evt)computeDIC) ;
-               % All Zones
-                    hd.ToolBar.MainMenu.computeAllDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...
-                                                            'Label','All Zones', ...
-                                                            'callback',@(src,evt)computeAllDIC) ;
-                
-        % VIEWS -------------------------------------------------
-           hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
-           % Plot Preview
-                hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
-                                                        'Label','Plot Preview', ...
-                                                        'callback',@(src,evt)plotPreview) ;
-           % Slicing tool
-                hd.ToolBar.MainMenu.sliceTool = uimenu(hd.ToolBar.MainMenu.views,...
-                                                        'Label','Slicing', ...
-                                                        'callback',@(src,evt)sliceTool) ;
-           % Manage Axes
-                hd.ToolBar.MainMenu.manageViews = uimenu(hd.ToolBar.MainMenu.views,...
-                                                        'Label','Manage Views', ...
-                                                        'callback',@(src,evt)manageViews) ;
-           % Auto Layout
-                hd.ToolBar.MainMenu.autoLayout = uimenu(hd.ToolBar.MainMenu.views,...
-                                                        'Label','Auto Layout', ...
-                                                        ...'Enable','off', ...
-                                                        'callback',@(src,evt)autoLayout) ;
-                
-        % HELP -------------------------------------------------
-           hd.ToolBar.MainMenu.help = uimenu(hd.ToolBar.fig,'Label','?');%,'Enable','off') ;
-           % Manage Axes
-                hd.ToolBar.MainMenu.about = uimenu(hd.ToolBar.MainMenu.help,...
-                                                        'Label','About', ...
-                                                        'callback',@(src,evt){}) ;
-           % DebugMode
-                hd.ToolBar.MainMenu.debugMode = uimenu(hd.ToolBar.MainMenu.help,...
-                                                        'Label','Debug', ...
-                                                        ...'Enable','on', ...
-                                                        'callback',@(src,evt)debugMode) ;
-                                                    
-                                                    
-    end
-
-% KEY PRESSED FUNCTION
-    function keyPressed(src,evt)
-        disp('Key Pressed !')
-        disp(evt.Key)
-    end
-
-% SET THE MAIN TOOLBAR SHORTCUTS
-    function setMainMenuShortcuts()
-        % Define Shortcuts
-            shortcuts = {'Open a Setup','shift O'; ...
-                         'Set the Working Directory','shift S'; ...
-                         'START','shift ENTER'; ...
-                         'Take a Snapshot','shift SPACE'; ...
-                         'Load From Video','shift V'; ...
-                         'Frame Rate','shift F'; ...
-                         'Preview a Camera','shift C'; ...
-                         'Preview an Input','shift I'; ...
-                         'Preview a Seed','shift D'; ...
-                         'Plot Preview','shift P'; ...
-                         } ;
-        % Get Menus Handles
-            hMenus = findobj(hd.ToolBar.fig,'type','uimenu') ; 
-            menuLabels = {hMenus.Label} ;
-        % Set "accelerators" (or shortcuts)
-            for s = 1:size(shortcuts,1)
-                idHandle = ismember(menuLabels,{shortcuts{s,1}}) ;
-                if any(idHandle)
-                    for it = 1:5 % Try multiple times to find the java object
-                    jHandle = findjobj(hMenus(idHandle)) ;
-                        if ~isempty(jHandle)
-                            jAccelerator = javax.swing.KeyStroke.getKeyStroke(shortcuts{s,2}) ;
-                            jHandle.setAccelerator(jAccelerator) ;
-                            continue
-                        end
-                    end
-               end
-            end
+% UPDATE INFOS TEXT
+    function updateToolbar()
+        % Is There any inputs ?
+            nIn = 0 ; if ~isempty(hd.DAQInputs) ; nIn = length(hd.DAQInputs.Inputs) ; end
+        % Infos String
+            strInfos = [] ;
+            strInfos = [strInfos,' ',num2str(length(hd.Cameras)),' Cameras'] ;
+            strInfos = [strInfos,' | ',num2str(nIn),' DAQ.Inputs'] ;
+            strInfos = [strInfos,' | ',num2str(length(hd.Seeds)),' DIC.Seeds'] ;
+            strInfos = [strInfos,' | ',num2str(length(hd.Previews)),' Previews'] ;
+            strInfos = [strInfos,' | Frame ',num2str(hd.CurrentFrame),'/',num2str(hd.nFrames)] ;
+            hd.ToolBar.infosTxt.String = strInfos ;
+        % Frame Slider
+            minVal = min(1,hd.nFrames) ;
+            maxVal = max(hd.nFrames,1) ;
+            hd.ToolBar.frameSlider.Min = minVal ;
+            hd.ToolBar.frameSlider.Max = maxVal ;
+            hd.ToolBar.frameSlider.Value = min([max(minVal,hd.CurrentFrame),maxVal,hd.nFrames]) ;
+            minSliderStep = 1/max(2,hd.nFrames) ;
+            maxSliderStep = max(minSliderStep,1/10) ;
+            hd.ToolBar.frameSlider.SliderStep = [minSliderStep maxSliderStep] ;
+            % Enable or not
+                if hd.nFrames>1 %&& strcmp(hd.TIMER.Running,'off') 
+                    hd.ToolBar.frameSlider.Enable = 'on' ;
+                else
+                    hd.ToolBar.frameSlider.Enable = 'off' ;
+                end
+        % Menus
+            updateMainMenu()
     end
 
 
@@ -961,8 +741,325 @@ function navDIC(varargin)
     end
 
 
-% ADDS BUTTONS TOOLBAR
-    function addButtons()
+% KEY PRESSED FUNCTION
+    function keyPressed(src,evt)
+        disp('Key Pressed !')
+        disp(evt.Key)
+    end
+
+% CHANGE THE FRAME FOR PREVIEW
+    function sliderFunction()
+        hd.ToolBar.frameSlider.Value = round(hd.ToolBar.frameSlider.Value) ;
+        if hd.CurrentFrame==hd.ToolBar.frameSlider.Value ; return ; end
+        hd.CurrentFrame = hd.ToolBar.frameSlider.Value ;
+        hd = updateAllPreviews(hd) ;
+        updateToolbar() ;
+    end
+
+
+
+
+% ===================================================================================================================    
+% REAL-TIME TIMER FUNCTION
+% ===================================================================================================================
+
+
+% FUNCTION EXECUTED BY THE TIMER TO TAKE A SHOT
+    function timerFunction()
+        % Set toolbar in red
+            hd.ToolBar.infosTxt.BackgroundColor = [1 0.3 0.3] ;
+            drawnow ;
+        % MAIN FUNCTION
+            startTime = tic ;
+            disp('----- Timer Fcn -----') ;
+            % Add a frame
+                hd.nFrames = hd.nFrames+1 ;
+                hd.CurrentFrame = hd.nFrames ;
+            % Capture
+                lastTime = toc(startTime) ;
+                disp(' - Get Data') ;
+                % Time
+                    hd.TimeLine(hd.nFrames,:) = clock() ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Clock : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+                % Images
+                    hd = captureCameras(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Cameras : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+                % Inputs
+                    hd = captureInputs(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+            % Save Acquired Data
+                hd = saveCurrentFrame(hd) ;
+                t = toc(startTime)-lastTime ;
+                disp([' - Save : ' num2str(t*1000,'%.1f'),' ms']) ;
+                lastTime = toc(startTime) ;
+            % Processing
+                % DIC
+                    hd = updateDIC(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp([' - Compute DIC : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+            % Previews
+                hd = updateAllPreviews(hd) ;
+                t = toc(startTime)-lastTime ;
+                disp([' - Update Previews : ' num2str(t*1000,'%.1f'),' ms']) ;
+                lastTime = toc(startTime) ;
+        % Update Infos
+            %pause(0.005) ;
+            updateToolbar() ;
+            t = toc(startTime)-lastTime ;
+            disp([' - Update Toolbar : ' num2str(t*1000,'%.1f'),' ms']) ;
+            lastTime = toc(startTime) ;
+        % Time
+            disp(['Total Time : ' num2str(toc(startTime)*1000,'%.1f'),' ms']) ;
+            disp('------------------------') ;
+            disp('') ;
+        % Reset toolbar Color
+            hd.ToolBar.infosTxt.BackgroundColor = hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor ;
+    end
+
+
+% SET THE CAMERAS
+    function manageCameras
+        % Stop all cameras
+            hd = stopAllCameras(hd) ;
+        % Open the manageMultiCameras Tool
+            [hd.Cameras,camsHasChanged] = manageMultiCameras(hd.Cameras) ;
+        % Re-start all cameras
+            hd = startAllCameras(hd) ;
+        % If nothing changed...
+            if ~camsHasChanged ; return ; end
+        % Ask to clear the data
+            initHandleData(true) ;
+        % Update Infos
+            updateToolbar() ;
+    end
+
+% SET THE EXTERNAL INPUTS
+    function manageInputs
+        % Open the manageDAQInputs Tool
+            [hd.DAQInputs,inputsHasChanged] = manageDAQInputs(hd.DAQInputs) ;
+            if ~inputsHasChanged ; return ; end
+        % Ask to clear the data
+            initHandleData(true) ;
+        % Update Infos
+            updateToolbar() ;
+    end
+
+
+% START CONTINUOUS SETUP
+    function startContinuous()
+        hd.ToolBar.frameSlider.Enable = 'off' ;
+        hd.ToolBar.MainMenu.startStop.Label = 'STOP' ;
+        hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)stopContinuous ;
+        start(hd.TIMER) ;
+    end
+
+
+% STOP CONTINUOUS SETUP
+    function stopContinuous() 
+        if strcmp(hd.TIMER.Running,'on')
+            stop(hd.TIMER) ;
+            while strcmp(hd.TIMER.Running,'on') ; end
+        end  
+        hd.ToolBar.MainMenu.startStop.Label = 'START' ;
+        hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)startContinuous ;
+    end
+
+
+% TAKE A SINGLE SHOT AND PROCESS
+    function singleShot()
+        if strcmp(hd.TIMER.Running,'on') ; return ; end
+        timerFunction() ;     
+    end
+
+
+% SET THE FRAME RATE
+    function setFrameRate()
+        frameRate = evalMaxFrameRate() ;
+        if isempty(frameRate)
+            frameRate = inputdlg('Set the Frame Rate (Hz)','navDIC Frame Rate',1,{num2str(hd.FrameRate)}) ;
+            if isempty(frameRate) ; return ; end
+            frameRate = str2num(frameRate{1}) ;
+            if frameRate>maximumFrameRate 
+                errordlg(['Maximum Frame Rate is ',num2str(maximumFrameRate),' Hz']) ;
+                return ;
+            end
+        end
+        hd.FrameRate = frameRate ;
+        hd.TIMER.Period = round(1/frameRate*1000)/1000 ; % millisecond precision
+    end
+
+
+% EVALUATE THE MAXIMUM FRAME RATE
+    function avisedFR = evalMaxFrameRate()
+        % Evaluate the maximumFrameRate by iterating the global timerFunction
+            evalTime = 3 ; % seconds
+        % Backup the config
+            hd_Bkp = hd ;
+        % Stop the timer
+            stopContinuous() ;
+        % Execute it while it last less than evalTime
+            startTime = tic ;
+            maxItTime = 0 ;
+            it = 0 ;
+            while toc(startTime)<evalTime
+                t = tic ;
+                timerFunction() ;
+                it = it+1 ;
+                maxItTime = max(maxItTime,toc(t)) ;
+            end
+        % Evaluate the maxFrameRate
+            maxFR = 1/maxItTime ; % maxFR = it/toc(startTime) ;
+            avisedFR = min(0.8*maxFR,maximumFrameRate) ;
+        % Reset all data OK
+            hd = hd_Bkp ;
+        % Update toolbar and previews ;
+            updateToolbar() ;
+            hd = updateAllPreviews(hd) ;
+        % Prompt the maxFrameRate
+            answer = questdlg({['The Maximum Frame Rate is ',num2str(maxFR,'%.2f'),' Hz'],...
+                                ['Set the Frame Rate to ',num2str(avisedFR,'%.2f'),' Hz ?']},'Evaluated Frame rate','Yes','No','No') ;
+            if strcmp(answer,'No')
+                avisedFR = [] ;
+            end
+            
+    end
+
+
+% SET THE REAL-TIME SAVING OPTIONS
+    function setSaving(src)
+        switch src.Checked
+            case 'off' % The user wants to activate
+                switch src.Label
+                    case 'Images'
+                        if isempty(hd.Cameras) ; warning('No image will be saved until a camera is added') ; end
+                    case 'Input Data'
+                        if isempty(hd.DAQInputs) || isempty(hd.DAQInputs.Inputs) ; warning('No data will be saved until a DAQ input is added') ; end
+                    case 'Seed Data'
+                        if isempty(hd.Seeds) ; warning('No data will be saved until a seed is added') ; end
+                end
+                src.Checked = 'on' ;
+            case 'on' % The user wants to desactivate
+                src.Checked = 'off' ;
+        end
+    end
+
+% SAVE THE SETUP DATA
+    function saveSetupData()
+        hd = saveAllFrames(hd) ;
+    end
+
+
+
+
+% ===================================================================================================================    
+% DIGITAL IMAGE CORRELATION FUNCTIONS
+% ===================================================================================================================
+
+
+% MANAGE DIC ZONES
+    function manageDICZones
+        hd = manageDICSeeds(hd) ;
+        % Update Infos
+            updateToolbar() ;
+    end
+
+
+% PREVIEW AN INDIVIDUAL DIC SEED
+    function previewSeed()
+        if isempty(hd.Seeds) ; return ; end
+        prev = navDIC2DSeedPreview(hd) ;
+        if prev.isValid
+            hd.Previews{end+1} = prev ;
+        end
+    end
+
+% COMPUTE NON-COMPUTED DIC ZONES
+    function computeDIC
+        disp('computeDIC')
+    end
+
+
+% COMPUTE ALL DIC ZONES
+    function computeAllDIC
+        disp('computeAllDIC')
+        for fr = 1:hd.nFrames
+            hd.CurrentFrame = fr ;
+            hd = updateDIC(hd) ;
+            hd = updateAllPreviews(hd) ;
+            updateToolbar() ;
+            drawnow ;
+        end
+    end
+
+
+
+% ===================================================================================================================    
+% VIEWS-RELATED FUNCTIONS
+% ===================================================================================================================
+
+
+
+% PREVIEW A CAMERA
+    function camPreview
+        prev = navDICCameraPreview(hd) ;
+        if prev.isValid
+            hd.Previews{end+1} = prev ;
+        end
+    end
+
+% PREVIEW A DATA INPUT
+    function inputPreview
+    end 
+
+
+% ADD A PLOT PREVIEW
+    function plotPreview()
+        hd.Previews{end+1} = navDICPlotPreview(hd) ;
+    end
+
+
+% START THE SLICING TOOL
+    function sliceTool()
+        hd.Previews{end+1} = navDICSlicingTool(hd) ;
+    end
+
+% AUTO LAYOUT OF PREVIEWS
+    function autoLayout 
+    end
+
+
+
+        
+% ===================================================================================================================    
+% navDIC INTERFACE FUNCTIONS
+% ===================================================================================================================
+
+
+
+% SWITCH IN DEBUG MODE
+    function debugMode()
+        hd.debug = true ;
+        % Enable all Menus
+            set(findobj(hd.ToolBar.fig,'type','uimenu'),'enable','on') ;
+    end
+
+
+% BRING ALL NAVDIC FIGURES TO FRONT
+    function navDICOnTop()
+        disp('tofront') ;
+        navDICFigs = findobj(groot,'tag',navDICTag) ;
+        if ~isempty(navDICFigs)
+            for f = 1:length(navDICFigs)
+                figure(navDICFigs(f)) ;
+            end
+        end
     end
 
 
@@ -987,6 +1084,19 @@ function navDIC(varargin)
             set(figsToClose,'CloseRequestFcn','closereq')
             close(figsToClose) ;
     end
+
+
+
+
+
+
+
+
+
+        
+% ===================================================================================================================    
+% END OF THE MAIN SCRIPT
+% ===================================================================================================================
 
 end
 
