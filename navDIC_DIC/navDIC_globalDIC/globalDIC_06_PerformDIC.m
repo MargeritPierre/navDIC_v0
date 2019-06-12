@@ -5,12 +5,18 @@ for ii = dicFrames
     % Init
         it = 0 ;
         outFlag = false ;
+        dUo = ones(nNodes,2)*0 ;
     % Import and display current image
         img2 = Smooth(IMG(:,:,:,ii)) ;
         %im.CData = repmat(img2,[1 1 3]) ;
         im.CData = repmat((img2-min(img2(:)))/range(img2(:)),[1 1 3]) ;
+    % Init Valid Geometry for this frame
+        VALID.Nodes(:,ii) = VALID.Nodes(:,ii-dicDir) ;
+        VALID.Elems(:,ii) = VALID.Elems(:,ii-dicDir) ;
+        VALID.Edges(:,ii) = VALID.Edges(:,ii-dicDir) ;
+        VALID.NakedEdges(:,ii) = VALID.NakedEdges(:,ii-dicDir) ;
     % First Guess for the displacement if needed
-        if ~startWithNavDICPositions || all(isnan(Xn(:,1,ii)))
+        if ~useNavDICXn(ii) || all(isnan(Xn(:,1,ii)))
             % Take the previously computed frame
                 Xn(:,:,ii) = Xn(:,:,ii-dicDir) ;
             % Add the previous "speed" as convergence help
@@ -25,23 +31,22 @@ for ii = dicFrames
         while ~outFlag && ~stopBtn.Value
             % VALID GEOMETRY
                 % Elements
-                    validElems = validElems & sum(tri2nod(VALID,:),1)'==3 ; % triangles with still their three nodes valid
-                    %validElems = validElems & sum(INSIDE(~deadPixels,:),1)'~=0 ; % triangles with still some pixels in the image
+                    VALID.Elems(:,ii) = VALID.Elems(:,ii) & sum(tri2nod(VALID.Nodes(:,ii),:),1)'==3 ; % triangles with still their three nodes valid
                 % Edges
-                    validEdges = validEdges & sum(edg2nod(VALID,:),1)'==2 ; % edges with still their two ends points valid
-                    nakedEdges = sum(tri2edg(:,validElems),2)<2 ; % edges with less than two elements valid
+                    VALID.Edges(:,ii) = VALID.Edges(:,ii) & sum(edg2nod(VALID.Nodes(:,ii),:),1)'==2 ; % edges with still their two ends points valid
+                    VALID.NakedEdges(:,ii) = sum(tri2edg(:,VALID.Elems(:,ii)),2)<2 ; % edges with less than two elements valid
                 % Nodes
-                    VALID = VALID & sum(tri2nod(:,validElems),2)>0 ; % nodes must be linked to at least one valid element
-                    VALID = VALID & sum(edg2nod(:,validEdges),2)>0 ; % nodes must be linked to at least one valid edge
-                    nVALID = sum(VALID) ;
+                    VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & sum(tri2nod(:,VALID.Elems(:,ii)),2)>0 ; % nodes must be linked to at least one valid element
+                    VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & sum(edg2nod(:,VALID.Edges(:,ii)),2)>0 ; % nodes must be linked to at least one valid edge
+                    nVALID = sum(VALID.Nodes(:,ii)) ;
                     if nVALID==0 ; break ; end
             % PIXEL-WISE DISPLACEMENT AND DIC DOMAIN
                 % VALID DIC Domain
-                    dicDomain = find(any(INSIDE(:,validElems),2)) ; 
+                    dicDomain = find(any(INSIDE(:,VALID.Elems(:,ii)),2)) ; 
                     selectDomain = sparse(1:length(dicDomain),dicDomain,1,length(dicDomain),nI*nJ) ;
-                    dicMAPPING = selectDomain*MAPPING(:,VALID) ;
+                    dicMAPPING = selectDomain*MAPPING(:,VALID.Nodes(:,ii)) ;
                 % Compute the displacement 
-                    Up = dicMAPPING*Un(VALID,:,ii) ;
+                    Up = dicMAPPING*Un(VALID.Nodes(:,ii),:,ii) ;
                 % New position of each pixel
                     JJp = JJ(dicDomain)+Up(:,1) ;
                     IIp = II(dicDomain)+Up(:,2) ;
@@ -66,9 +71,9 @@ for ii = dicFrames
                 % Integration weights
                     switch size(localWEIGHT,2)
                         case nNodes
-                            WEIGHT = localWEIGHT(:,VALID) ;
+                            WEIGHT = localWEIGHT(:,VALID.Nodes(:,ii)) ;
                         case nElems
-                            WEIGHT = localWEIGHT(:,validElems) ;
+                            WEIGHT = localWEIGHT(:,VALID.Elems(:,ii)) ;
                     end
                     WEIGHT = selectDomain*WEIGHT ;
                     sumWEIGHT = sum(WEIGHT,1).' ;
@@ -96,9 +101,9 @@ for ii = dicFrames
                         diffImg = img1mz-img2mz ;
                         switch size(localWEIGHT,2)
                             case nNodes
-                                ww = 1./normImg1(VALID) ;
+                                ww = 1./normImg1(VALID.Nodes(:,ii)) ;
                             case nElems
-                                ww = 1./bsxfun(@(x,y)x./y,tri2nod(VALID,validElems)*normImg1,sum(tri2nod(VALID,validElems),2)) ;
+                                ww = 1./bsxfun(@(x,y)x./y,tri2nod(VALID.Nodes(:,ii),VALID.Elems(:,ii))*normImg1,sum(tri2nod(VALID.Nodes(:,ii),VALID.Elems(:,ii)),2)) ;
                         end
                         weight = sparse(1:2*nVALID,1:2*nVALID,[ww;ww]) ;
                 end
@@ -115,24 +120,23 @@ for ii = dicFrames
                                     ] ;
                         % Hessian
                             Hess = dImg1_da'*dImg1_da ;
+                        % No need to compute next time
+                            refImageChanged = false ;
                     end
                 % Compute the first RMSE derivative
                     dr_da = (dImg1_da'*diffImg) ;
                 % Contraint on the SECOND displacement gradient
-                    validDOF = [VALID;VALID] ;
+                    validDOF = [VALID.Nodes(:,ii);VALID.Nodes(:,ii)] ;
                     switch strainCriterion
                         case 'normal'
-                            vEdg = repmat(~nakedEdges,[2 1]) ;
-                            vEle = [validElems;validElems;validElems] ;
+                            vEdg = repmat(~VALID.NakedEdges(:,ii),[2 1]) ;
+                            vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
                             CONS = B(vEle,validDOF)'*(E(vEdg,vEle)'*E(vEdg,vEle))*B(vEle,validDOF) ;
                         case 'full'
-                            vEdg = repmat(~nakedEdges,[4 1]) ;
-                            vEle = [validElems;validElems;validElems;validElems] ;
+                            vEdg = repmat(~VALID.NakedEdges(:,ii),[4 1]) ;
+                            vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
                             CONS = G(vEle,validDOF)'*(E(vEdg,vEle)'*E(vEdg,vEle))*G(vEle,validDOF) ;
                     end
-                    % Debugging...
-                        %markers.XData = Xn(nodesOnNaked,1,ii); markers.YData = Xn(nodesOnNaked,2,ii);
-                        %if any(~VALID)  disp('STOP!'); pause ; end
                 % Updating DOFs, X*a=b
                     X = ( ...
                             weight*Hess*weight...
@@ -140,12 +144,12 @@ for ii = dicFrames
                         ) ; 
                     b = (...
                             weight*dr_da...
-                            - beta*CONS*[Un(VALID,1,ii);Un(VALID,2,ii)]...
+                            - beta*CONS*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)]...
                         ) ;
                     a = X\b ;
                 % Displacement
-                    Un(VALID,1,ii) = Un(VALID,1,ii) + a(1:nVALID) ;
-                    Un(VALID,2,ii) = Un(VALID,2,ii) + a(nVALID+(1:sum(VALID))) ;
+                    dU = reshape(a,[nVALID 2]) ;
+                    Un(VALID.Nodes(:,ii),:,ii) = Un(VALID.Nodes(:,ii),:,ii) + dU ;
                 % Positions
                     Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
             % CONVERGENCE CITERIONS
@@ -153,6 +157,9 @@ for ii = dicFrames
                     resid = abs(diffImg) ;
                     meanSquaredElemResid = sqrt((WEIGHT'*abs(diffImg).^2)) ;
                     corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
+                % Displacement oscillations
+                    corr_dU = sum(dUo(validDOF).*dU(:))/(norm(dUo(validDOF))*norm(dU(:))) ;
+                    dUo(:) = 0 ; dUo(validDOF) = dU(:) ;
                 % Criterions
                     it = it+1 ;
                     %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
@@ -160,49 +167,54 @@ for ii = dicFrames
                 % Convergence criterion
                     if it>maxIt ; outFlag = true ; end
                     if normA<minNorm ; outFlag = true ; end
+                    if corr_dU<minCorrdU ; outFlag = true ; end
                     %if RMSE<1e-6 || abs((RMSE-RMSE_0)/RMSE) < 1e-4 ; outFlag = true ; end
                 % Keep the error
                     %RMSE_0 = RMSE ;
             % POINTS/ELEMENTS VALIDATION/DELETION
                 % OUT-OF-FRAME POINTS
                     if cullOutOfFrame
-                        VALID = VALID & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
+                        VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>0 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>0 ;
                     end
                 % DECORRELATED ELEMENTS
-                    if (outFlag || alwaysValidGeometry)
+                    cullGeo = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
+                    if any(cullGeo) && (outFlag || (normA/minNorm)<thresholdValidGeometry)
                         switch size(localWEIGHT,2) 
                             case nElems % Correlation at the element level
-                                %VALID = VALID & (tri2nod*corrCoeff(:))./sum(tri2nod(:,validElems),2) ;
-                                cullElems = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
-                                validElems(validElems) = validElems(validElems) & ~cullElems ; 
-                            case nNodes % Correlation at the node level
-                                VALID(VALID) = VALID(VALID) & corrCoeff(:)>minCorrCoeff ;
+                                VALID.Elems(VALID.Elems(:,ii),ii) = VALID.Elems(VALID.Elems(:,ii),ii) & ~cullGeo ; 
+                            case nNodes % Correlation at the node level$
+                                VALID.Nodes(VALID.Nodes(:,ii),ii) = VALID.Nodes(VALID.Nodes(:,ii),ii) & cullGeo ;
                         end
+                        outFlag = false ; % Force an new iteration
                     end
                 % SET THE NON-VALID NODES TO NAN
-                    Xn(~VALID,:,ii) = NaN ;
-                    Un(~VALID,:,ii) = NaN ;
+                    Xn(~VALID.Nodes(:,ii),:,ii) = NaN ;
+                    Un(~VALID.Nodes(:,ii),:,ii) = NaN ;
             % DISPLAY
                 % Always display infos
                     infosText.String = [ ' INFOS' ...
                                          ' | Frame: ' num2str(frames(ii)) ...
                                          ' | It: ' num2str(it) ...
-                                         ' | normA: ' num2str(normA,2) ...
+                                         ' | norm.A: ' num2str(normA,2) ...
+                                         ' | corr.dU: ' num2str(corr_dU,2) ...
                                          ] ;
                 % Heavy Plots
                     if plotEachIteration || (outFlag && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (outFlag && toc(lastPlotTime)>1/plotRate)
                         %ttl.String = [num2str(frames(ii)),'(',num2str(it),')'] ;
-                        residues = ... WEIGHT*abs(WEIGHT'*(img1mz.*img2mz)) ... Correlation coeffient
-                                   ... abs(diffImg) ... NR residues
-                                    WEIGHT*sqrt((WEIGHT'*abs(diffImg).^2)) ... Sum of squared NR residues
+                        %%
+                        residues = ... WEIGHT*corrCoeff ... Correlation coeffient
+                                    abs(diffImg) ... NR residues
+                                   ... WEIGHT*meanSquaredElemResid ... Sum of squared NR residues
                                    ;
                         imRes.CData = reshape(sparse(dicDomain,1,residues,nI*nJ,1),[nI nJ]) ;
+                        %%
                         mesh.Vertices = Xn(:,:,ii) ;
-                        mesh.Faces = Elems(validElems,:) ;
+                        mesh.Faces = Elems(VALID.Elems(:,ii),:) ;
+                        mesh.FaceVertexCData = sqrt(sum(dU.^2,2)) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ; 
                         lastPlotTime = tic ;
-                        drawnow ;
                     end
+                    drawnow ;
             % Pause execution ?
                 if pauseAtPlot && ~continueBtn.Value
                     while ~stopBtn.Value && ~nextBtn.Value && ~continueBtn.Value

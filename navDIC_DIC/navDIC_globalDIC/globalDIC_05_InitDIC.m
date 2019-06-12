@@ -12,7 +12,7 @@
         ax(1) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,1) ;
             ax(1).Position = ax(1).Position.*[1 1-infosHeight 1 1-infosHeight] ;
             im = imagesc(1:nJ,1:nI,Smooth(img0)) ;
-            mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,'facecolor','none','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
+            mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,Nodes(:,1)*NaN,'facecolor','interp','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
             set(ax(1),'Clipping','off') ;
@@ -69,13 +69,18 @@
 
 % INITIALIZE
     % Nodes position
-        if startWithNavDICPositions
-            Xn = hd.Seeds(seedNumber).MovingPoints(:,:,frames) ;
-            Xn(:,:,refFrame) = Nodes ;
-        else
-            Xn = ones([nNodes,2,nFrames])*NaN ;
-            Xn(:,:,avgFrames) = repmat(Nodes,[1 1 length(avgFrames)]) ;
+        useNavDICXn = false(nFrames,1) ;
+        switch startWithNavDICPositions
+            case 'all'
+                useNavDICXn(:) = true ;
+            case 'none'
+                useNavDICXn(:) = false ;
+            otherwise
+                useNavDICXn(startWithNavDICPositions) = true ;
         end
+        Xn = ones([nNodes,2,nFrames])*NaN ;
+        Xn(:,:,useNavDICXn) = hd.Seeds(seedNumber).MovingPoints(:,:,frames(useNavDICXn)) ;
+        Xn(:,:,avgFrames) = repmat(Nodes,[1 1 length(avgFrames)]) ;
     % Displacements
         % Of Nodes
             Un = Xn - Nodes ;
@@ -85,8 +90,16 @@
         img1 = Smooth(img0) ;
         refImageChanged = true ;
     % Valid geometry masks
-        VALID = true(nNodes,1) ;
-        validElems = true(nElems,1) ;
-        validEdges = true(nEdges,1) ;
-        nakedEdges = sum(tri2edg(:,validElems),2)<2  ;
+        VALID = [] ;
+        % Nodes
+            VALID.Nodes = false(nNodes,nFrames) ;
+            VALID.Nodes(:,avgFrames) = ~isnan(Xn(:,1,avgFrames)) ;
+        % Elements
+            VALID.Elems = false(nElems,nFrames) ;
+            VALID.Elems(:,avgFrames) = true ;
+        % Edges
+            VALID.Edges = false(nEdges,nFrames) ;
+            VALID.Edges(:,avgFrames) = true ;
+            VALID.NakedEdges = false(nEdges,nFrames) ;
+            VALID.NakedEdges(:,avgFrames) = sum(tri2edg,2)<2 ;
     

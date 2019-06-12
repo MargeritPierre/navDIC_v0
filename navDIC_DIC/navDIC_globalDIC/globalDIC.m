@@ -8,7 +8,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
     % INITIALIZATION PARAMETERS
         camID = 1 ;
         seedNumber = 1 ;
-        frames = '[1:295]' ; % Frames taken for DIC (allows decimation)
+        frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -31,8 +31,8 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = true ; % Use a preceding computation as guess
-        addPreviousVelocity = true ; % When possible ans no navDIC results available (or not used), add the previous motion as convergence help
+        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        addPreviousVelocity = true ; % When possible and no navDIC results available (or not used), add the previous motion as convergence help
     % Reference Image 
         weightCurrentImage = 0.3 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
@@ -52,13 +52,14 @@ end % END OF INITIALIZATION
         cullOutOfFrame = true ; % Cull out of frame points
         localWEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
         minCorrCoeff = .0 ; % Below this, elements are culled
-        maxMeanElemResidue = .5 ; % Above this, elements are culled
-        alwaysValidGeometry = false ; % Check corr. coeffs at each iteration or only after convergence ?
+        maxMeanElemResidue = Inf ; % Above this, elements are culled
+        thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         beta = 1*1e2 ; % Strain gradient penalisation coefficient
     % Convergence Criteria
-        maxIt = 200 ; % Maximum number of Newton-Raphson iterations
+        maxIt = 100 ; % Maximum number of Newton-Raphson iterations
         minNorm = 1e-3 ; % Maximum displacement of a node
+        minCorrdU = -.9999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
         exportTOnavDIC = false ;
         reverseReference = true ;
@@ -69,7 +70,7 @@ end % END OF INITIALIZATION
         plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
-        codeProfile = true ;
+        codeProfile = false ;
     
     
 % RUN DIC
