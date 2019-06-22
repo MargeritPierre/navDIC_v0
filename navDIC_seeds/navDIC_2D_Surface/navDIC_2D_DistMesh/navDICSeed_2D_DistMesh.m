@@ -153,20 +153,34 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         submenus(end+1) = uimenu(mData,'Label','Minor E') ;
                         submenus(end+1) = uimenu(mData,'Label','Max. Shear') ;
                         submenus(end+1) = uimenu(mData,'Label','Princ. Angle') ;
-                % Color Scale
-                    mColors = uimenu(ax.Parent,'Label','Colors') ;
-                        mClrScale = uimenu(mColors,'Label','Scale') ;
-                            submenus(end+1) = uimenu(mClrScale,'Label','Current Frame','checked','on') ;
-                            submenus(end+1) = uimenu(mClrScale,'Label','All Frames') ;
-                        mClrLims = uimenu(mColors,'Label','Limits') ;
-                            submenus(end+1) = uimenu(mClrLims,'Label','0-max','checked','on') ;
-                            submenus(end+1) = uimenu(mClrLims,'Label','min-max') ;
+                % DISPLAY
+                    mDisplay = uimenu(ax.Parent,'Label','Display') ;
+                    % Color Scale
+                        mColors = uimenu(mDisplay,'Label','Colors') ;
+                            mClrScale = uimenu(mColors,'Label','Scale') ;
+                                submenus(end+1) = uimenu(mClrScale,'Label','Current Frame','checked','on') ;
+                                submenus(end+1) = uimenu(mClrScale,'Label','All Frames') ;
+                            mClrLims = uimenu(mColors,'Label','Limits') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','0-max','checked','on') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','min-max') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','symmetric') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','1*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','2*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','3*sigma') ;
+                            mClrSteps = uimenu(mColors,'Label','Steps') ;
+                                submenus(end+1) = uimenu(mClrSteps,'Label','Continuous','checked','on') ;
+                                submenus(end+1) = uimenu(mClrSteps,'Label','11') ;
+                                submenus(end+1) = uimenu(mClrSteps,'Label','7') ;
+                                submenus(end+1) = uimenu(mClrSteps,'Label','4') ;
+                            submenus(end+1) = uimenu(mColors,'Label','Custom') ;
                 % Common Properties
                     set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
                 % UserData in axes to choose the data to plot
                     ax.UserData.dataLabel = '|U|' ;
+                    ax.UserData.clrMode = 'Preset' ;
                     ax.UserData.clrScaleLabel = 'Current Frame' ;
                     ax.UserData.clrLimsLabel = '0-max' ;
+                    ax.UserData.clrStepsLabel = 'Continuous' ;
         end
         
         function updateSeedMenus(obj,subMenu,ax)
@@ -180,8 +194,29 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         ax.UserData.dataLabel = subMenu.Label ;
                     case 'Scale'
                         ax.UserData.clrScaleLabel = subMenu.Label ;
+                        ax.UserData.clrMode = 'Preset' ;
                     case 'Limits'
                         ax.UserData.clrLimsLabel = subMenu.Label ;
+                        ax.UserData.clrMode = 'Preset' ;
+                    case 'Steps'
+                        ax.UserData.clrStepsLabel = subMenu.Label ;
+                        ax.UserData.clrMode = 'Preset' ;
+                    case 'Colors' 
+                        switch subMenu.Label
+                            case 'Custom'
+                                % Let the user choose the color scale
+                                    prompt = {'Min:','Max:','Steps:'};
+                                    dlgtitle = 'Custom Color Scale Parameters';
+                                    dims = [1 35];
+                                    definput = {num2str(min(caxis(ax))),num2str(max(caxis(ax))),num2str(size(colormap(ax),1))};
+                                    answer = inputdlg(prompt,dlgtitle,dims,definput) ;
+                                    if isempty(answer) ; return ; end
+                                % Set the axis color properties
+                                    caxis(ax,[str2num(answer{1}),str2num(answer{2})])
+                                    colormap(ax,jet(str2num(answer{3}))) ;
+                                % Turn on custom mode
+                                    ax.UserData.clrMode = 'Custom' ;
+                        end
                 end
             % Update the preview
                 updateSeedPreview(obj,[],ax)
@@ -234,26 +269,55 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             triMesh.FaceColor = 'interp' ;
                         end
                         triMesh.CData = Data(:,CurrentFrame) ;
-                    % Color scale
-                        switch ax.UserData.clrScaleLabel
-                            case 'Current Frame'
-                                colorData = Data(:,CurrentFrame) ;
-                            case 'All Frames'
-                                colorData = Data ;
-                        end
-                        minData = min(colorData(:)) ;
-                        maxData = max(colorData(:)) ;
-                    % Color Limits
-                        if ~any(isnan([minData maxData]))
-                            if sign(minData)==sign(maxData)
-                                if sign(minData)==-1
-                                    caxis(ax,[minData 0]) ;
-                                else
-                                    caxis(ax,[0 maxData]) ;
+                    % COLORS
+                        if strcmp(ax.UserData.clrMode,'Preset')
+                            % Color scale
+                                switch ax.UserData.clrScaleLabel
+                                    case 'Current Frame'
+                                        colorData = Data(:,CurrentFrame) ;
+                                    case 'All Frames'
+                                        colorData = Data ;
                                 end
-                            else
-                                caxis(ax,[minData maxData]) ;
-                            end
+                                minData = min(colorData(:)) ;
+                                maxData = max(colorData(:)) ;
+                            % Color Limits
+                                if ~any(isnan([minData maxData]))
+                                    % Set CAXIS
+                                        switch ax.UserData.clrLimsLabel
+                                            case '0-max'
+                                                if sign(minData)==sign(maxData)
+                                                    if sign(minData)==-1
+                                                        caxis(ax,[minData 0]) ;
+                                                    else
+                                                        caxis(ax,[0 maxData]) ;
+                                                    end
+                                                else
+                                                    caxis(ax,[minData maxData]) ;
+                                                end
+                                            case 'min-max'
+                                                caxis(ax,[minData maxData]) ;
+                                            case 'symmetric'
+                                                caxis(ax,max(abs([minData maxData]))*[-1 1]) ;
+                                            otherwise % N*sigma
+                                                % Get the factor N
+                                                    N = str2double(ax.UserData.clrLimsLabel(1)) ;
+                                                % Compute mean and variances
+                                                    valid = ~isnan(colorData(:)) ;
+                                                    avg = mean(colorData(valid)) ;
+                                                    ec = std(colorData(valid)) ;
+                                                % Set Color Limits
+                                                    caxis(min(max(avg+N*ec*[-1 1],minData),maxData)) ;
+                                        end
+                                end
+                            % Color Steps
+                                steps = ax.UserData.clrStepsLabel ;
+                                switch steps
+                                    case 'Continuous'
+                                        steps = 1000 ;
+                                    otherwise
+                                        steps = str2num(steps) ;
+                                end
+                                colormap(ax,jet(steps)) ;
                         end
                 end
         end

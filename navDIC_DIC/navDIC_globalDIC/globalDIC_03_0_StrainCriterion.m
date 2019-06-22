@@ -22,9 +22,9 @@
     % Edge constraint
         switch strainCriterion
             case 'normal'
-                E = sparse(2*nEdges,3*nElems) ; % projection on the normal
+                Ed = sparse(2*nEdges,3*nElems) ; % projection on the normal
             case 'full'
-                E = sparse(4*nEdges,3*nElems) ; % full gradient
+                Ed = sparse(4*nEdges,3*nElems) ; % full gradient
         end
     % Process
         wtbr = waitbar(0,'Edge constraint...') ;
@@ -45,14 +45,14 @@
                 switch strainCriterion
                     case 'normal' % Projection of the STRAINS on the normal
                         % dExx.nx + dExy.ny = 0
-                            E(edg,elmts) = normal(1)*dVect ;
-                            E(edg,elmts+2*nElems) = normal(2)*dVect ;
+                            Ed(edg,elmts) = normal(1)*dVect ;
+                            Ed(edg,elmts+2*nElems) = normal(2)*dVect ;
                         % dExy.nx + dEyy.ny = 0
-                            E(edg+nEdges,elmts+2*nElems) = normal(1)*dVect ;
-                            E(edg+nEdges,elmts+1*nElems) = normal(2)*dVect ;
+                            Ed(edg+nEdges,elmts+2*nElems) = normal(1)*dVect ;
+                            Ed(edg+nEdges,elmts+1*nElems) = normal(2)*dVect ;
                     case 'full' % variation of the GRADIENT between elements
                         for comp = 1:4
-                            E(edg+(comp-1)*nEdges,elmts+(comp-1)*nElems) = dVect ;
+                            Ed(edg+(comp-1)*nEdges,elmts+(comp-1)*nElems) = dVect ;
                         end
                 end
             % Waitbar
@@ -60,6 +60,7 @@
         end
         delete(wtbr) ;
     % Sparsify...
-        E = sparse(E) ;
+        Ed = sparse(Ed) ; % gives the difference between two elements
+        Em = double(logical(abs(Ed))) ;
         edg2nod = sparse(edg2nod) ;
         tri2edg = sparse(tri2edg) ;

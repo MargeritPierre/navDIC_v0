@@ -114,7 +114,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 disp(newline)
                 disp(['LOADING FRAMES FROM ',path])
             % Build File List
-                imgExt = {'png','tif','tiff','jpg','jpeg','bmp','raw','nef'} ;
+                supported = imformats ;
+                imgExt = [supported.ext] ; % Image files currently supported by Matlab
                 files = dir('*.anImpossibleExtension') ; % Initialization
                 for i = 1:length(imgExt)
                     f = dir([path,'/*.',imgExt{i}]) ;
@@ -185,7 +186,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         H.Valid = false ;
         % VIDEO FILE
             % Choose the file
-                [file,path] = uigetfile([hd.WorkDir.Path,'*'],'SELECT A VIDEO FILE') ;
+                supported  = getFilterSpec(VideoReader.getFileFormats()) ;
+                [file,path] = uigetfile(supported,'SELECT A VIDEO FILE',[hd.WorkDir.Path,'\*']) ;
                 if path==0 ; return ; end
                 filename = [path file] ;
             % Try to load the file

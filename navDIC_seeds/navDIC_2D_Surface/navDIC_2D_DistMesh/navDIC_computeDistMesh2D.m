@@ -80,6 +80,7 @@ while 1
     % Initialize
         dP = 0 ;
         p0 = p ;
+        dp = p-p0 ;
         count=count+1;
         
   % Retriangulation by the Delaunay algorithm

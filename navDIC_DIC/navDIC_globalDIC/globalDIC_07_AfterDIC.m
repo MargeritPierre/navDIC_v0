@@ -4,7 +4,7 @@
             oldNodes = Nodes ;
         % Reverse the displacements
             % First Valid Time
-                firstValidFrame = sum(VALID.Nodes,3)+1 ;
+                firstValidFrame = sum(~VALID.Nodes,2)+1 ;
             % New Nodes as corresponding position
                 Nodes = [...
                         reshape(Xn(sub2ind(size(Xn),1:nNodes,ones(1,nNodes),firstValidFrame(:)')),[nNodes 1]) ...

@@ -49,12 +49,20 @@
     % INSIDE each Elements
         INSIDE = sparse(iiiIN(vvvIN),jjjIN(vvvIN),true,nI*nJ,nElems) ;
         nInside = sum(INSIDE,1).' ;
-        DOMAIN = logical(sum(INSIDE,2)) ;
     % SHAPE FUNCTIONS
         % Keep only the positive values and inferior to 1 
             indValid = vvvMAP~=0 ;
-            %indValid = vvv>0 & vvv<=1 ;
         % Build the mapping matrix
             MAPPING = sparse(iiiMAP(indValid),jjjMAP(indValid),vvvMAP(indValid),nI*nJ,nNodes) ; % Shape functions (sparse representation)
+    % RESTRICT TO THE DIC DOMAIN
+        % Sparse Transfer Matrix
+            indDOMAIN = find(any(INSIDE,2)) ;
+            DOMAIN = sparse(1:numel(indDOMAIN),indDOMAIN,1,numel(indDOMAIN),nI*nJ) ;
+        % Image sub indices
+            IId = II(indDOMAIN) ;
+            JJd = JJ(indDOMAIN) ;
+        % Restriction for speed enhancement
+            INSIDE = DOMAIN*INSIDE ;
+            MAPPING = DOMAIN*MAPPING ;
 
     delete(wtbr)

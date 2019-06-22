@@ -7,8 +7,8 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 1 ;
-        frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
+        seedNumber = 6 ;
+        frames = '[1:275]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -31,10 +31,10 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousVelocity = true ; % When possible and no navDIC results available (or not used), add the previous motion as convergence help
     % Reference Image 
-        weightCurrentImage = 0.3 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.0 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -42,7 +42,7 @@ end % END OF INITIALIZATION
                         ;
         sizeImageKernel = 3 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
-        imWarpInterpOrder = 'cubic' ;
+        imWarpInterpOrder = 'linear' ;
     % Image difference criterion
         diffCriterion = ... 'Diff' ... Simple difference
                         ... 'ZM_Diff' ... Zero-mean difference
@@ -50,24 +50,26 @@ end % END OF INITIALIZATION
                          ;
     % Geometry validation criteria
         cullOutOfFrame = true ; % Cull out of frame points
-        localWEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
+        WEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
         minCorrCoeff = .0 ; % Below this, elements are culled
         maxMeanElemResidue = Inf ; % Above this, elements are culled
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
-        beta = 1*1e2 ; % Strain gradient penalisation coefficient
+        regCrit = 'abs' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
+        beta = 1*1e6 ; % Strain gradient penalisation coefficient
+        epsTrsh = 1e0 ; % Limit value for the regularisation weights
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-3 ; % Maximum displacement of a node
+        minNorm = 1e-2 ; % Maximum displacement of a node
         minCorrdU = -.9999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
-        exportTOnavDIC = false ;
+        exportTOnavDIC = true ;
         reverseReference = true ;
         strainOnNodes = false ;
     % Plotting
-        plotRate = 1 ; % Plot Refresh Frequency 
+        plotRate = 0 ; % Plot Refresh Frequency 
         plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
-        plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
+        plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
         codeProfile = false ;
@@ -81,9 +83,10 @@ end % END OF INITIALIZATION
         if codeProfile ; profile on ; end
         globalDIC_06_PerformDIC ;
         if codeProfile; profile viewer ; profile off ; end
-    % Process
-        globalDIC_07_AfterDIC ;
     % Send to navDIC
-        if exportTOnavDIC ; globalDIC_08_TOnavDIC ; end
+        if exportTOnavDIC
+            globalDIC_07_AfterDIC ; 
+            globalDIC_08_TOnavDIC ; 
+        end
 
     

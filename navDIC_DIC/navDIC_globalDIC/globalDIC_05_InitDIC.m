@@ -12,13 +12,18 @@
         ax(1) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,1) ;
             ax(1).Position = ax(1).Position.*[1 1-infosHeight 1 1-infosHeight] ;
             im = imagesc(1:nJ,1:nI,Smooth(img0)) ;
-            mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,Nodes(:,1)*NaN,'facecolor','interp','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
+            mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,Nodes(:,1)*NaN...
+                            ,'facecolor','none'...
+                            ,'edgecolor','interp'...
+                            ,'linewidth',0.5...
+                            ,'edgealpha',0.5...
+                            ,'facealpha',0.5) ;
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
             set(ax(1),'Clipping','off') ;
         ax(2) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,2) ;
             ax(2).Position = ax(2).Position.*[1 1-infosHeight 1 1-infosHeight] ;
-            imRes = imagesc(1:nJ,1:nI,Smooth(img0)) ; 
+            imRes = imagesc(1:nJ,1:nI,Smooth(img0)*NaN) ; 
             colormap(ax(2),gray)
             %ttl = title('','interpreter','none','units','normalized','color',[1 0 0]*1.0,'position',[0 1],'horizontalalignment','left','verticalalignment','top') ;
         axis(ax,'tight')
@@ -82,13 +87,12 @@
         Xn(:,:,useNavDICXn) = hd.Seeds(seedNumber).MovingPoints(:,:,frames(useNavDICXn)) ;
         Xn(:,:,avgFrames) = repmat(Nodes,[1 1 length(avgFrames)]) ;
     % Displacements
-        % Of Nodes
-            Un = Xn - Nodes ;
-        % Of Pixels
-            Up = zeros([nI nJ 2]) ;
+        Un = Xn - Nodes ;
     % Reference Image
         img1 = Smooth(img0) ;
         refImageChanged = true ;
+    % Image moments 
+        sumWEIGHT = sum(WEIGHT,1).' ;
     % Valid geometry masks
         VALID = [] ;
         % Nodes
