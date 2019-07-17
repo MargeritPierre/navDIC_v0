@@ -31,7 +31,7 @@ for ii = dicFrames
             % VALID GEOMETRY 
                 % OUT-OF-FRAME POINTS
                     if cullOutOfFrame
-                        VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & Xn(:,1,ii)<nJ+1 & Xn(:,1,ii)>=1 & Xn(:,2,ii)<nI+1 & Xn(:,2,ii)>=1 ;
+                        VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & ceil(Xn(:,1,ii))<nJ+1 & floor(Xn(:,1,ii))>=1 & ceil(Xn(:,2,ii))<nI+1 & floor(Xn(:,2,ii))>=1 ;
                     end
                 % Elements
                     VALID.Elems(:,ii) = VALID.Elems(:,ii) & sum(tri2nod(VALID.Nodes(:,ii),:),1)'==3 ; % triangles with still their three nodes valid
@@ -50,7 +50,8 @@ for ii = dicFrames
             % PIXEL-WISE DISPLACEMENT AND DIC DOMAIN
                 % VALID DIC Domain
                 % Compute the displacement 
-                    Ui = Un(:,:,ii) ; Ui(~VALID.Nodes(:,ii),:) = 0 ;
+                    Ui = Un(:,:,ii) ; 
+                    Ui(~VALID.Nodes(:,ii),:) = 0 ;
                     Up = MAPPING*Ui ;
                 % New position of each pixel
                     JJp = JJd+Up(:,1) ;

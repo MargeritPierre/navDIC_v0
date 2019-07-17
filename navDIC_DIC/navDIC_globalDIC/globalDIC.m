@@ -7,8 +7,8 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 6 ;
-        frames = '[1:275]' ; % Frames taken for DIC (allows decimation)
+        seedNumber = 1 ;
+        frames = '[1:260]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -34,13 +34,13 @@ end % END OF INITIALIZATION
         startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousVelocity = true ; % When possible and no navDIC results available (or not used), add the previous motion as convergence help
     % Reference Image 
-        weightCurrentImage = 0.0 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.05 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
-        kernelModel =   ... 'finiteDiff' ... first order finite difference
-                         'gaussian' ... optimized gaussian
+        kernelModel =    'finiteDiff' ... first order finite difference
+                        ... 'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 3 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 1 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
@@ -56,8 +56,8 @@ end % END OF INITIALIZATION
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         regCrit = 'abs' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e6 ; % Strain gradient penalisation coefficient
-        epsTrsh = 1e0 ; % Limit value for the regularisation weights
+        beta = 1*1e5 ; % Strain gradient penalisation coefficient
+        epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
         minNorm = 1e-2 ; % Maximum displacement of a node
@@ -65,11 +65,11 @@ end % END OF INITIALIZATION
     % Displacement Processing
         exportTOnavDIC = true ;
         reverseReference = true ;
-        strainOnNodes = false ;
+        strainOnNodes = true ;
     % Plotting
         plotRate = 0 ; % Plot Refresh Frequency 
         plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
-        plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
+        plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
         codeProfile = false ;

@@ -167,6 +167,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 submenus(end+1) = uimenu(mClrLims,'Label','1*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','2*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','3*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','4*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','5*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','6*sigma') ;
                             mClrSteps = uimenu(mColors,'Label','Steps') ;
                                 submenus(end+1) = uimenu(mClrSteps,'Label','Continuous','checked','on') ;
                                 submenus(end+1) = uimenu(mClrSteps,'Label','11') ;

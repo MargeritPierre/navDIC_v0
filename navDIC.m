@@ -28,7 +28,7 @@ function navDIC(varargin)
         end
         
     % Is navDIC already running ?
-        set(0,'ShowHiddenHandles','on') ; % Force hadle visibility
+        set(0,'ShowHiddenHandles','on') ; % Force handle visibility
         navDICFigs = findobj(groot,'tag',navDICTag) ;
         % If YES, prompt figures to Foreground
             if strcmp(COMMAND,'') && ~isempty(navDICFigs)

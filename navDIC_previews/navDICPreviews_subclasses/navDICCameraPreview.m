@@ -70,7 +70,7 @@ classdef navDICCameraPreview < navDICPreview
                         img = hd.Images{prev.CameraID}(:,:,:,hd.CurrentFrame) ;
                     end
                     if isempty(img) 
-                        prev.Img.CData = 0.5 + 0*prev.Img.CData ;
+                        %prev.Img.CData = 0.5 + 0*prev.Img.CData ;
                         return ;
                     end
                 % Actualize preview image

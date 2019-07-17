@@ -20,6 +20,8 @@ classdef navDICPlotPreview < navDICPreview
                     prev.fig.MenuBar = 'figure' ;
                 % Set the axes
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
+                        box(prev.Axes,'on')
+                        grid(prev.Axes,'on')
                 % TEMPORARY CODE =======================
                     % Let the user choose the plot
                         availablePlots = {'strain_time','force_time','disp_time','position_time','velocity_time','poisson','force_strain'} ;
@@ -87,8 +89,8 @@ classdef navDICPlotPreview < navDICPreview
                         end
                         title(regexprep(plotMachin,{'_'},{' '}))
                         prev = updatePreview(prev,hd) ;
-                        set(prev.lines,'linestyle','-.','linewidth',1,'marker','.','markersize',20)
-                        set(prev.timeMarkers,'linestyle','none','marker','o','markersize',12,'linewidth',4)
+                        set(prev.lines,'linestyle','-','linewidth',1,'marker','.','markersize',10)
+                        set(prev.timeMarkers,'linestyle','none','marker','.','markersize',35,'linewidth',4)
                 %=======================================
             end
             

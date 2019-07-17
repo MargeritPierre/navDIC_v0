@@ -86,7 +86,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
             % New Default Timeline
                 hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
             % New number of frames
-                hd.nFrames = max(size(IMG,4)) ;
+                hd.nFrames = max(size(IMG,4),hd.nFrames) ;
         end
 
     % Add the images
