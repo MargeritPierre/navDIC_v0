@@ -195,7 +195,7 @@ end % RUN THE CODE FROM HERE
         pauseExecution = false ;
         minNorm = 1e-5 ;
         maxIt = 500 ;
-        minCorrCoeff = 0.01 ;
+        minCorrCoeff = 0.0 ;
         
     % CONSTANT OBJECTS
         % Image
@@ -283,7 +283,7 @@ end % RUN THE CODE FROM HERE
                 end
             % Add the previous "speed" as convergence help
                 if (dicDir==1 && fr>refFrame+1) || (dicDir==-1 && fr<refFrame-1)
-                    Un(:,fr) = Un(:,fr) - dicDir * (Un(:,fr-2*dicDir)-Un(:,fr-dicDir)) * 0;%.1 ;
+                    Un(:,fr) = Un(:,fr) - dicDir * (Un(:,fr-2*dicDir)-Un(:,fr-dicDir)) * 1.0 ;
                 end
             % Newton-Raphson
                 RMSE_0 = Inf ;
@@ -313,9 +313,9 @@ end % RUN THE CODE FROM HERE
                             lin1mz = lin1m(:)./(WEIGHT*normLin1) ;
                             lin2wmz = lin2wm(:)./(WEIGHT*normLin2w) ;
                     % IMAGE FUNCTIONAL
-                        %diffImg = lin1(:)-lin2w(:) ; % Simple difference
-                        diffImg = lin1m(:)-lin2wm(:) ; % Zero-mean difference
-                        %diffImg = (lin1mz(:)-lin2wmz(:)).*(WEIGHT*normLin1) ; % Normalized Zero-mean difference
+                        %diffImg = lin1(:)-lin2w(:) ; weight = 1:sum(VALID) ; % Simple difference
+                        %diffImg = lin1m(:)-lin2wm(:) ; weight = 1:sum(VALID) ; % Zero-mean difference
+                        diffImg = lin1mz(:)-lin2wmz(:) ; weight = 1:sum(VALID) ; % Normalized Zero-mean difference
                     % NEWTON-RAPHSON PROCEDURE
                         % Compute the first RMSE derivative
                             dr_da = (diffImg(DOMAIN)'*dF_da(DOMAIN,VALID))' ;

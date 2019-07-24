@@ -77,34 +77,32 @@ function H = navDIC_processShapesForDistMesh(H)
                     case 'impoly'
                         if ~strcmp(H.Geometries(s).Bool,'polyline')
                             % It is a closed polygon
-                            polyPos = pos([1:end,1],:) ;
-                        else 
-                            polyPos = pos ;
+                            polyPos = 
                         end
                         % Distance Function
-                            dF{geo} = @(p)dpoly(p,polyPos) ;
+                            dF{geo} = @(p)dpoly(p,pos([1:end,1],:)) ;
                         % Fixed Points
                             pFix = [pFix ; pos] ;
                         % Parametrization
-                            l = sqrt(sum(diff(polyPos,1,1).^2,2)) ;
+                            l = sqrt(sum(diff(pos([1:end,1],:),1,1).^2,2)) ;
                             L = cumsum(l) ;
-                            edgPt = @(t)interp1([0;L]/L(end),polyPos,t) ;
+                            edgPt = @(t)interp1([0;L]/L(end),pos([1:end,1],:),t) ;
                     otherwise
                         disp(H.Geometries(s).Class)
                 end
             % Add or Remove Domain
                 switch H.Geometries(s).Bool
+                    case '+'
+                        if geo==1 
+                            dFrecurs{geo} = @(p)dF{geo}(p) ;
+                        else
+                            dFrecurs{geo} = @(p)dunion(dFrecurs{geo-1}(p),dF{geo}(p)) ;
+                        end
                     case '-'
                         if geo==1 
                             dFrecurs{geo} = @(p)dF{geo}(p) ;
                         else
                             dFrecurs{geo} = @(p)ddiff(dFrecurs{geo-1}(p),dF{geo}(p)) ;
-                        end
-                    otherwise %case '+'
-                        if geo==1 
-                            dFrecurs{geo} = @(p)dF{geo}(p) ;
-                        else
-                            dFrecurs{geo} = @(p)dunion(dFrecurs{geo-1}(p),dF{geo}(p)) ;
                         end
                 end
             % Density function

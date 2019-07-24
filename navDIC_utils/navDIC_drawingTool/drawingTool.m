@@ -57,6 +57,10 @@ function H = drawingTool(varargin)
                     H.Shapes{numShape} = impoint(H.Axes,varargin{:}) ;
                 case 'imline'
                     H.Shapes{numShape} = imline(H.Axes,varargin{:}) ;
+                case 'impolyline'
+                    H.Shapes{numShape} = impoly(H.Axes,varargin{:},'Closed',false) ;
+                    shape = 'impoly' ;
+                    msg = 'polyline' ;
                 otherwise
                     return ;
             end
@@ -320,7 +324,7 @@ function H = drawingTool(varargin)
                             theBtn.ClickedCallback = @(src,evt)newShape('imline','+',[]) ;
                         case 'polyline'
                             theBtn.TooltipString = 'Draw a Polyline' ;
-                            theBtn.ClickedCallback = @(src,evt)newShape('Polyline','+',[]) ;
+                            theBtn.ClickedCallback = @(src,evt)newShape('impolyline','+',[]) ;
                         case 'spline'
                             theBtn.TooltipString = 'Draw a Spline' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('Spline','+',[]) ;

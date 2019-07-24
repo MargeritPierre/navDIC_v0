@@ -93,7 +93,7 @@ while 1
             bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
             bars=unique(sort(bars,2),'rows');                % Bars as node pairs
         % If only fixed points remains, break
-            if size(p,1)<=size(pfix,1) ; break ; end
+            if size(p,1)<=size(pfix,1) ; infos{end+1} = {'out criterion: only fixed points'} ; break ; end
       end
 
   % Move mesh points based on bar lengths L and forces F
@@ -135,7 +135,10 @@ while 1
       if stopBtn.Value ; infos{end+1} = {'out criterion: user stop'} ; break ; end 
 
   % 5. Graphical output of the current mesh
-     updateMeshPlot(p,t) ;
+      if toc(lastPlotTime)>1/plotFreq
+          updateMeshPlot(p,t) ;
+          lastPlotTime = tic ;
+      end
 end
 infos{end+1} = {[num2str(count),' iterations']} ;
 infos{end+1} = {['last dP: ',num2str(dP)]} ;
@@ -159,6 +162,7 @@ infos{end+1} = {[num2str(nReTri),' re-triangulations']} ;
     mesh.Patches = triMesh ;
     infos{end+1} = {[num2str(size(p,1)),' nodes']} ;
     infos{end+1} = {[num2str(size(t,1)),' triangles']} ;
+    infos{end+1} = '<a href="matlab: opentoline(which(''navDIC_computeDistMesh2D.m''),6)">method parameters</a>' ;
     
     
 % DISPLAY INFOS
@@ -185,20 +189,17 @@ disp('----------------')
 
     function updateMeshPlot(p,t)
         if isvalid(triMesh) 
-            if toc(lastPlotTime)>1/plotFreq
-                triMesh.FaceVertexCData = sqrt(sum(dp.^2,2)) ;
-                triMesh.Vertices = p ;
-                triMesh.Faces = t ;
-                infosText.String = ['Infos: ' ...
-                                     , ' | it: ' , num2str(count),'/',num2str(maxCount) ...
-                                     , ' | Nodes: ' , num2str(length(p)) ...
-                                     , ' | Triangles: ' , num2str(size(t,1)) ...
-                                     , ' | Re-Tri: ' , num2str(nReTri) ...
-                                     , ' | dP: ' , num2str(dP,3),'/',num2str(dptol,3) ...
-                                    ] ; 
-                drawnow
-                lastPlotTime = tic ;
-            end
+            triMesh.FaceVertexCData = sqrt(sum(dp.^2,2)) ;
+            triMesh.Vertices = p ;
+            triMesh.Faces = t ;
+            infosText.String = ['Infos: ' ...
+                                 , ' | it: ' , num2str(count),'/',num2str(maxCount) ...
+                                 , ' | Nodes: ' , num2str(length(p)) ...
+                                 , ' | Triangles: ' , num2str(size(t,1)) ...
+                                 , ' | Re-Tri: ' , num2str(nReTri) ...
+                                 , ' | dP: ' , num2str(dP,3),'/',num2str(dptol,3) ...
+                                ] ; 
+            drawnow
         end
     end
 

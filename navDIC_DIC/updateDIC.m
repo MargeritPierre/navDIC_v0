@@ -8,11 +8,14 @@ function hd = updateDIC(hd)
         
     % Compute displacements
         for s = 1:length(hd.Seeds)
+            if ~hd.Seeds(s).compDisp ; continue ; end
             hd.Seeds(s) = hd.Seeds(s).computeDisplacements(hd) ;
         end
         
     % Compute Strains
         for s = 1:length(hd.Seeds)
+            if ~hd.Seeds(s).compDisp ; continue ; end
+            if ~hd.Seeds(s).compStrains ; continue ; end
             hd.Seeds(s) = hd.Seeds(s).computeStrains(hd) ;
         end
 

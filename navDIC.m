@@ -561,21 +561,22 @@ function navDIC(varargin)
             switch dataType
                 case 'Images'
                     % Let the user choose a camera
-                        [valid,camID] = selectCameras(hd,'single') ;
+                        [camID,valid] = selectCameras(hd,'single') ;
                         if ~valid ; return ; end
                     % Let the user choose an image file name
-                        [file,path] = uiputfile('*',...
+                        [file,path] = uiputfile('*.tiff',...
                                         'SELECT THE COMMON IMAGE PATH', ... 
-                                        [hd.WorkDir.Path,hd.Cameras(camID).Name,'/img',hd.WorkDir.ImagesExtension] ...
+                                        [hd.WorkDir.Path,'\',hd.Cameras(camID).Name,'\img',hd.WorkDir.ImagesExtension] ...
                                         ) ;
                         if path==0 ; return ; end
                         [path,commonName,ext] = fileparts([path,file]) ;
                     % Save All Images
                         wtbr = waitbar(0,'Writing Images...') ;
-                        for fr = 1:hd.nFrames
+                        nFrames = size(hd.Images{camID},4) ;
+                        for fr = 1:nFrames 
                             filename = [path,'/',commonName,'_',num2str(fr),ext] ;
                             imwrite(hd.Images{camID}(:,:,:,fr),filename) ;
-                            wtbr = waitbar(fr/hd.nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
+                            wtbr = waitbar(fr/nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
                         end
                         delete(wtbr) ;
                 case 'Animation'

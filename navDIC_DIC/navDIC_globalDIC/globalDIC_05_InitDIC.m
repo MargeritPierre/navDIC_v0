@@ -105,5 +105,5 @@
             VALID.Edges = false(nEdges,nFrames) ;
             VALID.Edges(:,avgFrames) = true ;
             VALID.NakedEdges = false(nEdges,nFrames) ;
-            VALID.NakedEdges(:,avgFrames) = sum(tri2edg,2)<2 ;
+            VALID.NakedEdges(:,avgFrames) = repmat(sum(tri2edg,2)<2,[1 length(avgFrames)]) ;
     

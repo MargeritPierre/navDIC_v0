@@ -28,7 +28,7 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
             case 'abs'
                 PtsRef = obj.Points ;
                 imgRef = hd.Images{camID}(:,:,:,obj.RefFrame) ;%obj.refImgs{1} ;
-                PtsMov = obj.MovingPoints(:,:,frame-obj.RefFrame) ; % round() ?
+                PtsMov = obj.MovingPoints(:,:,frame-1);%-obj.RefFrame) ; % round() ?
                 imgMov = hd.Images{camID}(:,:,:,frame) ;
             case 'rel'
                 PtsRef = obj.MovingPoints(:,:,frame-1) ;

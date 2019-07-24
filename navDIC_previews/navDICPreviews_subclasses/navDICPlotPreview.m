@@ -81,7 +81,8 @@ classdef navDICPlotPreview < navDICPreview
                                 prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                                 prev.timeMarkers(1) = plot(NaN,NaN) ;
                             case 'FORCE_STRAIN'
-                                prev.XDataSources{1} = ['meanNoNaN((',seedStr,'.Strains(:,2,:)),1)'] ;
+                                prev.XDataSources{1} = ['meanNoNaN((',seedStr,'.MajorStrains(:,1,:)),1)'] ;
+                                %prev.XDataSources{1} = ['meanNoNaN((',seedStr,'.Strains(:,2,:)),1)'] ;
                                 prev.YDataSources{1} = ['hd.InputData-hd.InputData(1)'] ;
                                 prev.lines(1) = plot(NaN,NaN,'tag','Poisson') ;
                                 prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;

@@ -81,7 +81,7 @@ classdef navDICSlicingTool < navDICCameraPreview
                 % Update the slice function
                     sliceFunction = @(pos)slice(prev,hd) ;
                 % Execute it
-                    sliceFunction() ;
+                    %sliceFunction() ;
                 % Set it as the slice line position callback
                     for s = 1:numel(prev.SliceLines)
                         removeNewPositionCallback(prev.SliceLines(s),prev.SliceCallBacks(s)) ;
@@ -91,7 +91,6 @@ classdef navDICSlicingTool < navDICCameraPreview
             
         % SLICING FUNCTION
             function slice(prev,hd)
-                disp(['slice! ',num2str(rand(1))])
                 %return ;
                 % Get the lines position
                     X = [] ; Y = [] ; Ls = [] ;
