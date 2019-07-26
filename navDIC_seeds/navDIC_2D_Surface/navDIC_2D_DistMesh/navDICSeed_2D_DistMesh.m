@@ -38,69 +38,74 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 if size(obj.Points,1)==size(Points,1) && sqrt(sum((obj.Points(:)-Points(:)).^2))<1
                     return ; % No need for modifications
                 end
-            % ASK THE USER WHAT TO DO
-                if all(isnan(obj.MovingPoints(:))) ; return ; end
-                answer = questdlg(...
-                            {'THE MESH HAS BEEN MODIFIED.',...
-                            'WHAT DO YOU WANT TO DO WITH THE EXISTING DATA ?'}...
-                            ,'/!\ WARNING'...
-                            ,'Project','Clear','Cancel','Project'...
-                            ) ; 
-                if strcmp(answer,'Cancel') ; return ; end
             % MODIFY THE MESH DATA
-                % Init with NaNs
-                    MovingPoints = ones(size(Points,1),2,hd.nFrames)*NaN ;
-                    Displacements = ones(size(Points,1),2,hd.nFrames)*NaN ;
-                    Strains = ones(size(Points,1),3,hd.nFrames)*NaN ;
-                % Project previous computations if wanted
-                    if strcmp(answer,'Project')
-                        % Triangulation class constructor
-                            tri = triangulation(obj.Triangles,obj.Points) ; 
-                        % oldPoints associated to each newPoint
-                            % Initialization
-                                indPts = zeros(size(Points,1),3) ;
-                            % Enclosing element and barycentric positions
-                                [elmt,weights] = pointLocation(tri,Points) ; 
-                            % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
-                                outside = isnan(elmt) ;
-                                outsidePts = Points(outside,:) ;
-                                if any(outside)
-                                    % Find the closest element
-                                        C = circumcenter(tri) ;
-                                        [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
-                                        elmt(outside) = clstElmt ;
-                                    % Find the (extended) coordinates of the new point in each old closest element frame
-                                        elmtNodes = obj.Triangles(clstElmt,:) ;
-                                        p1 = obj.Points(elmtNodes(:,1),:)' ; 
-                                        p2 = obj.Points(elmtNodes(:,2),:)' ; 
-                                        p3 = obj.Points(elmtNodes(:,3),:)' ; 
-                                        v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
-                                        m = [] ; % coordinates in this frame
-                                        for pp = 1:length(clstElmt)
-                                            m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
+                if all(isnan(obj.MovingPoints(:))) ; 
+                    MovingPoints = ones(size(Points,1),1)*obj.MovingPoints(1,:) ;
+                    Displacements = MovingPoints ;
+                    Strains = MovingPoints(:,[1 2 1]) ;
+                else
+                    % ASK THE USER WHAT TO DO
+                        answer = questdlg(...
+                                    {'THE MESH HAS BEEN MODIFIED.',...
+                                    'WHAT DO YOU WANT TO DO WITH THE EXISTING DATA ?'}...
+                                    ,'/!\ WARNING'...
+                                    ,'Project','Clear','Cancel','Project'...
+                                    ) ; 
+                        if strcmp(answer,'Cancel') ; return ; end
+                        % Init with NaNs
+                            MovingPoints = ones(size(Points,1),2,hd.nFrames)*NaN ;
+                            Displacements = ones(size(Points,1),2,hd.nFrames)*NaN ;
+                            Strains = ones(size(Points,1),3,hd.nFrames)*NaN ;
+                        % Project previous computations if wanted
+                            if strcmp(answer,'Project')
+                                % Triangulation class constructor
+                                    tri = triangulation(obj.Triangles,obj.Points) ; 
+                                % oldPoints associated to each newPoint
+                                    % Initialization
+                                        indPts = zeros(size(Points,1),3) ;
+                                    % Enclosing element and barycentric positions
+                                        [elmt,weights] = pointLocation(tri,Points) ; 
+                                    % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
+                                        outside = isnan(elmt) ;
+                                        outsidePts = Points(outside,:) ;
+                                        if any(outside)
+                                            % Find the closest element
+                                                C = circumcenter(tri) ;
+                                                [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
+                                                elmt(outside) = clstElmt ;
+                                            % Find the (extended) coordinates of the new point in each old closest element frame
+                                                elmtNodes = obj.Triangles(clstElmt,:) ;
+                                                p1 = obj.Points(elmtNodes(:,1),:)' ; 
+                                                p2 = obj.Points(elmtNodes(:,2),:)' ; 
+                                                p3 = obj.Points(elmtNodes(:,3),:)' ; 
+                                                v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
+                                                m = [] ; % coordinates in this frame
+                                                for pp = 1:length(clstElmt)
+                                                    m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
+                                                end
+                                            % Assign the weights
+                                                indPts(outside,:) = elmtNodes ;
+                                                weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
                                         end
-                                    % Assign the weights
-                                        indPts(outside,:) = elmtNodes ;
-                                        weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
-                                end
-                            % Inside nodes
-                                indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
-                        % Transfer Matrix
-                            nodes = (1:size(Points,1))'*[1 1 1] ;
-                            T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(obj.Points,1)) ;
-                        % Projection of displacements
-                            MovingPoints = reshape(T*reshape(obj.MovingPoints,size(obj.Points,1),[]),size(Points,1),2,hd.nFrames) ;
-                            Displacements = reshape(T*reshape(obj.Displacements,size(obj.Points,1),[]),size(Points,1),2,hd.nFrames) ;
-                        % For strain
-                            if size(obj.Strains,1)==size(obj.Points,1) % Strains defined on nodes
-                                Strains = reshape(T*reshape(obj.Strains,size(obj.Points,1),[]),size(Points,1),3,hd.nFrames) ;
-                            else % Strains defined on elements
-                                elmt(outside) = 1 ;
-                                weights(outside,:) = 1 ;
-                                Ts = sparse(1:size(Points,1),elmt,weights(:,1),size(Points,1),size(obj.Triangles,1)) ;
-                                Strains = reshape(Ts*reshape(obj.Strains,size(obj.Triangles,1),[]),size(Points,1),3,hd.nFrames) ;
+                                    % Inside nodes
+                                        indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
+                                % Transfer Matrix
+                                    nodes = (1:size(Points,1))'*[1 1 1] ;
+                                    T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(obj.Points,1)) ;
+                                % Projection of displacements
+                                    MovingPoints = reshape(T*reshape(obj.MovingPoints,size(obj.Points,1),[]),size(Points,1),2,hd.nFrames) ;
+                                    Displacements = reshape(T*reshape(obj.Displacements,size(obj.Points,1),[]),size(Points,1),2,hd.nFrames) ;
+                                % For strain
+                                    if size(obj.Strains,1)==size(obj.Points,1) % Strains defined on nodes
+                                        Strains = reshape(T*reshape(obj.Strains,size(obj.Points,1),[]),size(Points,1),3,hd.nFrames) ;
+                                    else % Strains defined on elements
+                                        elmt(outside) = 1 ;
+                                        weights(outside,:) = 1 ;
+                                        Ts = sparse(1:size(Points,1),elmt,weights(:,1),size(Points,1),size(obj.Triangles,1)) ;
+                                        Strains = reshape(Ts*reshape(obj.Strains,size(obj.Triangles,1),[]),size(Points,1),3,hd.nFrames) ;
+                                    end
                             end
-                    end
+                end
                 % Crush the old mesh
                     obj.drawToolH = drawToolH ;
                     obj.Points = Points ;

@@ -45,6 +45,8 @@ function H = drawingTool(varargin)
 % ADD A SHAPE
     function newShape(shape,msg,varargin)
         numShape = length(H.Shapes)+1 ;
+        if regexp(msg,'impolyline','once') ; shape = 'impolyline' ; end
+        %msg = [msg , ' [',shape,']'] ;
         % Shape-depending properties
             switch shape
                 case 'imrect'
@@ -60,13 +62,13 @@ function H = drawingTool(varargin)
                 case 'impolyline'
                     H.Shapes{numShape} = impoly(H.Axes,varargin{:},'Closed',false) ;
                     shape = 'impoly' ;
-                    msg = 'polyline' ;
+                    msg = 'impolyline' ;
                 otherwise
                     return ;
             end
             fcn = makeConstrainToRectFcn(shape,H.Axes.XLim, H.Axes.YLim) ;
         % Type-depending properties
-            switch msg
+            switch msg(1)
                 case '+'
                     setColor(H.Shapes{numShape},'b') ;
                 case '-'

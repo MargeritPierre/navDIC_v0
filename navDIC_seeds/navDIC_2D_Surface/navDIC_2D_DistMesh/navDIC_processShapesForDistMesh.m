@@ -7,7 +7,9 @@ function H = navDIC_processShapesForDistMesh(H)
 
     % Is there geometries to process ?
         mesh = [] ;
-        if isempty(H.Geometries) || ~any([H.Geometries.isValid]) 
+        if isempty(H.Geometries) ...
+                || ~any([H.Geometries.isValid]) ...
+                || (all(ismember([H.Geometries.Class],'impoint')) && numel(H.Geometries)<3) 
             triMesh = findobj(H.Axes,'tag','DistMeshPreview') ;
             delete(triMesh) ;
             return ; 
@@ -75,7 +77,7 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Parametrization
                             edgPt = @(t)[cx+a*cos(2*pi*t'),cy+b*sin(2*pi*t')] ;
                     case 'impoly'
-                        if ~strcmp(H.Geometries(s).Bool,'polyline')
+                        if ~strcmp(H.Geometries(s).Bool,'impolyline')
                             % It is a closed polygon
                             polyPos = pos([1:end,1],:) ;
                         else 
@@ -89,6 +91,9 @@ function H = navDIC_processShapesForDistMesh(H)
                             l = sqrt(sum(diff(polyPos,1,1).^2,2)) ;
                             L = cumsum(l) ;
                             edgPt = @(t)interp1([0;L]/L(end),polyPos,t) ;
+                    case 'impoint'
+                            pFix = [pFix ; pos] ;
+                            dF{geo} = @(p)sqrt((p(:,1)-pos(1)).^2+(p(:,2)-pos(2)).^2) ;
                     otherwise
                         disp(H.Geometries(s).Class)
                 end
@@ -111,7 +116,7 @@ function H = navDIC_processShapesForDistMesh(H)
                 hF{geo} = @(p)max(0,1-abs(dF{geo}(p)/d(s))) ;
                 hFrecurs{geo+1} = @(p)hFrecurs{geo}(p).*(1-hF{geo}(p))+h(s).*hF{geo}(p) ;
             % Add Fixed Points at Intersections of edges
-                if geo>1
+                if geo>1 && ismember(H.Geometries(s).Class,{'imrect','impoly','imellipse'})
                     t0 = (0:nPtsInt-1)/nPtsInt ;
                     p0 = edgPt(t0) ;
                     d0 = dFrecurs{geo-1}(p0) ;

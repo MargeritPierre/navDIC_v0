@@ -1,8 +1,8 @@
   
 %% SHOW THE INITIALIZATION THAT HAS BEEN ACHIEVED
 
-        clf(figGlobalDIC) ;
-        figure(figGlobalDIC) ;
+        clf(figDIC) ;
+        figure(figDIC) ;
         
         axes('position',[0 0 1 1])
             im = imagesc(1:nJ,1:nI,img0) ; colormap(gray)

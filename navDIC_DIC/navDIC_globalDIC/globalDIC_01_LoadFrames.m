@@ -63,9 +63,9 @@
     end
     
 % INIT THE FIGURE
-    figGlobalDIC = findobj(groot,'tag','globalDICfigure') ;
-        if isempty(figGlobalDIC)
-            figGlobalDIC = figure('tag','globalDICfigure') ;
+    figDIC = findobj(groot,'tag',figTag) ;
+        if isempty(figDIC)
+            figDIC = figure('tag',figTag,'name',figTag,'numbertitle','off') ;
         end
     
     

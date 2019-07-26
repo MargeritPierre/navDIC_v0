@@ -14,17 +14,22 @@ for ii = dicFrames
         VALID.Elems(:,ii) = VALID.Elems(:,ii-dicDir) ;
         VALID.Edges(:,ii) = VALID.Edges(:,ii-dicDir) ;
         VALID.NakedEdges(:,ii) = VALID.NakedEdges(:,ii-dicDir) ;
-    % First Guess for the displacement if needed
-        if ~useNavDICXn(ii) || all(isnan(Xn(:,1,ii)))
-            % Take the previously computed frame
+    % First Guess for the positions
+        % Take the previously computed frame
+            if ~useNavDICXn(ii) || all(isnan(Xn(:,1,ii)))
                 Xn(:,:,ii) = Xn(:,:,ii-dicDir) ;
-            % Add the previous "speed" as convergence help
-                if addPreviousVelocity && abs(refFrame-ii)>=2
-                    Xn(:,:,ii) = Xn(:,:,ii) + (Xn(:,:,ii-dicDir)-Xn(:,:,ii-2*dicDir)) * (frames(ii)-frames(ii-dicDir))/(frames(ii-dicDir)-frames(ii-2*dicDir)) * 1.0 ;
+            end
+        % Add the previous "correction" as convergence help
+            if addPreviousCorrection && abs(refFrame-ii)>=2
+                if useNavDICXn(ii-dicDir) % Add the correction of the previous frame with regard to the navDIC positions
+                    correctionXn = Xn(:,:,ii-dicDir) - Xn0(:,:,ii-dicDir) ;
+                else % Add the correction of the previous frame with regard to the before-the-previous frame
+                    correctionXn = (Xn(:,:,ii-dicDir)-Xn(:,:,ii-2*dicDir)) * (frames(ii)-frames(ii-dicDir))/(frames(ii-dicDir)-frames(ii-2*dicDir)) ;
                 end
-            % Displacement
-                Un(:,:,ii) = Xn(:,:,ii) - Nodes ;
-        end
+                Xn(:,:,ii) = Xn(:,:,ii) + correctionXn * 1.0 ;
+            end
+    % Displacement guess
+        Un(:,:,ii) = Xn(:,:,ii) - Nodes ;
     % Newton-Raphson
         RMSE_0 = Inf ;
         while ~outFlag && ~stopBtn.Value
@@ -144,17 +149,26 @@ for ii = dicFrames
                     a = X\b ;
                 % Displacement
                     dU = reshape(a,[nVALID 2]) ;
-                    Un(VALID.Nodes(:,ii),:,ii) = Un(VALID.Nodes(:,ii),:,ii) + dU ;
+                % Descent Step
+                    % Displacement oscillations
+                        corr_dU = sum(dUo(validDOF).*dU(:))/(norm(dUo(validDOF))*norm(dU(:))) ;
+                        dUo(:) = 0 ; dUo(validDOF) = dU(:) ;
+                    % Compute the step
+                        step = stepRatio ;
+                        if corr_dU>.95
+                            %step = 1-(1-stepRatio)^4 ;
+                        end
+                        if corr_dU<-.1 % Need to decrease the step
+                            step = stepRatio^(1/(1+corr_dU)) ;
+                        end
                 % Positions
+                    Un(VALID.Nodes(:,ii),:,ii) = Un(VALID.Nodes(:,ii),:,ii) + dU * step ;
                     Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
             % CONVERGENCE CITERIONS
                 % Residues Maps
                     resid = abs(diffImg) ;
                     meanSquaredElemResid = ((WEIGHT'*abs(diffImg))) ;
                     corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
-                % Displacement oscillations
-                    corr_dU = sum(dUo(validDOF).*dU(:))/(norm(dUo(validDOF))*norm(dU(:))) ;
-                    dUo(:) = 0 ; dUo(validDOF) = dU(:) ;
                 % Criterions
                     it = it+1 ;
                     %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
