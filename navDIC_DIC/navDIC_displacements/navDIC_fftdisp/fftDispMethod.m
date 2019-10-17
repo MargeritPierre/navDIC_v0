@@ -2,8 +2,8 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
-        CorrSize = 51*[1 1] ; % Rectangular window
-        m = round(CorrSize/3) ; % Margin to truncate borders
+        CorrSize = 50*[1 1] ; % Rectangular window
+        m = round(CorrSize/6) ; % Margin to truncate borders
         uMax = 10*[1 1] ; CorrSize/3 ; % Maximum allowed displacement per iteration
         FIT =   ... 'LS' ...
                  'SVD' ...
@@ -86,14 +86,29 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                 fftMov = fft(imagettesMov,[],1) ;
         end
         
+%     % Normalize
+%         fftRef = fftRef./abs(fftRef) ;
+%         fftMov = fftMov./abs(fftMov) ;
+%         
+%     % Phase field
+%         PHI = fftshift(fftshift(fftMov./fftRef,1),2) ;
+%         PHI = PHI./abs(PHI) ;
+%         PHI(isnan(PHI)) = 1 ;
+        
     % Normalize
-        fftRef = fftRef./abs(fftRef) ;
-        fftMov = fftMov./abs(fftMov) ;
         
     % Phase field
-        PHI = fftshift(fftshift(fftMov./fftRef,1),2) ;
-        PHI = PHI./abs(PHI) ;
-        PHI(isnan(PHI)) = 1 ;
+        PHI = fftMov.*conj(fftRef) ;
+        PHI = fftshift(fftshift(PHI,1),2) ;
+        PHI = PHI./abs(PHI+eps) ;
+        
+    % Hankel Matrix
+        if strcmp(FIT,'SVD')
+            indI = 1+m(1):CorrSize(1)-m(1) ; 
+            indJ = 1+m(2):CorrSize(2)-m(2) ;
+            N = floor(CorrSize/2) ;
+            %H = hankel(0:N(1)-1,N(1)-1:CorrSize(1)-1),CorrSize(1)*hankel(
+        end
 
         
     % Wavevectors
@@ -139,7 +154,7 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
             case 'SVD' % Use SVD Decomposition (Slower)
                 for p = 1:nPts
                     % Select and truncate
-                        phi = PHI(1+m(1):end-m(1),1+m(2):end-m(2),p) ;
+                        phi = PHI(indI,indJ,p) ;
                     % SVD Filtering
                         [U,~,V] = svd(phi,'econ') ;
                     % Shift Invariance

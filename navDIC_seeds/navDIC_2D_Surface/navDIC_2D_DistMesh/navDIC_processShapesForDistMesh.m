@@ -134,7 +134,7 @@ function H = navDIC_processShapesForDistMesh(H)
         FH = @(p)hFrecurs{end}(p) ;
         fh = @(p)FH(p) ; %min(max(FH(p),huniform(p)*minH0),maxH0*huniform(p)) ;
     % Add intersection points to fixed ppoints
-        pFix = [pFix ; pInt] ;
+        pFix = [] ; [pFix ; pInt] ;
         
     % Remove fixed points that are not on the boundary
         if ~isempty(pFix)

@@ -325,7 +325,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                     otherwise
                                         steps = str2num(steps) ;
                                 end
-                                colormap(ax,jet(steps)) ;
+                                if steps~=size(colormap(ax),1) ; colormap(ax,jet(steps)) ; end
                         end
                 end
         end

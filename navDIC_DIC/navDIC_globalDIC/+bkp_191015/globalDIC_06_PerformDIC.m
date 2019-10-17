@@ -15,14 +15,13 @@ for ii = dicFrames
         VALID.Edges(:,ii) = VALID.Edges(:,ii-dicDir) ;
         VALID.NakedEdges(:,ii) = VALID.NakedEdges(:,ii-dicDir) ;
     % First Guess for the positions
-        % Xn(:,:,ii) has already been initialized to Xn0(:,:,ii) (navDIC positions)
-        % Take the previously computed frame if needed
+        % Take the previously computed frame
             if ~useNavDICXn(ii) || all(isnan(Xn(:,1,ii)))
                 Xn(:,:,ii) = Xn(:,:,ii-dicDir) ;
             end
         % Add the previous "correction" as convergence help
             if addPreviousCorrection && abs(refFrame-ii)>=2
-                if useNavDICXn(ii)%(ii-dicDir) % Add the correction of the previous frame with regard to the navDIC positions
+                if useNavDICXn(ii-dicDir) % Add the correction of the previous frame with regard to the navDIC positions
                     correctionXn = Xn(:,:,ii-dicDir) - Xn0(:,:,ii-dicDir) ;
                 else % Add the correction of the previous frame with regard to the before-the-previous frame
                     correctionXn = (Xn(:,:,ii-dicDir)-Xn(:,:,ii-2*dicDir)) * (frames(ii)-frames(ii-dicDir))/(frames(ii-dicDir)-frames(ii-2*dicDir)) ;
@@ -138,14 +137,6 @@ for ii = dicFrames
                             if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
                     end
                     wCon = sparse(1:2*nVALID,1:2*nVALID,[wCon;wCon]) ;
-                    DU = Un(VALID.Nodes(:,ii),1,ii) ;
-                    switch regCrit
-                        case 'abs' % Strain computed from the reference state
-                        case 'rel' % Strain computed from the previous state
-                            if abs(refFrame-ii)>=2
-                                DU = DU - Un(VALID.Nodes(:,ii),1,ii-dicDir) ;
-                            end
-                    end
                 % Updating DOFs, X*a=b
                     X = ( ...
                             weight*Hess(validDOF,validDOF)*weight...
@@ -153,7 +144,7 @@ for ii = dicFrames
                         ) ; 
                     b = (...
                             weight*dr_da(validDOF)...
-                            - beta*wCon*CONS*[DU ; DU]...
+                            - beta*wCon*CONS*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)]...
                         ) ;
                     a = X\b ;
                 % Displacement

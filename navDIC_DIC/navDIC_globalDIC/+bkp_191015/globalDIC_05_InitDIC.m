@@ -75,7 +75,7 @@
 % INITIALIZE
     % Nodes position
         useNavDICXn = false(nFrames,1) ;
-        switch num2str(startWithNavDICPositions)
+        switch startWithNavDICPositions
             case 'all'
                 useNavDICXn(:) = true ;
             case 'none'
