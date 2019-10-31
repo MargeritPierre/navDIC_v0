@@ -3,7 +3,7 @@
 global hd
 
 qmin = 1/10 ;
-seedNumber = 4
+seedNumber = 3
 mesh = hd.Seeds(seedNumber) ;
 tri = mesh.Triangles ;
 Xm = mesh.Points(:,1) ;

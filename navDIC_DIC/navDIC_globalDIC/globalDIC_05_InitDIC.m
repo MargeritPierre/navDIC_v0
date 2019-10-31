@@ -20,7 +20,7 @@
                             ,'facealpha',0.5) ;
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
-            set(ax(1),'Clipping','off') ;
+            %set(ax(1),'Clipping','off') ;
         ax(2) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,2) ;
             ax(2).Position = ax(2).Position.*[1 1-infosHeight 1 1-infosHeight] ;
             imRes = imagesc(1:nJ,1:nI,Smooth(img0)*NaN) ; 
@@ -41,7 +41,7 @@
                         ,'backgroundcolor','w'...
                         ,'foregroundcolor','r'...
                         ,'fontsize',fontSize ...
-                        ,'fontweight','bold' ...
+                        ...,'fontweight','bold' ...
                         ,'horizontalalignment','left'...
                         ,'position',[0 1-infosHeight 1 infosHeight]...
                         ) ;
@@ -95,6 +95,8 @@
         refImageChanged = true ;
     % Image moments 
         sumWEIGHT = sum(WEIGHT,1).' ;
+    % Residue
+        RMSE = NaN(nFrames,maxIt) ;
     % Valid geometry masks
         VALID = [] ;
         % Nodes

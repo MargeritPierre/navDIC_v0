@@ -35,13 +35,13 @@ end % END OF INITIALIZATION
         startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.3 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.00 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 5 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 3 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
@@ -64,12 +64,13 @@ end % END OF INITIALIZATION
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         stepRatio = 1 ;%0.15 ; % Descent step ratio, damping the convergence
-        regCrit = 'abs' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e5 ; % Strain gradient penalisation coefficient
+        regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
+        beta = 5*1e6 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-2 ; % Maximum displacement of a node
+        minNorm = 1e-3 ; % Maximum displacement of a node
+        maxResidueRelativeVariation = -.001 ; % Maximum relative vriation of the image residue (RMSE)
         minCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
         exportTOnavDIC = true ;

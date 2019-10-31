@@ -50,22 +50,24 @@ function H = drawingTool(varargin)
         % Shape-depending properties
             switch shape
                 case 'imrect'
-                    H.Shapes{numShape} = imrect(H.Axes,varargin{:}) ; 
+                    SHAPE = imrect(H.Axes,varargin{:}) ; 
                 case 'imellipse'
-                    H.Shapes{numShape} = imellipse(H.Axes,varargin{:}) ;
+                    SHAPE = imellipse(H.Axes,varargin{:}) ;
                 case 'impoly'
-                    H.Shapes{numShape} = impoly(H.Axes,varargin{:}) ;
+                    SHAPE = impoly(H.Axes,varargin{:}) ;
                 case 'impoint'
-                    H.Shapes{numShape} = impoint(H.Axes,varargin{:}) ;
+                    SHAPE = impoint(H.Axes,varargin{:}) ;
                 case 'imline'
-                    H.Shapes{numShape} = imline(H.Axes,varargin{:}) ;
+                    SHAPE = imline(H.Axes,varargin{:}) ;
                 case 'impolyline'
-                    H.Shapes{numShape} = impoly(H.Axes,varargin{:},'Closed',false) ;
+                    SHAPE = impoly(H.Axes,varargin{:},'Closed',false) ;
                     shape = 'impoly' ;
                     msg = 'impolyline' ;
                 otherwise
                     return ;
             end
+            if isempty(SHAPE) ; return ; end
+            H.Shapes{numShape} = SHAPE ;
             fcn = makeConstrainToRectFcn(shape,H.Axes.XLim, H.Axes.YLim) ;
         % Type-depending properties
             switch msg(1)
@@ -109,6 +111,14 @@ function H = drawingTool(varargin)
         % Update
             if H.initFinished
                 updateDrawing(0) ;
+            end
+        % Depending on the shape, loop
+            if isempty(varargin)
+                switch shape
+                    case 'impoint'
+                        newShape(shape,msg) ;
+                    otherwise
+                end
             end
     end
 

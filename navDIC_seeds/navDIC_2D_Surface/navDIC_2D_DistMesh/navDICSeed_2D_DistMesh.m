@@ -44,7 +44,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 end
             % MODIFY THE MESH DATA
                 if all(isnan(obj.MovingPoints(:))) 
-                    MovingPoints = ones(size(Points,1),1)*obj.MovingPoints(1,:) ;
+                    MovingPoints = ones(size(Points,1),1)*obj.MovingPoints(1,:,:) ;
                     Displacements = MovingPoints ;
                     Strains = MovingPoints(:,[1 2 1]) ;
                 else
@@ -274,8 +274,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 submenus(end+1) = uimenu(mClrScale,'Label','Current Frame','checked','on') ;
                                 submenus(end+1) = uimenu(mClrScale,'Label','All Frames') ;
                             mClrLims = uimenu(mColors,'Label','Limits') ;
-                                submenus(end+1) = uimenu(mClrLims,'Label','0-max','checked','on') ;
-                                submenus(end+1) = uimenu(mClrLims,'Label','min-max') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','0-max') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','min-max','checked','on') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','symmetric') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','1*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','2*sigma') ;
@@ -295,7 +295,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     ax.UserData.dataLabel = 'U' ;
                     ax.UserData.clrMode = 'Preset' ;
                     ax.UserData.clrScaleLabel = 'Current Frame' ;
-                    ax.UserData.clrLimsLabel = '0-max' ;
+                    ax.UserData.clrLimsLabel = 'min-max' ;
                     ax.UserData.clrStepsLabel = 'Continuous' ;
         end
         

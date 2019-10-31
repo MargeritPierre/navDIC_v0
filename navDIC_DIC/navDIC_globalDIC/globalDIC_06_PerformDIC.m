@@ -22,7 +22,7 @@ for ii = dicFrames
             end
         % Add the previous "correction" as convergence help
             if addPreviousCorrection && abs(refFrame-ii)>=2
-                if useNavDICXn(ii)%(ii-dicDir) % Add the correction of the previous frame with regard to the navDIC positions
+                if useNavDICXn(ii) && ~all(isnan(Xn0(:,1,ii-dicDir))) % Add the correction of the previous frame with regard to the navDIC positions
                     correctionXn = Xn(:,:,ii-dicDir) - Xn0(:,:,ii-dicDir) ;
                 else % Add the correction of the previous frame with regard to the before-the-previous frame
                     correctionXn = (Xn(:,:,ii-dicDir)-Xn(:,:,ii-2*dicDir)) * (frames(ii)-frames(ii-dicDir))/(frames(ii-dicDir)-frames(ii-2*dicDir)) ;
@@ -32,8 +32,7 @@ for ii = dicFrames
     % Displacement guess
         Un(:,:,ii) = Xn(:,:,ii) - Nodes ;
     % Newton-Raphson
-        RMSE_0 = Inf ;
-        while ~outFlag && ~stopBtn.Value
+        while ~any(outFlag) && ~stopBtn.Value
             % VALID GEOMETRY 
                 % OUT-OF-FRAME POINTS
                     if cullOutOfFrame
@@ -148,12 +147,12 @@ for ii = dicFrames
                             %if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
                     end
                     wCon = sparse(1:2*nVALID,1:2*nVALID,[wCon;wCon]) ;
-                    DU = Un(VALID.Nodes(:,ii),1,ii) ;
+                    DU = reshape(Un(VALID.Nodes(:,ii),:,ii),[],1) ;
                     switch regCrit
                         case 'abs' % Strain computed from the reference state
                         case 'rel' % Strain computed from the previous state
                             if abs(refFrame-ii)>=2
-                                DU = DU - Un(VALID.Nodes(:,ii),1,ii-dicDir) ;
+                                DU = DU - reshape(Un(VALID.Nodes(:,ii),:,ii-dicDir),[],1) ;
                             end
                     end
                 % Updating DOFs, X*a=b
@@ -163,9 +162,10 @@ for ii = dicFrames
                         ) ; 
                     b = (...
                             weight*dr_da(validDOF)...
-                            - beta*wCon*CONS*[DU ; DU]...
+                            - beta*wCon*CONS*DU...
                         ) ;
                     a = X\b ;
+                    descent = -b'*a ; % Descent direction (should be always<0)
                 % Displacement
                     dU = reshape(a,[nVALID 2]) ;
                 % Descent Step
@@ -184,25 +184,24 @@ for ii = dicFrames
                     Un(VALID.Nodes(:,ii),:,ii) = Un(VALID.Nodes(:,ii),:,ii) + dU * step ;
                     Xn(:,:,ii) = Nodes + Un(:,:,ii) ;
             % CONVERGENCE CITERIONS
+                % number of iterations
+                    it = it+1 ;
                 % Residues Maps
-                    resid = abs(diffImg) ;
+                    RMSE(ii,it) = norm(X*a-b) ; %sqrt(sum(diffImg(:).^2)) ;
+                    relativeResidueVariation = (RMSE(ii,it)-RMSE(ii,max(1,it-1)))/RMSE(ii,max(1,it-1)) ;
                     meanSquaredElemResid = ((WEIGHT'*abs(diffImg))) ;
                     corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
                 % Criterions
-                    it = it+1 ;
-                    %RMSE = norm(diffImg(DOMAIN))/norm(img1(DOMAIN)) ; 
                     normA = max(abs(a)) ; norm(a)/nNodes ;
                 % Convergence criterion
-                    if it>maxIt ; outFlag = true ; end
-                    if normA<minNorm ; outFlag = true ; end
-                    if corr_dU<minCorrdU ; outFlag = true ; end
-                    %if RMSE<1e-6 || abs((RMSE-RMSE_0)/RMSE) < 1e-4 ; outFlag = true ; end
-                % Keep the error
-                    %RMSE_0 = RMSE ;
+                    if it>maxIt ; outFlag = 'number of iterations' ; end
+                    if normA<minNorm ; outFlag = 'norm of descent direction' ; end
+                    if corr_dU<minCorrdU ; outFlag = 'descent direction oscillates' ; end
+                    if it>1 && relativeResidueVariation>maxResidueRelativeVariation ; outFlag = 'RMSE did not decreased sufficiently' ; end
             % POINTS/ELEMENTS VALIDATION/DELETION
                 % DECORRELATED ELEMENTS
                     cullGeo = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
-                    if any(cullGeo) && (outFlag || (normA/minNorm)<thresholdValidGeometry)
+                    if any(cullGeo) && (any(outFlag) || (normA/minNorm)<thresholdValidGeometry)
                         switch size(WEIGHT,2) 
                             case nElems % Correlation at the element level
                                 VALID.Elems(VALID.Elems(:,ii),ii) = VALID.Elems(VALID.Elems(:,ii),ii) & ~cullGeo ; 
@@ -221,9 +220,12 @@ for ii = dicFrames
                                          ' | It: ' num2str(it) ...
                                          ' | norm.A: ' num2str(normA,2) ...
                                          ' | corr.dU: ' num2str(corr_dU,3) ...
+                                         ' | RMSE: ' num2str(RMSE(ii,it),5) ...
+                                         ' (' num2str(relativeResidueVariation,3) ')' ...
+                                         ' | outFlag: ' mat2str(outFlag) ...
                                          ] ; 
                 % Heavy Plots
-                    if plotEachIteration || (outFlag && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (outFlag && toc(lastPlotTime)>1/plotRate)
+                    if plotEachIteration || (any(outFlag) && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (any(outFlag) && toc(lastPlotTime)>1/plotRate)
                         im.CData = repmat(img2,[1 1 3]) ;
                         %%
                         residues = ... WEIGHT*corrCoeff ... Correlation coeffient
