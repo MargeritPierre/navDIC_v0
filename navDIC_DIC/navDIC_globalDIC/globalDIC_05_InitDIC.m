@@ -31,6 +31,7 @@
         set(ax,'xtick',[],'ytick',[])
         set(ax,'xlim',[0 nJ]+.5,'ylim',[0 nI]+.5)
         set(ax,'ydir','reverse') 
+        linkaxes(ax,'xy') ;
         clrbr = colorbar(ax(2)) ;
             clrbr.Location = 'west' ;
             clrbr.Color = 'w' ;

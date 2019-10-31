@@ -7,7 +7,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 5 ;
+        seedNumber = 6 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
@@ -16,7 +16,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
         normToImageClassRange = true ; % Normalize images to their dataclass range
         timeMeanLength = 0 ; % Time averaging of images
         strainCriterion = 'full' ; % strain gradient penalization: 'full' or 'normal'
-        showInit = true ;
+        showInit = false ;
         codeProfile = false ; % Code timing
         figTag = 'Global DIC' ;
 
@@ -32,10 +32,10 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = [1:60] ; 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.0 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.3 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -49,6 +49,13 @@ end % END OF INITIALIZATION
                         ... 'ZM_Diff' ... Zero-mean difference
                          'ZM_N_Diff' ... Normalized Zero-mean difference
                          ;
+    % Descent Algorithm
+        method =  'full-GN' ... full Gauss-Newton
+                 ... 'mod-GN' ... modified (assume "grad(g(x+u))=grad(f(x))") OK for small perturbations
+                 ... 'quasi-GN' ... not implemented
+                 ... 'ICGN' ... not implemented
+                 ... 'FCGN' ... not implemented
+                    ;
     % Geometry validation criteria
         cullOutOfFrame = true ; % Cull out of frame points
         WEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
@@ -57,12 +64,12 @@ end % END OF INITIALIZATION
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         stepRatio = 1 ;%0.15 ; % Descent step ratio, damping the convergence
-        regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e7 ; % Strain gradient penalisation coefficient
+        regCrit = 'abs' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
+        beta = 1*1e5 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
-        maxIt = 1000 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 5e-2 ; % Maximum displacement of a node
+        maxIt = 100 ; % Maximum number of Newton-Raphson iterations
+        minNorm = 1e-2 ; % Maximum displacement of a node
         minCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
         exportTOnavDIC = true ;

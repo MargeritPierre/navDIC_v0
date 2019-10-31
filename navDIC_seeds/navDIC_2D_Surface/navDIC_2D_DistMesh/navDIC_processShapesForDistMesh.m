@@ -4,6 +4,7 @@ function H = navDIC_processShapesForDistMesh(H)
         nPtsInt = 10000 ; % num of pts for the intersection computation
         minH0 = 1 ; % default mean bar length
         maxH0 = 200 ;
+        minFixCornerAngle = 45*pi/180 ; % minimum angle between two polygon edges to fix a point
 
     % Is there geometries to process ?
         mesh = [] ;
@@ -86,7 +87,19 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Distance Function
                             dF{geo} = @(p)dpoly(p,polyPos) ;
                         % Fixed Points
-                            pFix = [pFix ; pos] ;
+                            % Edges vectors
+                                edges = diff(polyPos,1) ;
+                                vecs = edges./sqrt(sum(edges.^2,2)) ;
+                            % Angles at corners
+                                angles = acos(abs(sum(vecs.*circshift(vecs,1,1),2))) ;
+                            % Fixed Points
+                                if ~strcmp(H.Geometries(s).Bool,'impolyline')
+                                    % It is a closed polygon
+                                    isFixed = angles>minFixCornerAngle ;
+                                else 
+                                    isFixed = [true ; angles(2:end)>minFixCornerAngle ; true] ;
+                                end
+                                pFix = [pFix ; pos(isFixed,:)] ;
                         % Parametrization
                             l = sqrt(sum(diff(polyPos,1,1).^2,2)) ;
                             L = cumsum(l) ;
@@ -134,7 +147,7 @@ function H = navDIC_processShapesForDistMesh(H)
         FH = @(p)hFrecurs{end}(p) ;
         fh = @(p)FH(p) ; %min(max(FH(p),huniform(p)*minH0),maxH0*huniform(p)) ;
     % Add intersection points to fixed ppoints
-        pFix = [] ; [pFix ; pInt] ;
+        pFix = [pFix ; pInt] ; [] ;
         
     % Remove fixed points that are not on the boundary
         if ~isempty(pFix)

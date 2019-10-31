@@ -105,24 +105,34 @@ for ii = dicFrames
                         end
                         weight = sparse(1:2*nVALID,1:2*nVALID,[ww;ww]) ;
                 end
-            % NEWTON-RAPHSON PROCEDURE
+            % DESCENT COMPUTATION
                 % Recompute Jacobian and Hessian if needed
-                    if refImageChanged
-                        % Image gradients
-                            dImg1_dx = dI_dx(img1) ;
-                            dImg1_dy = dI_dy(img1) ;
+                    if refImageChanged || strcmp(method,'full-GN')
+                        % Method-dependent image used for image gradients
+                            switch method
+                                case 'full-GN'
+                                    if it==0 % the image2 has changed
+                                        dImg2_dx = conv2(img2,[1 0 -1]/2,'same') ;
+                                        dImg2_dy = conv2(img2,[1 0 -1]'/2,'same') ;
+                                    end
+                                    dImg_dx = interp2(JJ(iii,jjj),II(iii,jjj),dImg2_dx(iii,jjj),JJp,IIp,imWarpInterpOrder) ;
+                                    dImg_dy = interp2(JJ(iii,jjj),II(iii,jjj),dImg2_dy(iii,jjj),JJp,IIp,imWarpInterpOrder) ;
+                                otherwise
+                                    dImg_dx = dI_dx(img1) ;
+                                    dImg_dy = dI_dy(img1) ;
+                            end
                         % Jacobian
-                            dImg1_da = [...
-                                    spdiag(dImg1_dx)*MAPPING ... 
-                                    spdiag(dImg1_dy)*MAPPING ... 
+                            dImg_da = [...
+                                    spdiag(dImg_dx)*MAPPING ... 
+                                    spdiag(dImg_dy)*MAPPING ... 
                                     ] ;
                         % Hessian
-                            Hess = dImg1_da'*dImg1_da ;
+                            Hess = dImg_da'*dImg_da ;
                         % No need to compute next time
                             refImageChanged = false ;
                     end
                 % Compute the first RMSE derivative
-                    dr_da = (dImg1_da(validDomain_it,:)'*diffImg(validDomain_it)) ;
+                    dr_da = (dImg_da(validDomain_it,:)'*diffImg(validDomain_it)) ;
                 % Contraint on the SECOND displacement gradient
                     validDOF = [VALID.Nodes(:,ii);VALID.Nodes(:,ii)] ;
                     wCon = ones(1,nVALID) ;
@@ -135,7 +145,7 @@ for ii = dicFrames
                             vEdg = repmat(~VALID.NakedEdges(:,ii),[4 1]) ;
                             vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
                             CONS = G(vEle,validDOF)'*(Ed(vEdg,vEle)'*Ed(vEdg,vEle))*G(vEle,validDOF) ;
-                            if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
+                            %if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
                     end
                     wCon = sparse(1:2*nVALID,1:2*nVALID,[wCon;wCon]) ;
                     DU = Un(VALID.Nodes(:,ii),1,ii) ;
@@ -218,6 +228,7 @@ for ii = dicFrames
                         %%
                         residues = ... WEIGHT*corrCoeff ... Correlation coeffient
                                     abs(diffImg) ... NR residues
+                                   ... Up(:,1) ... Ux displacement
                                    ... WEIGHT*meanSquaredElemResid ... Sum of squared NR residues
                                    ... WEIGHT*((WEIGHT'*abs(diffImg))./sumWEIGHT) ...
                                    ;

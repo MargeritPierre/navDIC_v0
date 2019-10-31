@@ -3,8 +3,7 @@
 global hd
 
 qmin = 1/10 ;
-seedNumber = 3 ;
-
+seedNumber = 4
 mesh = hd.Seeds(seedNumber) ;
 tri = mesh.Triangles ;
 Xm = mesh.Points(:,1) ;
@@ -25,6 +24,8 @@ clf
 axis equal
 patch('Vertices',mesh.Points,'Faces',mesh.Triangles,'facecolor','none','edgecolor','k')
 patch('Vertices',mesh.Points,'Faces',mesh.Triangles(q<qmin,:),'facecolor','r','edgecolor','r')
+
+disp([num2str(sum(q<qmin)) ' elements with a quality less than ' num2str(qmin)]) ;
 
 %% DELETE TRIANGLES
 

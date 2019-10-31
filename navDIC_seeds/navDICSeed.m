@@ -1,4 +1,4 @@
-classdef navDICSeed < matlab.mixin.Heterogeneous
+classdef navDICSeed < handle & matlab.mixin.Heterogeneous
     
     properties
         % Basic Infos
@@ -11,6 +11,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
         % Seed elements
             Points = [] ;
             MovingPoints = [] ;
+            MovingPoints_bkp = [] ;
             Displacements = [] ;
             Strains = [] ;
             MajorStrains = [] ;
@@ -20,6 +21,7 @@ classdef navDICSeed < matlab.mixin.Heterogeneous
         % Displ. Computation Method
             compDisp = true ;
             displMode = 'abs' ;
+            useExistingDisp = true ;
             RefFrame = 1 ;
             displMethod = ... 'cpcorr' ...
                            'fftdisp' ...
