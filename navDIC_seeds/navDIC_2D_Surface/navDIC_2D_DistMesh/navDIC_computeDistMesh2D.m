@@ -28,7 +28,7 @@ function mesh = navDIC_computeDistMesh2D(fd,fh,h0,bbox,pfix,Axes)
         r0=1./fh(p).^2;                                      % Probability to keep point
         p=p(rand(size(p,1),1)<r0./max(r0),:);                % Rejection method
         if ~isempty(pfix), p=setdiff(p,pfix,'rows'); end     % Remove duplicated nodes
-        pfix=unique(pfix,'rows'); nfix=size(pfix,1);
+        pfix=unique(pfix,'rows','stable'); nfix=size(pfix,1);
         p=[pfix; p];                                         % Prepend fix points
         N=size(p,1);                                         % Number of points N
 

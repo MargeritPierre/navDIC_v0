@@ -52,6 +52,9 @@
     hd.Seeds(seedNumber).MaxShear = bbb ;
     hd.Seeds(seedNumber).PrincipalAngle = 1/2*atan(2*hd.Seeds(seedNumber).Strains(:,3,:)./(hd.Seeds(seedNumber).Strains(:,1,:)-hd.Seeds(seedNumber).Strains(:,2,:))) ;
     
+%% DATA FIELDS COMPUTATION
+    
+    hd.Seeds(seedNumber).computeDataFields ;
     
     
                                     

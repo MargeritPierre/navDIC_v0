@@ -91,11 +91,12 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         end
         
         
-        function T = interpMat(obj,Points)
+        function T = interpMat(obj,Points,refPoints)
         % Return the interpolation matrix of the mesh on query points so
         % that U(pts) = T*U(Nodes)
+            if nargin<3 ; refPoints = obj.Points ; end
             % Triangulation class constructor
-                tri = triangulation(obj.Triangles,obj.Points) ; 
+                tri = triangulation(obj.Triangles,refPoints) ; 
             % oldPoints associated to each newPoint
                 % Initialization
                     indPts = zeros(size(Points,1),3) ;
@@ -111,9 +112,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             elmt(outside) = clstElmt ;
                         % Find the (extended) coordinates of the new point in each old closest element frame
                             elmtNodes = obj.Triangles(clstElmt,:) ;
-                            p1 = obj.Points(elmtNodes(:,1),:)' ; 
-                            p2 = obj.Points(elmtNodes(:,2),:)' ; 
-                            p3 = obj.Points(elmtNodes(:,3),:)' ; 
+                            p1 = refPoints(elmtNodes(:,1),:)' ; 
+                            p2 = refPoints(elmtNodes(:,2),:)' ; 
+                            p3 = refPoints(elmtNodes(:,3),:)' ; 
                             v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
                             m = [] ; % coordinates in this frame
                             for pp = 1:length(clstElmt)
@@ -127,7 +128,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
             % Transfer Matrix
                 nodes = (1:size(Points,1))'*[1 1 1] ;
-                T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(obj.Points,1)) ;
+                T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(refPoints,1)) ;
         end
         
         
@@ -173,6 +174,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             nTris = size(obj.Triangles,1) ; 
             nPts = size(obj.Points,1) ;
             nFrames = size(obj.MovingPoints,3) ;
+            % NaNs
+                DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
             % Coordinates
                 DATA.x1 = obj.MovingPoints(:,1,:) ;
                 DATA.x2 = obj.MovingPoints(:,2,:) ;
@@ -243,10 +246,11 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     end
                 end
             % ADD THE MENU BAR
+                submenus = gobjects(0) ;
                 % Data to plot
                     mData = uimenu(ax.Parent,'Label','Data') ;
                         if 0 % old version
-                            submenus(1) = uimenu(mData,'Label','|U|','checked','on') ;
+                            submenus(end+1) = uimenu(mData,'Label','|U|','checked','on') ;
                             submenus(end+1) = uimenu(mData,'Label','Ux') ;
                             submenus(end+1) = uimenu(mData,'Label','Uy') ;
                             submenus(end+1) = uimenu(mData,'Label','Exx','separator','on') ;
@@ -257,25 +261,31 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             submenus(end+1) = uimenu(mData,'Label','Max. Shear') ;
                             submenus(end+1) = uimenu(mData,'Label','Princ. Angle') ;
                         else % new version with many fields
-                            obj.computeDataFields() ;
-                            submenus = gobjects(0) ;
-                            fieldNames = fieldnames(obj.DataFields) ;
-                            for f = 1:numel(fieldNames)
-                                submenus(end+1) = uimenu(mData,'Label',fieldNames{f}) ;
-                                if f>1 && fieldNames{f}(1)~=fieldNames{f-1}(1) ; submenus(end).Separator = 'on' ; end
+                            if isempty(obj.DataFields) ; obj.computeDataFields() ; end
+                            if ~isempty(fieldnames(obj.DataFields))
+                                fieldNames = fieldnames(obj.DataFields) ;
+                                for f = 1:numel(fieldNames)
+                                    submenus(end+1) = uimenu(mData,'Label',fieldNames{f}) ;
+                                    if f>1 && fieldNames{f}(1)~=fieldNames{f-1}(1) ; submenus(end).Separator = 'on' ; end
+                                end
+                                submenus(ismember({submenus.Label},'U')).Checked = 'on' ;
                             end
-                            submenus(ismember({submenus.Label},'U')).Checked = 'on' ;
                         end
                 % DISPLAY
                     mDisplay = uimenu(ax.Parent,'Label','Display') ;
+                    % Plot Type
+                        mPlot = uimenu(mDisplay,'Label','Plot') ;
+                            submenus(end+1) = uimenu(mPlot,'Label','Mesh','checked','on') ;
+                            submenus(end+1) = uimenu(mPlot,'Label','Points') ;
+                            submenus(end+1) = uimenu(mPlot,'Label','Edges') ;
                     % Color Scale
                         mColors = uimenu(mDisplay,'Label','Colors') ;
                             mClrScale = uimenu(mColors,'Label','Scale') ;
                                 submenus(end+1) = uimenu(mClrScale,'Label','Current Frame','checked','on') ;
                                 submenus(end+1) = uimenu(mClrScale,'Label','All Frames') ;
                             mClrLims = uimenu(mColors,'Label','Limits') ;
-                                submenus(end+1) = uimenu(mClrLims,'Label','0-max') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','min-max','checked','on') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','0-max') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','symmetric') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','1*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','2*sigma') ;
@@ -289,10 +299,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 submenus(end+1) = uimenu(mClrSteps,'Label','7') ;
                                 submenus(end+1) = uimenu(mClrSteps,'Label','4') ;
                             submenus(end+1) = uimenu(mColors,'Label','Custom') ;
+                    % Axes Behavior
+                        mAxesMode = uimenu(mDisplay,'Label','Axes') ;
+                            submenus(end+1) = uimenu(mAxesMode,'Label','Fixed','checked','on') ;
+                            submenus(end+1) = uimenu(mAxesMode,'Label','Follow') ;
                 % Common Properties
                     set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
                 % UserData in axes to choose the data to plot
                     ax.UserData.dataLabel = 'U' ;
+                    ax.UserData.plotType = 'Mesh' ;
+                    ax.UserData.axesPositionReference = [] ; % [frame posX posY]
                     ax.UserData.clrMode = 'Preset' ;
                     ax.UserData.clrScaleLabel = 'Current Frame' ;
                     ax.UserData.clrLimsLabel = 'min-max' ;
@@ -318,6 +334,20 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     case 'Steps'
                         ax.UserData.clrStepsLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
+                    case 'Axes'
+                        switch subMenu.Label
+                            case 'Fixed'
+                                ax.UserData.axesPositionReference = [] ;
+                            case 'Follow'
+                                % The axes position will start following the current position of the axes center
+                                    cen = [mean(ax.XLim) mean(ax.YLim)] ; ran = [range(ax.XLim) range(ax.YLim)] ;
+                                    frame = ax.UserData.currentFrame ;
+                                % Position of the current point in the reference config.
+                                    cen = obj.interpMat(cen,obj.MovingPoints(:,:,frame))*obj.Points ;
+                                % Record
+                                    ax.UserData.axesPositionReference = [cen ran] ; % [frame posX posY]
+                                    disp([obj.Name ' preview will follow with the position reference ' mat2str(ax.UserData.axesPositionReference)]) ;
+                        end
                     case 'Colors' 
                         switch subMenu.Label
                             case 'Custom'
@@ -446,6 +476,15 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 end
                                 if steps~=size(colormap(ax),1) ; colormap(ax,jet(steps)) ; end
                         end
+                    % AXES LIMITS
+                        % Follow point if needed
+                            if ~isempty(ax.UserData.axesPositionReference) && ~any(isnan(ax.UserData.axesPositionReference))
+                                cen = obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame) ; 
+                                ran = ax.UserData.axesPositionReference(3:4) ;
+                                [nI,nJ] = size(obj.refImgs{1}) ;
+                                ax.XLim = max(0.5,min(nJ+0.5,cen(1)+ran(1)*[-1 1]/2)) ;
+                                ax.YLim = max(0.5,min(nI+0.5,cen(2)+ran(2)*[-1 1]/2)) ;
+                            end
                 end
         end
         

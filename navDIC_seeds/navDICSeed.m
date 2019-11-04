@@ -1,4 +1,4 @@
-classdef navDICSeed < handle & matlab.mixin.Heterogeneous
+classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneous
     
     properties
         % Basic Infos
@@ -19,15 +19,15 @@ classdef navDICSeed < handle & matlab.mixin.Heterogeneous
             MaxShear = [] ;
             PrincipalAngle = [] ;
         % Displ. Computation Method
-            compDisp = true ;
-            displMode = 'abs' ;
+            compDisp = false ;
+            displMode = 'rel' ;
             useExistingDisp = true ;
             RefFrame = 1 ;
             displMethod = ... 'cpcorr' ...
                            'fftdisp' ...
                           ;
         % Strain Computation Method
-            compStrains = true ;
+            compStrains = false ;
             strainMethod = 'planefit' ;
         % drawingTool retrurns
             drawToolH = [] ;

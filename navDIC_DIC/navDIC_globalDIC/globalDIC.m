@@ -7,7 +7,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 6 ;
+        seedNumber = 4 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
@@ -35,7 +35,7 @@ end % END OF INITIALIZATION
         startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.00 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.1 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -65,7 +65,7 @@ end % END OF INITIALIZATION
     % Regularization
         stepRatio = 1 ;%0.15 ; % Descent step ratio, damping the convergence
         regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 5*1e6 ; % Strain gradient penalisation coefficient
+        beta = 1*1e4 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
