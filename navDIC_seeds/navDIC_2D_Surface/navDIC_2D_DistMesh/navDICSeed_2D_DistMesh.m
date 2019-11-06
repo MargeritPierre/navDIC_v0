@@ -121,16 +121,17 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         end
         
         
-        function [D1,D2] = gradMat(obj)
+        function [D1,D2] = gradMat(obj,refPoints)
         % Return the differentiation matrices so that df_dxi = Di*f(:)
         % size(Di) = [nElems nNodes] : f is defined on nodes, the gradient
         % is constant over elements
+            if nargin==1 ; refPoints = obj.Points ; end
             nTris = size(obj.Triangles,1) ; 
-            nPts = size(obj.Points,1) ;
-            nDims = size(obj.Points,2) ;
+            nPts = size(refPoints,1) ;
+            nDims = size(refPoints,2) ;
             nNodesByElem = size(obj.Triangles,2) ; %(==3) here
             % Face points 
-                Polygons = reshape(obj.Points(obj.Triangles(:),:),nTris,[],nDims) ;
+                Polygons = reshape(refPoints(obj.Triangles(:),:),nTris,[],nDims) ;
             % Areas
                 Areas = polyarea(Polygons(:,:,1)',Polygons(:,:,2)').' ;
             % Derivatives
@@ -169,15 +170,18 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             nFrames = size(obj.MovingPoints,3) ;
             % NaNs
                 DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
-            % Coordinates
+            % Reference Coordinates
+                DATA.X1 = obj.MovingPoints(:,1,1) ;
+                DATA.X2 = obj.MovingPoints(:,2,1) ;
+            % Current Coordinates
                 DATA.x1 = obj.MovingPoints(:,1,:) ;
                 DATA.x2 = obj.MovingPoints(:,2,:) ;
             % Displacements (transformation)
-                DATA.u1 = DATA.x1 - obj.Points(:,1) ;
-                DATA.u2 = DATA.x2 - obj.Points(:,2) ;
+                DATA.u1 = DATA.x1 - DATA.X1 ;
+                DATA.u2 = DATA.x2 - DATA.X2 ;
                 DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
             % Transformation Gradient
-                [D1,D2] = gradMat(obj) ;
+                [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
                 DATA.F11 = reshape(D1*squeeze(DATA.x1),nTris,1,nFrames) ;
                 DATA.F12 = reshape(D2*squeeze(DATA.x1),nTris,1,nFrames) ;
                 DATA.F21 = reshape(D1*squeeze(DATA.x2),nTris,1,nFrames) ;

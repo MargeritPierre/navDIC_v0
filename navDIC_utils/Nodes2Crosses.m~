@@ -90,15 +90,15 @@
         AngleMembers = [0 90 180 270]*pi/180 ; % Angle of the cross members
         AngleShift = repmat([1;-1]*5*pi/180,1000,1) ; 60*pi/180 ;
     
-%% Create the new Seed
+% Create the new Seed
     hd.Seeds(newSeedNumber) = copy(hd.Seeds(fromSeedNumber)) ;
     hd.Seeds(newSeedNumber).Name = newSeedName ;
 
 % Create crosses
     nNodes = size(hd.Seeds(newSeedNumber).Points,1) ;
-    nMembers = numel(AngleMembers) ;
+    nMembers = numel(AngleMembers)*4 ;
     % New nodes and displacements
-        hd.Seeds(newSeedNumber).MovingPoints = repmat(hd.Seeds(newSeedNumber).MovingPoints,[nMembers*3 1 1]) ; 
+        hd.Seeds(newSeedNumber).MovingPoints = repmat(hd.Seeds(newSeedNumber).MovingPoints,[nMembers 1 1]) ; 
         AngleShift = reshape(AngleShift(1:nNodes),[],1).*ones(nNodes,1) ;
     % Instantaneous Position shift
         for m = 1:nMembers*4 % the last one will be the center node
