@@ -82,7 +82,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 tri = triangulation(obj.Triangles,refPoints) ; 
             % oldPoints associated to each newPoint
                 % Initialization
-                    indPts = ones(size(Points,1),3) ;
+                    indPts = zeros(size(Points,1),3) ;
                 % Enclosing element and barycentric positions
                     [elmt,weights] = pointLocation(tri,Points) ; 
                 % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
@@ -358,7 +358,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                     cen = [mean(ax.XLim) mean(ax.YLim)] ; ran = [range(ax.XLim) range(ax.YLim)] ;
                                     frame = ax.UserData.currentFrame ;
                                 % Position of the current point in the reference config.
-                                    cen = obj.interpMat(cen,'extrap',obj.MovingPoints(:,:,frame))*obj.Points ;
+                                    cen = obj.interpMat(cen,obj.MovingPoints(:,:,frame))*obj.Points ;
                                 % Record
                                     ax.UserData.axesPositionReference = [cen ran] ; % [frame posX posY]
                                     disp([obj.Name ' preview will follow with the position reference ' mat2str(ax.UserData.axesPositionReference)]) ;
