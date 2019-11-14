@@ -4,8 +4,11 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         Triangles = [] ;
         ROI = [] ;
         Shapes = [] ;
-        DataFields = struct() ;
         DataOnNodes = false ;
+    end
+    
+    properties (Transient)
+        DataFields = struct() ;
     end
     
     methods
