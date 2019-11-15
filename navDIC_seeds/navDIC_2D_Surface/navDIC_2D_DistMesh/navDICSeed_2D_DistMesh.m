@@ -31,8 +31,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 obj.Triangles = obj.drawToolH.DistMesh.Triangles ;
             % INITIALIZE
                 obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
-                obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
-                obj.Strains = ones(size(obj.Points,1),3,hd.nFrames)*NaN ;
+%                 obj.Displacements = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
+%                 obj.Strains = ones(size(obj.Points,1),3,hd.nFrames)*NaN ;
         end
         
         
@@ -47,7 +47,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 end
             % MODIFY THE MESH DATA
                 if all(isnan(obj.MovingPoints(:))) 
-                    MovingPoints = ones(size(Points,1),1)*obj.MovingPoints(1,:,:) ;
+                    MovingPoints = ones(size(Points,1),1).*obj.MovingPoints(1,:,:) ;
                 else
                     % ASK THE USER WHAT TO DO
                         answer = questdlg(...
@@ -168,8 +168,6 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         function DATA = computeDataFields(obj)
         % Compute all (scalar) data fields associated to the object motion
             DATA = struct() ;
-            nTris = size(obj.Triangles,1) ; 
-            nPts = size(obj.Points,1) ;
             nFrames = size(obj.MovingPoints,3) ;
             % NaNs
                 DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
@@ -183,12 +181,18 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 DATA.u1 = DATA.x1 - DATA.X1 ;
                 DATA.u2 = DATA.x2 - DATA.X2 ;
                 DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
-            % Transformation Gradient
+            % Derivation matrices
                 [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
-                DATA.F11 = reshape(D1*squeeze(DATA.x1),nTris,1,nFrames) ;
-                DATA.F12 = reshape(D2*squeeze(DATA.x1),nTris,1,nFrames) ;
-                DATA.F21 = reshape(D1*squeeze(DATA.x2),nTris,1,nFrames) ;
-                DATA.F22 = reshape(D2*squeeze(DATA.x2),nTris,1,nFrames) ;
+                % Apply to nodes if needed (mean over connected triangles)
+                    if obj.DataOnNodes
+                        T = obj.tri2nod ;
+                        D1 = T*D1 ; D2 = T*D2 ;
+                    end
+            % Transformation Gradient
+                DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
+                DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
+                DATA.F21 = reshape(D1*squeeze(DATA.x2),[],1,nFrames) ;
+                DATA.F22 = reshape(D2*squeeze(DATA.x2),[],1,nFrames) ;
             % Jacobian
                 DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ;
             % Cauchy Strains
@@ -216,25 +220,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 DATA.EigTau = bbb ; % Maximum Shear
                 DATA.EigTheta = 1/2*atan(2*DATA.L12./(DATA.L11-DATA.L22)) ; % Principal Angle
             % Linearized Euler-Lagrange Strains
-                DATA.E11 = reshape(D1*squeeze(DATA.u1),nTris,1,nFrames) ;
-                DATA.E22 = reshape(D2*squeeze(DATA.u2),nTris,1,nFrames) ;
-                DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),nTris,1,nFrames) + reshape(D1*squeeze(DATA.u2),nTris,1,nFrames)) ;
-            % Project Data on Nodes if asked for
-                if obj.DataOnNodes
-                    T = obj.tri2nod ;
-                    fields = fieldnames(DATA) ;
-                    for f = 1:numel(fields)
-                        data = DATA.(fields{f}) ;
-                        sz = size(data) ;
-                        if sz(1)==nTris
-                            data = reshape(data,nTris,[]) ; % Reshape
-                            data(isnan(data)) = 1i ; % avoid propagation of NaNs
-                            data = T*data ; % Project
-                            data(imag(data)~=0) = NaN ;
-                            DATA.(fields{f}) = reshape(data,[nPts sz(2:end)]) ; % Re-Reshape
-                        end
-                    end
-                end
+                DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
+                DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
+                DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
             % Save in the object
                 obj.DataFields = DATA ;
         end

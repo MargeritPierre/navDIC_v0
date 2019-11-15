@@ -1,11 +1,13 @@
 %% PROCESS CROSSES TO COMPUTE MEMBERS ANGLES, ELONGATIONS, ETC.
 
 % Parameters
-    crossSeedNumber = 2 ;
-    macroSeedNumber = 1 ;
+    crossSeedNumber = 4 ;
+    macroSeedNumber = 3 ;
     nMembers = 4 ;
     
+    
 % Retrieve data
+    global hd
     Pos = hd.Seeds(crossSeedNumber).MovingPoints ;
     
 % Reshape
@@ -33,10 +35,10 @@
     
 % Display
     clf ;
-    nodesIndices = 1:nNodes ; [1:14 29:42] ; 4:7:nNodes ;
-    xdata = ... (1:hd.nFrames)' ...
+    nodesIndices = 1:nNodes ; 6:9:nNodes ; [1:14 29:42] ; 4:7:nNodes ;
+    xdata =  (1:hd.nFrames)' ...
             ... MacroL11(nodesIndices,:)' ...
-             MacroL22(nodesIndices,:)' ...
+            ... MacroL22(nodesIndices,:)' ...
             ;
     ydata =  reshape(permute((meanEdgRot(nodesIndices,:,:,:)*180/pi),[3 1 2 4]),hd.nFrames,[]) ... 
             ... reshape(permute((devEdgRot(nodesIndices,:,:,:)*180/pi),[3 1 2 4]),hd.nFrames,[]) ...
@@ -44,5 +46,6 @@
             ;
     pl = plot(xdata,ydata) ;
     lgd = legend(pl,arrayfun(@(i)num2str(i),nodesIndices,'uniformoutput',false)) ;
+    lgd.EdgeColor = 'k' ;
     
     

@@ -41,8 +41,8 @@
     
     crackPos = [0.5 0.82].*[nJ nI] ; % Crack tip position
     crackVec = [0 -1] ; % Crack direction
-    zoneWidth = 0.8*nJ ;
-    zoneHeight = 0.7*nI ;
+    zoneWidth = 0.3*nJ ;
+    zoneHeight = 0.5*nI ;
     crackWidth = 0.05*nJ ;
     rulerLength = 0.007 ;
     nPts = 1000 ;

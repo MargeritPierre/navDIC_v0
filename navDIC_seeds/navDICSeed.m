@@ -11,13 +11,6 @@ classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneou
         % Seed elements
             Points = [] ;
             MovingPoints = [] ;
-            MovingPoints_bkp = [] ;
-            Displacements = [] ;
-            Strains = [] ;
-            MajorStrains = [] ;
-            MinorStrains = [] ;
-            MaxShear = [] ;
-            PrincipalAngle = [] ;
         % Displ. Computation Method
             compDisp = false ;
             displMode = 'rel' ;
@@ -31,6 +24,17 @@ classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneou
             strainMethod = 'planefit' ;
         % drawingTool retrurns
             drawToolH = [] ;
+    end
+    
+    properties (Transient)
+    % These properties wont be saved !
+        MovingPoints_bkp = [] ;
+%         Displacements = [] ;
+%         Strains = [] ;
+%         MajorStrains = [] ;
+%         MinorStrains = [] ;
+%         MaxShear = [] ;
+%         PrincipalAngle = [] ;
     end
     
     methods
@@ -67,8 +71,8 @@ classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneou
                 % If there was token frames before this seed creation
                     if hd.CurrentFrame>1
                         obj.MovingPoints = repmat(obj.Points,[1 1 obj.RefFrame]) ;
-                        obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
-                        obj.Strains = zeros([size(obj.Points) obj.RefFrame]) ;
+%                         obj.Displacements = zeros([size(obj.Points) obj.RefFrame]) ;
+%                         obj.Strains = zeros([size(obj.Points) obj.RefFrame]) ;
                     end
         end
         
