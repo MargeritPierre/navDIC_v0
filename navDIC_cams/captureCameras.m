@@ -20,7 +20,7 @@ function hd = captureCameras(hd)
         images = cell(1,nCams) ;
         imgExt = {'png','tif','jpg','jpeg','bmp'} ;
         for c = 1:nCams
-            if hd.Cameras(c).CurrentState == 'ghost'
+            if strcmpi(hd.Cameras(c).CurrentState, 'ghost')
                 t = tic ;
                 files = dir('*.anImpossibleExtension') ;
                 for i = 1:length(imgExt)
