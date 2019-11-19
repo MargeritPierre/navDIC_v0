@@ -15,14 +15,14 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
 %         obj.MovingPoints = repmat(obj.Points,[1 1 frame]) ;
 %         obj.Displacements = zeros([size(obj.Points) frame]) ;
         obj.MovingPoints(:,:,frame) = obj.Points ;
-        obj.Displacements(:,:,frame) = 0*obj.Points ;
+%         obj.Displacements(:,:,frame) = 0*obj.Points ;
         obj.MovingPoints_bkp = obj.MovingPoints ;
     end
     
     if 0 && hd.CurrentFrame>1
         obj.RefFrame = frame;
         obj.MovingPoints = repmat(obj.Points,[1 1 frame]) ;
-        obj.Displacements = zeros([size(obj.Points) frame]) ;
+%         obj.Displacements = zeros([size(obj.Points) frame]) ;
     end
     
 % ELSE, Compute DIC
@@ -51,7 +51,7 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
     end
     
 % Compute Displacements
-    obj.Displacements(:,:,frame) = obj.MovingPoints(:,:,frame)-obj.Points ;
+%     obj.Displacements(:,:,frame) = obj.MovingPoints(:,:,frame)-obj.Points ;
     
 % Compute DataFields
     obj.computeDataFields ;
