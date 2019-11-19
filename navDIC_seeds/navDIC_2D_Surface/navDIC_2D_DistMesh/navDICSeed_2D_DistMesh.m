@@ -2,6 +2,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
    
     properties
         Triangles = [] ;
+        Quadrangles = [] ;
+        Edges = [] ;
         ROI = [] ;
         Shapes = [] ;
         DataOnNodes = false ;
@@ -83,41 +85,40 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             if nargin<4 ; refPoints = obj.Points ; end
             % Triangulation class constructor
                 tri = triangulation(obj.Triangles,refPoints) ; 
-            % oldPoints associated to each newPoint
-                % Initialization
-                    indPts = ones(size(Points,1),3) ;
-                % Enclosing element and barycentric positions
-                    [elmt,weights] = pointLocation(tri,Points) ; 
-                % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
-                    outside = isnan(elmt) ;
-                    if any(outside)
-                        switch extrap
-                            case 'extrap'
-                                % Outside Points
-                                    outsidePts = Points(outside,:) ;
-                                % Find the closest element
-                                    C = circumcenter(tri) ;
-                                    [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
-                                    elmt(outside) = clstElmt ;
-                                % Find the (extended) coordinates of the new point in each old closest element frame
-                                    elmtNodes = obj.Triangles(clstElmt,:) ;
-                                    p1 = refPoints(elmtNodes(:,1),:)' ; 
-                                    p2 = refPoints(elmtNodes(:,2),:)' ; 
-                                    p3 = refPoints(elmtNodes(:,3),:)' ; 
-                                    v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
-                                    m = [] ; % coordinates in this frame
-                                    for pp = 1:length(clstElmt)
-                                        m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
-                                    end
-                                % Assign the weights
-                                    indPts(outside,:) = elmtNodes ;
-                                    weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
-                            otherwise
-                                weights(outside,:) = extrap ;
-                        end
+            % Initialization
+                indPts = ones(size(Points,1),3) ;
+            % Enclosing element and barycentric positions
+                [elmt,weights] = pointLocation(tri,Points) ; 
+            % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
+                outside = isnan(elmt) ;
+                if any(outside)
+                    switch extrap
+                        case 'extrap'
+                            % Outside Points
+                                outsidePts = Points(outside,:) ;
+                            % Find the closest element
+                                C = circumcenter(tri) ;
+                                [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
+                                elmt(outside) = clstElmt ;
+                            % Find the (extended) coordinates of the new point in each old closest element frame
+                                elmtNodes = obj.Triangles(clstElmt,:) ;
+                                p1 = refPoints(elmtNodes(:,1),:)' ; 
+                                p2 = refPoints(elmtNodes(:,2),:)' ; 
+                                p3 = refPoints(elmtNodes(:,3),:)' ; 
+                                v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
+                                m = [] ; % coordinates in this frame
+                                for pp = 1:length(clstElmt)
+                                    m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
+                                end
+                            % Assign the weights
+                                indPts(outside,:) = elmtNodes ;
+                                weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
+                        otherwise
+                            weights(outside,:) = extrap ;
                     end
-                % Inside nodes
-                    indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
+                end
+            % Inside nodes
+                indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
             % Transfer Matrix
                 nodes = (1:size(Points,1))'*[1 1 1] ;
                 T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(refPoints,1)) ;
@@ -139,7 +140,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 Areas = polyarea(Polygons(:,:,1)',Polygons(:,:,2)').' ;
             % Derivatives
                 % Triangles shape indicators
-                    aa = cross(Polygons(:,:,1),Polygons(:,:,2),2) ;
+                    %aa = cross(Polygons(:,:,1),Polygons(:,:,2),2) ;
                     bb = circshift(Polygons(:,:,2),2,2) - circshift(Polygons(:,:,2),1,2) ;
                     cc = circshift(Polygons(:,:,1),1,2) - circshift(Polygons(:,:,1),2,2) ;
                 % Sparse matrices indices
@@ -150,6 +151,49 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 % Build sparse matrices
                     D1 = sparse(iii(:),jjj(:),vvvD1(:),nTris,nPts) ;
                     D2 = sparse(iii(:),jjj(:),vvvD2(:),nTris,nPts) ;
+            % Apply to nodes if needed (mean over connected triangles)
+                if obj.DataOnNodes
+                    T = obj.tri2nod ;
+                    D1 = T*D1 ; D2 = T*D2 ;
+                end
+        end
+        
+        
+        function [D1,D2] = gradMat2(obj,refPoints)
+        % Return the differentiation matrices so that df_dxi = Di*f(:)
+        % size(Di) = [nElems nNodes] : f is defined on nodes, the gradient
+        % is constant over elements
+            if nargin==1 ; refPoints = obj.Points ; end
+            % Build the element matrices
+                Elems = [obj.Triangles NaN(size(obj.Triangles,1),1) ; obj.Quadrangles] ;
+            % Coordinates
+                X = refPoints(:,1) ; Y = refPoints(:,2) ;
+            % Compute the mean gradient
+                eee = [] ;
+                nnn = [] ;
+                vvvD1 = [] ;
+                vvvD2 = [] ;
+                for elmt = 1:size(Elems,1)
+                    % Element topology
+                        nodes = Elems(elmt,~isnan(Elems(elmt,:)))' ;
+                        area = polyarea(X(nodes),Y(nodes)) ;
+                        edges = [nodes circshift(nodes,1,1)] ;
+                    % Normals
+                        normals = [-diff(Y(edges),1,2) diff(X(edges),1,2)] ;
+                        dl = sum(normals.^2,2) ; 
+                        midPts = [mean(X(edges),2) mean(Y(edges),2)] ;
+                        switched = inpolygon(midPts(:,1)+normals(:,1)*0.01,midPts(:,2)+normals(:,2)*0.01,X(nodes),Y(nodes)) ;
+                        normals(switched,:) = -normals(switched,:) ;
+                        normals = normals./dl ;
+                    % Sparse matrices indices
+                        eee = [eee ; elmt*ones(numel(edges),1)] ;
+                        nnn = [nnn ; edges(:)] ;
+                        vvvD1 = [vvvD1 ; reshape(1/2/area.*dl.*normals(:,1).*[1 1],[],1)] ;
+                        vvvD2 = [vvvD2 ; reshape(1/2/area.*dl.*normals(:,2).*[1 1],[],1)] ;
+                end
+            % Differentiation matrices
+                D1 = sparse(eee(:),nnn(:),vvvD1(:),size(Elems,1),size(refPoints,1)) ;
+                D2 = sparse(eee(:),nnn(:),vvvD2(:),size(Elems,1),size(refPoints,1)) ;
         end
         
         function M = tri2nod(obj)
@@ -182,12 +226,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 DATA.u2 = DATA.x2 - DATA.X2 ;
                 DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
             % Derivation matrices
-                [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
-                % Apply to nodes if needed (mean over connected triangles)
-                    if obj.DataOnNodes
-                        T = obj.tri2nod ;
-                        D1 = T*D1 ; D2 = T*D2 ;
-                    end
+                [D1,D2] = gradMat2(obj,[DATA.X1 DATA.X2]) ;
             % Transformation Gradient
                 DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
                 DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
@@ -261,7 +300,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 % Data to plot
                     mData = uimenu(ax.Parent,'Label','Data') ;
                     % Re-compute DataFields if needed
-                        if isempty(obj.DataFields) ; obj.computeDataFields() ; end
+                        if isempty(obj.DataFields) || isempty(fieldnames(obj.DataFields)) ; obj.computeDataFields() ; end
                     % Fill Menus
                         if ~isempty(fieldnames(obj.DataFields))
                             % Get dete fields
@@ -466,8 +505,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         % Follow point if needed
                             if ~isempty(ax.UserData.axesPositionReference) && ~any(isnan(ax.UserData.axesPositionReference))
                                 % Center and range of axis limits
-                                    cen = obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame) ; 
-                                    ran = ax.UserData.axesPositionReference(3:4) ;
+                                    cen = round(obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame)) ; 
+                                    ran = round(ax.UserData.axesPositionReference(3:4)) ;
                                 % Update limits
                                     [nI,nJ] = size(obj.refImgs{1}) ;
                                     ax.XLim = max(0.5,min(nJ+0.5,cen(1)+ran(1)*[-1 1]/2)) ;
