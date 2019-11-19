@@ -157,7 +157,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         % F is defined on elements; size(M) = [nNodes nElems]
             M = sparse(obj.Triangles(:),reshape(repmat((1:size(obj.Triangles,1))',[1 3]),[],1),1,size(obj.Points,1),size(obj.Triangles,1)) ;
             valance = sum(M,2) ; % number of elements associated to each node
-            M = diag(1./valance)*M ;
+            M = M./valance(:) ;
         end
         
         function set.DataOnNodes(obj,val)
