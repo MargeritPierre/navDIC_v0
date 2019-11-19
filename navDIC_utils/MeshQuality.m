@@ -3,7 +3,7 @@
 global hd
 
 qmin = 1/10 ;
-seedNumber = 4
+seedNumber = 2
 mesh = hd.Seeds(seedNumber) ;
 tri = mesh.Triangles ;
 Xm = mesh.Points(:,1) ;
@@ -22,6 +22,7 @@ Ym = mesh.Points(:,2) ;
         
 clf
 axis equal
+axis ij
 patch('Vertices',mesh.Points,'Faces',mesh.Triangles,'facecolor','none','edgecolor','k')
 patch('Vertices',mesh.Points,'Faces',mesh.Triangles(q<qmin,:),'facecolor','r','edgecolor','r')
 
