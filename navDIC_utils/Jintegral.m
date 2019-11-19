@@ -126,7 +126,9 @@
                                                 hd.Seeds(seedNumber).DataFields.Leq(:,:,1)*0,...
                                                 diff(hd.Seeds(seedNumber).DataFields.Leq,1,3)) ;
 
-    hd.Seeds(seedNumber).DataFields.Dmax = hd.Seeds(seedNumber).DataFields.Leq-max(hd.Seeds(seedNumber).DataFields.Leq,[],3) ; ;
+    hd.Seeds(seedNumber).DataFields.Dmax = hd.Seeds(seedNumber).DataFields.Leq-max(hd.Seeds(seedNumber).DataFields.Leq,[],3) ;
+    
+    hd.Seeds(seedNumber).DataFields.logW = log10(hd.Seeds(seedNumber).DataFields.W) ;
  
     
     
