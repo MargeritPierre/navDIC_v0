@@ -83,45 +83,54 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         % that U(pts) = T*U(Nodes)
             if nargin<3 ; extrap = 'extrap' ; end
             if nargin<4 ; refPoints = obj.Points ; end
-            % Triangulation class constructor
-                tri = triangulation(obj.Triangles,refPoints) ; 
-            % Initialization
-                indPts = ones(size(Points,1),3) ;
-            % Enclosing element and barycentric positions
-                [elmt,weights] = pointLocation(tri,Points) ; 
-            % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
-                outside = isnan(elmt) ;
-                if any(outside)
-                    switch extrap
-                        case 'extrap'
-                            % Outside Points
-                                outsidePts = Points(outside,:) ;
-                            % Find the closest element
-                                C = circumcenter(tri) ;
-                                [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
-                                elmt(outside) = clstElmt ;
-                            % Find the (extended) coordinates of the new point in each old closest element frame
-                                elmtNodes = obj.Triangles(clstElmt,:) ;
-                                p1 = refPoints(elmtNodes(:,1),:)' ; 
-                                p2 = refPoints(elmtNodes(:,2),:)' ; 
-                                p3 = refPoints(elmtNodes(:,3),:)' ; 
-                                v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
-                                m = [] ; % coordinates in this frame
-                                for pp = 1:length(clstElmt)
-                                    m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
-                                end
-                            % Assign the weights
-                                indPts(outside,:) = elmtNodes ;
-                                weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
-                        otherwise
-                            weights(outside,:) = extrap ;
+            if isempty(obj.Triangles) % NO MESH FOR INTERPOLATION
+                % Distance between points and refpoints
+                    dist = sum((reshape(full(Points),[],1,2)-reshape(full(refPoints),1,[],2)).^2,3) ;
+                % Nearest neightbors
+                    [pt,refPt] = find(dist==min(dist,[],2)) ;
+                % Transfer matrix
+                    T = sparse(pt(:),refPt(:),1,size(Points,1),size(refPoints,1)) ;
+            else % THERE IS A MESH FOR INTERPOLATION
+                % Triangulation class constructor
+                    tri = triangulation(obj.Triangles,refPoints) ; 
+                % Initialization
+                    indPts = ones(size(Points,1),3) ;
+                % Enclosing element and barycentric positions
+                    [elmt,weights] = pointLocation(tri,Points) ; 
+                % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
+                    outside = isnan(elmt) ;
+                    if any(outside)
+                        switch extrap
+                            case 'extrap'
+                                % Outside Points
+                                    outsidePts = Points(outside,:) ;
+                                % Find the closest element
+                                    C = circumcenter(tri) ;
+                                    [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
+                                    elmt(outside) = clstElmt ;
+                                % Find the (extended) coordinates of the new point in each old closest element frame
+                                    elmtNodes = obj.Triangles(clstElmt,:) ;
+                                    p1 = refPoints(elmtNodes(:,1),:)' ; 
+                                    p2 = refPoints(elmtNodes(:,2),:)' ; 
+                                    p3 = refPoints(elmtNodes(:,3),:)' ; 
+                                    v1 = p2-p1 ; v2 = p3-p1 ; % element's frame vectors
+                                    m = [] ; % coordinates in this frame
+                                    for pp = 1:length(clstElmt)
+                                        m(pp,:) = [v1(:,pp) v2(:,pp)]\(outsidePts(pp,:)'-p1(:,pp)) ;
+                                    end
+                                % Assign the weights
+                                    indPts(outside,:) = elmtNodes ;
+                                    weights(outside,:) = [1-m(:,1)-m(:,2) m(:,1) m(:,2)] ;
+                            otherwise
+                                weights(outside,:) = extrap ;
+                        end
                     end
-                end
-            % Inside nodes
-                indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
-            % Transfer Matrix
-                nodes = (1:size(Points,1))'*[1 1 1] ;
-                T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(refPoints,1)) ;
+                % Inside nodes
+                    indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
+                % Transfer Matrix
+                    nodes = (1:size(Points,1))'*[1 1 1] ;
+                    T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(refPoints,1)) ;
+            end
         end
         
         
@@ -225,43 +234,46 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 DATA.u1 = DATA.x1 - DATA.X1 ;
                 DATA.u2 = DATA.x2 - DATA.X2 ;
                 DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
-            % Derivation matrices
-                [D1,D2] = gradMat2(obj,[DATA.X1 DATA.X2]) ;
-            % Transformation Gradient
-                DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
-                DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
-                DATA.F21 = reshape(D1*squeeze(DATA.x2),[],1,nFrames) ;
-                DATA.F22 = reshape(D2*squeeze(DATA.x2),[],1,nFrames) ;
-            % Jacobian
-                DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ;
-            % Cauchy Strains
-                DATA.C11 = DATA.F11.*DATA.F11 + DATA.F21.*DATA.F21 ;
-                DATA.C22 = DATA.F12.*DATA.F12 + DATA.F22.*DATA.F22 ;
-                DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
-            % Euler-Lagrange Strains
-                DATA.L11 = 0.5*(DATA.C11 - 1) ;
-                DATA.L22 = 0.5*(DATA.C22 - 1) ;
-                DATA.L12 = 0.5*(DATA.C12) ;
-                DATA.L33 = -DATA.L11-DATA.L22 ;
-                DATA.Lmean = 1/3*(DATA.L11+DATA.L22+DATA.L33) ;
-            % Deviatoric part
-                DATA.Ldev11 = DATA.L11-DATA.Lmean ;
-                DATA.Ldev22 = DATA.L22-DATA.Lmean ;
-                DATA.Ldev33 = DATA.L33-DATA.Lmean ;
-                DATA.Ldev12 = DATA.L12 ;
-            % Equivalent strain
-                DATA.Leq = sqrt(2/3*(DATA.Ldev11.^2 + DATA.Ldev22.^2 + DATA.Ldev12.^2 + DATA.Ldev33.^2)) ;
-            % Eigen Strains
-                aaa = 1/2*(DATA.L11+DATA.L22) ;
-                bbb = sqrt(1/4*(DATA.L11-DATA.L22).^2 + DATA.L12.^2) ;
-                DATA.Eig1 = aaa+bbb ; % Major strain
-                DATA.Eig2 = aaa-bbb ; % Minor Strain
-                DATA.EigTau = bbb ; % Maximum Shear
-                DATA.EigTheta = 1/2*atan(2*DATA.L12./(DATA.L11-DATA.L22)) ; % Principal Angle
-            % Linearized Euler-Lagrange Strains
-                DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
-                DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
-                DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
+            % DATA FIELDS WITH GRADIENT
+                if ~isempty(obj.Triangles) || ~isempty(obj.Quadrangles)
+                    % Derivation matrices
+                        [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
+                    % Transformation Gradient
+                        DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
+                        DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
+                        DATA.F21 = reshape(D1*squeeze(DATA.x2),[],1,nFrames) ;
+                        DATA.F22 = reshape(D2*squeeze(DATA.x2),[],1,nFrames) ;
+                    % Jacobian
+                        DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ;
+                    % Cauchy Strains
+                        DATA.C11 = DATA.F11.*DATA.F11 + DATA.F21.*DATA.F21 ;
+                        DATA.C22 = DATA.F12.*DATA.F12 + DATA.F22.*DATA.F22 ;
+                        DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
+                    % Euler-Lagrange Strains
+                        DATA.L11 = 0.5*(DATA.C11 - 1) ;
+                        DATA.L22 = 0.5*(DATA.C22 - 1) ;
+                        DATA.L12 = 0.5*(DATA.C12) ;
+                        DATA.L33 = -DATA.L11-DATA.L22 ;
+                        DATA.Lmean = 1/3*(DATA.L11+DATA.L22+DATA.L33) ;
+                    % Deviatoric part
+                        DATA.Ldev11 = DATA.L11-DATA.Lmean ;
+                        DATA.Ldev22 = DATA.L22-DATA.Lmean ;
+                        DATA.Ldev33 = DATA.L33-DATA.Lmean ;
+                        DATA.Ldev12 = DATA.L12 ;
+                    % Equivalent strain
+                        DATA.Leq = sqrt(2/3*(DATA.Ldev11.^2 + DATA.Ldev22.^2 + DATA.Ldev12.^2 + DATA.Ldev33.^2)) ;
+                    % Eigen Strains
+                        aaa = 1/2*(DATA.L11+DATA.L22) ;
+                        bbb = sqrt(1/4*(DATA.L11-DATA.L22).^2 + DATA.L12.^2) ;
+                        DATA.Eig1 = aaa+bbb ; % Major strain
+                        DATA.Eig2 = aaa-bbb ; % Minor Strain
+                        DATA.EigTau = bbb ; % Maximum Shear
+                        DATA.EigTheta = 1/2*atan(2*DATA.L12./(DATA.L11-DATA.L22)) ; % Principal Angle
+                    % Linearized Euler-Lagrange Strains
+                        DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
+                        DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
+                        DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
+                end
             % Save in the object
                 obj.DataFields = DATA ;
         end
@@ -279,6 +291,14 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'facecolor','interp'...
                                 ,'facealpha',0.5 ...
                                 ,'hittest','off' ...
+                                ,'Visible','off' ...
+                                ,'tag',obj.Name ...
+                                ) ;
+                scatt = scatter(obj.Points(:,1),obj.Points(:,2)...
+                                ,200 ... scatter size
+                                ,'hittest','off' ...
+                                ,'marker','.' ...
+                                ,'Visible','off' ...
                                 ,'tag',obj.Name ...
                                 ) ;
             % ADD A COLORBAR
@@ -325,7 +345,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     % Plot Type
                         mPlot = uimenu(mDisplay,'Label','Plot') ;
                             submenus(end+1) = uimenu(mPlot,'Label','Mesh','checked','on') ;
-                            submenus(end+1) = uimenu(mPlot,'Label','Points') ;
+                            submenus(end+1) = uimenu(mPlot,'Label','Contours') ;
+                            submenus(end+1) = uimenu(mPlot,'Label','Scatter') ;
                             submenus(end+1) = uimenu(mPlot,'Label','Edges') ;
                     % Color Scale
                         mColors = uimenu(mDisplay,'Label','Colors') ;
@@ -380,6 +401,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     case 'Limits'
                         ax.UserData.clrLimsLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
+                    case 'Plot'
+                        ax.UserData.plotType = subMenu.Label ;
                     case 'Steps'
                         ax.UserData.clrStepsLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
@@ -392,7 +415,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                     cen = [mean(ax.XLim) mean(ax.YLim)] ; ran = [range(ax.XLim) range(ax.YLim)] ;
                                     frame = ax.UserData.currentFrame ;
                                 % Position of the current point in the reference config.
-                                    cen = obj.interpMat(cen,'extrap',obj.MovingPoints(:,:,frame))*obj.Points ;
+                                    cen = full(obj.interpMat(cen,'extrap',obj.MovingPoints(:,:,frame))*obj.Points) ;
                                 % Record
                                     ax.UserData.axesPositionReference = [cen ran] ; % [frame posX posY]
                                     disp([obj.Name ' preview will follow with the position reference ' mat2str(ax.UserData.axesPositionReference)]) ;
@@ -420,99 +443,128 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         
         
         function updateSeedPreview(obj,~,ax)
-            % Search for the mesh
-                triMesh = findobj(ax,'tag',obj.Name) ;
-            % If it is not found, re-init
-                if isempty(triMesh)
-                    initSeedPreview(obj,ax) ;
-                    triMesh = findobj(ax,'tag',obj.Name) ;
-                end
+            % Has the preview been initialized ?
+                % Search for the object
+                    gH = findobj(ax,'tag',obj.Name) ;
+                % If it is not found, re-init
+                    if isempty(gH)
+                        initSeedPreview(obj,ax) ;
+                        gH = findobj(ax,'tag',obj.Name) ;
+                    end
+            % Structure containing plot Data
+                PlotStruct = [] ;
             % Get the frame
                 CurrentFrame = ax.UserData.currentFrame ;
-            % If the frame is valid, Update
-                if CurrentFrame>0 && CurrentFrame<=size(obj.MovingPoints,3)
-                    % Deform the mesh
-                        triMesh.Vertices = obj.MovingPoints(:,:,CurrentFrame) ;
-                    % Retrieve the data
-                        Data = [] ;
-                        % Re-compute data fields if needed
-                            if ~isfield(obj.DataFields,ax.UserData.dataLabel) ; obj.computeDataFields ; end
-                        % Extract the data
-                            Data = obj.DataFields.(ax.UserData.dataLabel) ;
-                        % If no data, return
-                            if isempty(Data) ; return ; end
-                        % Re-format
-                            Data = squeeze(Data) ;
-                    % Apply data to mesh
-                        if size(Data,1) == size(triMesh.Faces,1)
-                            triMesh.FaceColor = 'flat' ;
-                        else
-                            triMesh.FaceColor = 'interp' ;
-                        end
-                        CurrentFrame = min(size(Data,2),CurrentFrame) ; % Allow a field to be constant
-                        triMesh.CData = Data(:,CurrentFrame) ;
-                    % COLORS
-                        if strcmp(ax.UserData.clrMode,'Preset')
-                            % Color scale
-                                switch ax.UserData.clrScaleLabel
-                                    case 'Current Frame'
-                                        colorData = Data(:,CurrentFrame) ;
-                                    case 'All Frames'
-                                        colorData = Data ;
-                                end
-                                minData = min(colorData(:)) ;
-                                maxData = max(colorData(:)) ;
-                            % Color Limits
-                                if ~any(isnan([minData maxData]))
-                                    % Set CAXIS
-                                        switch ax.UserData.clrLimsLabel
-                                            case '0-max'
-                                                if sign(minData)==sign(maxData)
-                                                    if sign(minData)==-1
-                                                        caxis(ax,[minData 0]) ;
-                                                    else
-                                                        caxis(ax,[0 maxData]) ;
-                                                    end
-                                                else
-                                                    caxis(ax,[minData maxData]) ;
-                                                end
-                                            case 'min-max'
-                                                caxis(ax,[minData maxData]) ;
-                                            case 'symmetric'
-                                                caxis(ax,max(abs([minData maxData]))*[-1 1]) ;
-                                            otherwise % N*sigma
-                                                % Get the factor N
-                                                    N = str2double(ax.UserData.clrLimsLabel(1)) ;
-                                                % Compute mean and variances
-                                                    valid = ~isnan(colorData(:)) ;
-                                                    avg = mean(colorData(valid)) ;
-                                                    ec = std(colorData(valid)) ;
-                                                % Set Color Limits
-                                                    caxis(min(max(avg+N*ec*[-1 1],minData),maxData)) ;
-                                        end
-                                end
-                            % Color Steps
-                                steps = ax.UserData.clrStepsLabel ;
-                                switch steps
-                                    case 'Continuous'
-                                        steps = 1000 ;
-                                    otherwise
-                                        steps = str2num(steps) ;
-                                end
-                                if steps~=size(colormap(ax),1) ; colormap(ax,jet(steps)) ; end
-                        end
-                    % AXES LIMITS
-                        % Follow point if needed
-                            if ~isempty(ax.UserData.axesPositionReference) && ~any(isnan(ax.UserData.axesPositionReference))
-                                % Center and range of axis limits
-                                    cen = round(obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame)) ; 
-                                    ran = round(ax.UserData.axesPositionReference(3:4)) ;
-                                % Update limits
-                                    [nI,nJ] = size(obj.refImgs{1}) ;
-                                    ax.XLim = max(0.5,min(nJ+0.5,cen(1)+ran(1)*[-1 1]/2)) ;
-                                    ax.YLim = max(0.5,min(nI+0.5,cen(2)+ran(2)*[-1 1]/2)) ;
-                            end
+            % If the frame is not valid, return
+                if ~(CurrentFrame>0 && CurrentFrame<=size(obj.MovingPoints,3)) ; return ; end
+            % Current configuration
+                PlotStruct.Vertices = obj.MovingPoints(:,:,CurrentFrame) ;
+            % Data Field to plot
+                Data = [] ;
+                % Re-compute data fields if needed
+                    if ~isfield(obj.DataFields,ax.UserData.dataLabel) ; obj.computeDataFields ; end
+                % Extract the data
+                    Data = obj.DataFields.(ax.UserData.dataLabel) ;
+                % If no data, return
+                    if isempty(Data) ; return ; end
+                % Re-format
+                    Data = permute(Data,[1 3 2]) ;
+            % Apply data to mesh
+                if size(Data,1) == size(obj.Triangles,1)
+                    PlotStruct.FaceColor = 'flat' ;
+                else
+                    PlotStruct.FaceColor = 'interp' ;
                 end
+                CurrentFrame = min(size(Data,2),CurrentFrame) ; % Allow a field to be constant
+                PlotStruct.CData = Data(:,CurrentFrame) ;
+            % COLORS
+                if strcmp(ax.UserData.clrMode,'Preset')
+                    % Color scale
+                        switch ax.UserData.clrScaleLabel
+                            case 'Current Frame'
+                                colorData = Data(:,CurrentFrame) ;
+                            case 'All Frames'
+                                colorData = Data ;
+                        end
+                        minData = min(colorData(:)) ;
+                        maxData = max(colorData(:)) ;
+                    % Color Limits
+                        if ~any(isnan([minData maxData]))
+                            % Set CAXIS
+                                switch ax.UserData.clrLimsLabel
+                                    case '0-max'
+                                        if sign(minData)==sign(maxData)
+                                            if sign(minData)==-1
+                                                CLim = [minData 0] ;
+                                            else
+                                                CLim = [0 maxData] ;
+                                            end
+                                        else
+                                            CLim = [minData maxData] ;
+                                        end
+                                    case 'min-max'
+                                        CLim = [minData maxData] ;
+                                    case 'symmetric'
+                                        CLim = max(abs([minData maxData]))*[-1 1] ;
+                                    otherwise % N*sigma
+                                        % Get the factor N
+                                            N = str2double(ax.UserData.clrLimsLabel(1)) ;
+                                        % Compute mean and variances
+                                            valid = ~isnan(colorData(:)) ;
+                                            avg = mean(colorData(valid)) ;
+                                            ec = std(colorData(valid)) ;
+                                        % Set Color Limits
+                                            CLim = min(max(avg+N*ec*[-1 1],minData),maxData) ;
+                                end
+                                if range(CLim)>eps
+                                    caxis(ax,CLim) ;
+                                end
+                        end
+                    % Color Steps
+                        steps = ax.UserData.clrStepsLabel ;
+                        switch steps
+                            case 'Continuous'
+                                steps = 1000 ;
+                            otherwise
+                                steps = str2num(steps) ;
+                        end
+                        if steps~=size(colormap(ax),1) ; colormap(ax,jet(steps)) ; end
+                end
+            % UPDATE THE DISPLAY OBJECT
+                % Set objects not visible
+                    set(gH,'Visible','off') ;
+                % Depending on the kind of plot..
+                    switch ax.UserData.plotType
+                        case 'Mesh'
+                            gHi = findobj(gH,'type','patch') ;
+                            gHi.Vertices = PlotStruct.Vertices ;
+                            gHi.FaceColor = PlotStruct.FaceColor ;
+                            gHi.CData = PlotStruct.CData ;
+                        case 'Contours'
+                            gHi = findobj(gH,'type','contour') ;
+                        case 'Scatter'
+                            gHi = findobj(gH,'type','scatter') ;
+                            gHi.XData = PlotStruct.Vertices(:,1) ;
+                            gHi.YData = PlotStruct.Vertices(:,2) ;
+                            gHi.CData = PlotStruct.CData ;
+                        case 'Edges'
+                            gHi = findobj(gH,'type','line') ;
+                    end
+                % Make the object visible
+                    gHi.Visible = 'on' ;
+            % AXES LIMITS
+                % Follow point if needed
+                    if ~isempty(ax.UserData.axesPositionReference) && ~any(isnan(ax.UserData.axesPositionReference))
+                        % Center and range of axis limits
+                            cen = round(obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame)) ; 
+                            ran = round(ax.UserData.axesPositionReference(3:4)) ;
+                        % Update limits
+                            if ~any(isnan([cen ran]))
+                                [nI,nJ] = size(obj.refImgs{1}) ;
+                                ax.XLim = max(0.5,min(nJ+0.5,cen(1)+ran(1)*[-1 1]/2)) ;
+                                ax.YLim = max(0.5,min(nI+0.5,cen(2)+ran(2)*[-1 1]/2)) ;
+                            end
+                    end
         end
         
         

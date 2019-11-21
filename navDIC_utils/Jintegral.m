@@ -16,8 +16,11 @@
         hd.Seeds(seedNumber).DataFields.S22 = Es./(1-Nus.^2).*(hd.Seeds(seedNumber).DataFields.L22 + Nus.*hd.Seeds(seedNumber).DataFields.L11);
         hd.Seeds(seedNumber).DataFields.S12 = Es./(1-Nus.^2).*hd.Seeds(seedNumber).DataFields.L12;
         hd.Seeds(seedNumber).DataFields.Seq = SIG ;
-    % Compute strain energy
-        hd.Seeds(seedNumber).DataFields.W = SIG.*EPS ;
+    % Strain rate
+        hd.Seeds(seedNumber).DataFields.Deq = cat(3,EPS(:,:,1)*0,diff(EPS,1,3)) ;
+    % Strain energy
+        hd.Seeds(seedNumber).DataFields.dW = SIG.*hd.Seeds(seedNumber).DataFields.Deq ;
+        hd.Seeds(seedNumber).DataFields.W = cumsum(hd.Seeds(seedNumber).DataFields.dW,3) ;
 
 %% INITIALIZE THE FIGURE
     % Init the figure
@@ -41,8 +44,8 @@
     
     crackPos = [0.5 0.82].*[nJ nI] ; % Crack tip position
     crackVec = [0 -1] ; % Crack direction
-    zoneWidth = 0.8*nJ ;
-    zoneHeight = 0.68*nI ;
+    zoneWidth = 0.6*nJ ;
+    zoneHeight = 0.6*nI ;
     crackWidth = 0.05*nJ ;
     rulerLength = 0.007 ;
     nPts = 1000 ;

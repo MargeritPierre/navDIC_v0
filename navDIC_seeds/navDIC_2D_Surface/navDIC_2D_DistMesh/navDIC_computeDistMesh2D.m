@@ -196,6 +196,10 @@ disp('----------------')
 
    
     function t = computeMesh(p,varargin)
+        if size(p,1)<3
+            t = [] ;
+            return ;
+        end
         t=delaunay(p);                                  % List of triangles
         if isempty(varargin)
             pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;    % Compute centroids
@@ -230,12 +234,13 @@ disp('----------------')
     end
 
     function selected = selectedElement(mp,p,t)
+        selected = [] ;
+        if isempty(t) ; return ; end
         x = p(:,1) ; y = p(:,2) ;
         xc = mean(x(t),2) ; yc = mean(y(t),2) ; 
         distToElems = sqrt((xc-mp(1)).^2 + (yc-mp(2)).^2) ;
         [~,closestElems] = sort(distToElems,'ascend') ;
-        selected = [] ;
-        for e = 1:10
+        for e = 1:min(10,numel(t(:,1)))
             elmt = closestElems(e) ;
             xe = x(t(elmt,:)) ; ye = y(t(elmt,:)) ; 
             if inpolygon(mp(1),mp(2),xe,ye) ; selected(end+1) = elmt ; end

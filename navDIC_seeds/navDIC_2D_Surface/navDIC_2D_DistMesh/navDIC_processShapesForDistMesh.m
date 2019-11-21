@@ -10,7 +10,6 @@ function H = navDIC_processShapesForDistMesh(H)
         mesh = [] ;
         if isempty(H.Geometries) ...
                 || ~any([H.Geometries.isValid]) ...
-                || (all(ismember([H.Geometries.Class],'impoint')) && numel(H.Geometries)<3) 
             triMesh = findobj(H.Axes,'tag','DistMeshPreview') ;
             delete(triMesh) ;
             return ; 

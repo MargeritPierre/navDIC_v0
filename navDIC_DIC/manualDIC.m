@@ -7,13 +7,13 @@
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 6 ;
-        frames = '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; '[20:end]' ; % Frames taken for DIC (allows decimation)
+        seedNumber = 3 ;
+        frames = '[202:5:282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
         dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'last' ; % Reference image ('first' , 'last' or number)
         compConfig = 'Previous' ; % background help configuration ('Reference' or 'Previous') ;
-        startWithNavDICPositions = 'all' ;
-        addPreviousCorrection = false ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
+        startWithNavDICPositions = 'none' ;
+        addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
         exportTOnavDIC = true ;
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
         normToImageClassRange = true ; % Normalize images to their dataclass range
@@ -33,22 +33,23 @@
         btnWidth = 0.05 ;
         margin = 0.003 ;
         clf(figDIC) ;
-        ax0 = mysubplot(1,2,1) ;
+        ax = gobjects(0) ;
+        ax(1) = mysubplot(1,2,1) ;
             im0 = imagesc(IMG(:,:,:,refFrame),'hittest','off') ;
-            ax0.XTick = [] ; ax0.YTick = [] ;
-            ax0.YDir = 'reverse' ;
+            ax(1).XTick = [] ; ax(1).YTick = [] ;
+            ax(1).YDir = 'reverse' ;
             box on
             axis equal
             axis tight 
             colormap gray
             title([compConfig,' Configuration'])
             mesh0 = patch('Faces',Elems,'Vertices',Nodes,'edgecolor','r','facecolor','none') ;
-            pts0 = plot(ax0,Nodes(:,1),Nodes(:,2),'.r','markersize',20) ;
-        ax = mysubplot(1,2,2) ;
+            pts0 = plot(ax(1),Nodes(:,1),Nodes(:,2),'.r','markersize',20) ;
+        ax(2) = mysubplot(1,2,2) ;
             im = imagesc(IMG(:,:,:,refFrame),'hittest','off') ;
-            ax.XTick = [] ; ax.YTick = [] ;
-            ax.YDir = 'reverse' ;
-            ax.Clipping = 'off' ;
+            ax(2).XTick = [] ; ax(2).YTick = [] ;
+            ax(2).YDir = 'reverse' ;
+            %ax(2).Clipping = 'off' ;
             box on
             axis equal
             axis tight 
@@ -57,12 +58,13 @@
             mesh = patch('Faces',Elems,'Vertices',Nodes,'edgecolor','b','facecolor','none') ;
             pts = impoint.empty ;
             for n = 1:size(Nodes,1)
-                pts(end+1) = impoint(ax,Nodes(n,:)) ;
+                pts(end+1) = impoint(ax(2),Nodes(n,:)) ;
             end
             getPositions = @()reshape(cell2mat(arrayfun(@getPosition,pts,'UniformOutput',false)),2,[])' ;
             for n = 1:size(Nodes,1)
                 addNewPositionCallback(pts(n),@(src,evt)set(mesh,'Vertices',getPositions())) ;
             end
+        linkaxes(ax,'xy') ;
         stopBtn = uicontrol(figDIC,'style','togglebutton'...
                             ,'string','STOP'...
                             ,'units','normalized'...
@@ -144,6 +146,9 @@
                 if isempty(answer) || strcmp(answer,'No') ; return ; end
             end
 
+            if nNodes==1
+                hd.Seeds(seedNumber).MovingPoints = permute(interp1(frames(:),permute(Xn,[3 2 1]),navDICFrames(:),'linear',NaN),[3 2 1]) ;
+            else
             hd.Seeds(seedNumber).MovingPoints = interpn(...
                                                     repmat((1:nNodes)',[1 2 nFrames]),...
                                                     repmat(1:2,[nNodes 1 nFrames]),...
@@ -153,15 +158,16 @@
                                                     repmat(1:2,[nNodes 1 hd.nFrames]),...
                                                     repmat(reshape(navDICFrames,[1 1 hd.nFrames]),[nNodes 2 1]),...
                                                 'linear',NaN) ;
-            hd.Seeds(seedNumber).Displacements = interpn(...
-                                                    repmat((1:nNodes)',[1 2 nFrames]),...
-                                                    repmat(1:2,[nNodes 1 nFrames]),...
-                                                    repmat(reshape(frames,[1 1 nFrames]),[nNodes 2 1]),...
-                                                    Un,...
-                                                    repmat((1:nNodes)',[1 2 hd.nFrames]),...
-                                                    repmat(1:2,[nNodes 1 hd.nFrames]),...
-                                                    repmat(reshape(navDICFrames,[1 1 hd.nFrames]),[nNodes 2 1]),...
-                                                'linear',NaN) ;
+%             hd.Seeds(seedNumber).Displacements = interpn(...
+%                                                     repmat((1:nNodes)',[1 2 nFrames]),...
+%                                                     repmat(1:2,[nNodes 1 nFrames]),...
+%                                                     repmat(reshape(frames,[1 1 nFrames]),[nNodes 2 1]),...
+%                                                     Un,...
+%                                                     repmat((1:nNodes)',[1 2 hd.nFrames]),...
+%                                                     repmat(1:2,[nNodes 1 hd.nFrames]),...
+%                                                     repmat(reshape(navDICFrames,[1 1 hd.nFrames]),[nNodes 2 1]),...
+%                                                 'linear',NaN) ;
+            end
         end
         
 
