@@ -1,8 +1,5 @@
 function [C,lvl] = tricontours(t,p,f,lvl)
 
-tag = 'contour lines' ;
-ax = gca ;
-
 % Deal with given levels
     if nargin<4
         lvl = 10 ;
@@ -23,8 +20,7 @@ ax = gca ;
     y2 = reshape(p(e(:,:,2),2),[],3) ;
     
 % Contour lines
-    delete(findobj(ax,'tag',tag)) ;
-    C = gobjects(0) ;
+    C = [] ;
     for ll = 1:numel(lvl)
         L = lvl(ll) ;
         % Parameter of intersection (t € [0,1])
@@ -46,11 +42,7 @@ ax = gca ;
             nans = X(1,:)*NaN ;
             X = [X ; nans] ;
             Y = [Y ; nans] ;
-            %Cl = plot(X(:),Y(:),'-','tag',tag) ;
-            Cl = patch(X(:),Y(:),Y(:)*0+L,'tag',tag) ;
-            C(end+(1:numel(Cl))) = Cl ;
+            Z = X*0 + L ;
+            C = [C cat(3,X,Y,Z)] ;
     end
-    
-% Color lines
-    set(C,'edgecolor','interp','linewidth',1) ;
 

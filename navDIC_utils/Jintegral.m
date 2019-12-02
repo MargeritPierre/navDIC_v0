@@ -19,8 +19,8 @@
     % Strain rate
         hd.Seeds(seedNumber).DataFields.Deq = cat(3,EPS(:,:,1)*0,diff(EPS,1,3)) ;
     % Strain energy
-        hd.Seeds(seedNumber).DataFields.dW = SIG.*hd.Seeds(seedNumber).DataFields.Deq ;
-        hd.Seeds(seedNumber).DataFields.W = cumsum(hd.Seeds(seedNumber).DataFields.dW,3) ;
+        hd.Seeds(seedNumber).DataFields.Pi = -SIG.*hd.Seeds(seedNumber).DataFields.Deq ;
+        hd.Seeds(seedNumber).DataFields.W = cumsum(-hd.Seeds(seedNumber).DataFields.Pi,3) ;
 
 %% INITIALIZE THE FIGURE
     % Init the figure
@@ -48,6 +48,7 @@
     zoneHeight = 0.6*nI ;
     crackWidth = 0.05*nJ ;
     rulerLength = 0.007 ;
+    
     nPts = 1000 ;
     
     pos = [crackPos(1)-crackWidth/2 crackPos(2)] ;
@@ -61,9 +62,11 @@
     contour = images.roi.Polyline ;
     contour.Parent = gca ;
     contour.Position = pos ;
+    
+    contour.draw ; 
 
 
-% COMPUTE THE J-INTEGRAL
+%% COMPUTE THE J-INTEGRAL
     
     % Units
         pixelsByMeters = sqrt(sum(diff(ruler.Position,1,1).^2))/rulerLength ;
@@ -111,7 +114,7 @@
         K = sqrt(J*180e9/(1-0.33^2)) ;
         max(K)
         
-%% PLOT THE RESULT
+% PLOT THE RESULT
 
     pl = plot(J/1000) ;
     contour.Color = pl.Color ;

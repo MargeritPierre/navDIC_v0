@@ -293,6 +293,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'hittest','off' ...
                                 ,'Visible','off' ...
                                 ,'tag',obj.Name ...
+                                ,'DisplayName','mesh' ...
                                 ) ;
                 scatt = scatter(obj.Points(:,1),obj.Points(:,2)...
                                 ,200 ... scatter size
@@ -300,6 +301,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 ,'marker','.' ...
                                 ,'Visible','off' ...
                                 ,'tag',obj.Name ...
+                                ,'DisplayName','scatter' ...
+                                ) ;
+                contour = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
+                                ,'edgecolor','interp'...
+                                ,'EdgeAlpha', 1 ...
+                                ,'linewidth',1.5 ...
+                                ,'hittest','off' ...
+                                ,'Visible','off' ...
+                                ,'tag',obj.Name ...
+                                ,'DisplayName','contour' ...
                                 ) ;
             % ADD A COLORBAR
                 clrbr = colorbar(ax) ;
@@ -348,21 +359,27 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             submenus(end+1) = uimenu(mPlot,'Label','Contours') ;
                             submenus(end+1) = uimenu(mPlot,'Label','Scatter') ;
                             submenus(end+1) = uimenu(mPlot,'Label','Edges') ;
+                    % Data Scale
+                        mScale = uimenu(mDisplay,'Label','Scale') ;
+                            submenus(end+1) = uimenu(mScale,'Label','Linear','checked','on') ;
+                            submenus(end+1) = uimenu(mScale,'Label','Log10') ;
+                            submenus(end+1) = uimenu(mScale,'Label','Cummul') ;
                     % Color Scale
                         mColors = uimenu(mDisplay,'Label','Colors') ;
-                            mClrScale = uimenu(mColors,'Label','Scale') ;
-                                submenus(end+1) = uimenu(mClrScale,'Label','Current Frame','checked','on') ;
-                                submenus(end+1) = uimenu(mClrScale,'Label','All Frames') ;
+                            mClrFrames = uimenu(mColors,'Label','Frames') ;
+                                submenus(end+1) = uimenu(mClrFrames,'Label','Current','checked','on') ;
+                                submenus(end+1) = uimenu(mClrFrames,'Label','All') ;
                             mClrLims = uimenu(mColors,'Label','Limits') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','min-max','checked','on') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','0-max') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','symmetric') ;
-                                submenus(end+1) = uimenu(mClrLims,'Label','1*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','1*sigma','separator','on') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','2*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','3*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','4*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','5*sigma') ;
                                 submenus(end+1) = uimenu(mClrLims,'Label','6*sigma') ;
+                                submenus(end+1) = uimenu(mClrLims,'Label','cummul','separator','on') ;
                             mClrSteps = uimenu(mColors,'Label','Steps') ;
                                 submenus(end+1) = uimenu(mClrSteps,'Label','Continuous','checked','on') ;
                                 submenus(end+1) = uimenu(mClrSteps,'Label','11') ;
@@ -378,11 +395,12 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 % UserData in axes to choose the data to plot
                     ax.UserData.dataLabel = 'U' ;
                     ax.UserData.plotType = 'Mesh' ;
-                    ax.UserData.axesPositionReference = [] ; % [frame posX posY]
+                    ax.UserData.dataScale = 'Linear' ;
                     ax.UserData.clrMode = 'Preset' ;
-                    ax.UserData.clrScaleLabel = 'Current Frame' ;
+                    ax.UserData.clrFramesLabel = 'Current' ;
                     ax.UserData.clrLimsLabel = 'min-max' ;
                     ax.UserData.clrStepsLabel = 'Continuous' ;
+                    ax.UserData.axesPositionReference = [] ; % [frame posX posY]
         end
         
         
@@ -395,14 +413,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 switch subMenu.Parent.Label
                     case 'Data'
                         ax.UserData.dataLabel = subMenu.Label ;
-                    case 'Scale'
-                        ax.UserData.clrScaleLabel = subMenu.Label ;
+                    case 'Frames'
+                        ax.UserData.clrFramesLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
                     case 'Limits'
                         ax.UserData.clrLimsLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
                     case 'Plot'
                         ax.UserData.plotType = subMenu.Label ;
+                    case 'Scale'
+                        ax.UserData.dataScale = subMenu.Label ;
                     case 'Steps'
                         ax.UserData.clrStepsLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
@@ -469,27 +489,36 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     if isempty(Data) ; return ; end
                 % Re-format
                     Data = permute(Data,[1 3 2]) ;
-            % Apply data to mesh
-                if size(Data,1) == size(obj.Triangles,1)
-                    PlotStruct.FaceColor = 'flat' ;
-                else
-                    PlotStruct.FaceColor = 'interp' ;
+            % Data Transformation
+                switch ax.UserData.dataScale
+                    case 'Linear' % Do nothing
+                    case 'Log10'
+                        Data = log10(abs(Data)) ;
+                    case 'Cummul'
+                        [sortData,sortInd] = sort(Data,1) ;
+                        sortInd = sortInd + ((1:size(Data,2))-1)*size(Data,1) ;
+                        newData = cumsum(sortData,1) ;
+                        newData = newData./newData(end,:) ;
+                        newIndices(sortInd(:)) = 1:numel(Data) ;
+                        Data = reshape(newData(newIndices),size(Data)) ;
                 end
+            % Extract the Current Data
                 CurrentFrame = min(size(Data,2),CurrentFrame) ; % Allow a field to be constant
                 PlotStruct.CData = Data(:,CurrentFrame) ;
             % COLORS
                 if strcmp(ax.UserData.clrMode,'Preset')
-                    % Color scale
-                        switch ax.UserData.clrScaleLabel
-                            case 'Current Frame'
+                    % Color Frames
+                        switch ax.UserData.clrFramesLabel
+                            case 'Current'
                                 colorData = Data(:,CurrentFrame) ;
-                            case 'All Frames'
+                            case 'All'
                                 colorData = Data ;
                         end
                         minData = min(colorData(:)) ;
                         maxData = max(colorData(:)) ;
                     % Color Limits
-                        if ~any(isnan([minData maxData]))
+                        CLim = [minData maxData] ;
+                        if ~any(isnan(CLim))
                             % Set CAXIS
                                 switch ax.UserData.clrLimsLabel
                                     case '0-max'
@@ -529,6 +558,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 steps = str2num(steps) ;
                         end
                         if steps~=size(colormap(ax),1) ; colormap(ax,jet(steps)) ; end
+                else
+                    CLim = caxis(ax) ;
+                    steps = size(colormap(ax),1) ;
                 end
             % UPDATE THE DISPLAY OBJECT
                 % Set objects not visible
@@ -536,19 +568,50 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 % Depending on the kind of plot..
                     switch ax.UserData.plotType
                         case 'Mesh'
-                            gHi = findobj(gH,'type','patch') ;
-                            gHi.Vertices = PlotStruct.Vertices ;
-                            gHi.FaceColor = PlotStruct.FaceColor ;
-                            gHi.CData = PlotStruct.CData ;
+                            gHi = findobj(gH,'DisplayName','mesh') ;
+                            % Apply data to mesh
+                                if size(PlotStruct.CData,1) == size(obj.Triangles,1)
+                                    PlotStruct.FaceColor = 'flat' ;
+                                else
+                                    PlotStruct.FaceColor = 'interp' ;
+                                end
+                            % Display
+                                gHi.Vertices = PlotStruct.Vertices ;
+                                gHi.FaceColor = PlotStruct.FaceColor ;
+                                gHi.CData = PlotStruct.CData ;
                         case 'Contours'
-                            gHi = findobj(gH,'type','contour') ;
+                            gHi = findobj(gH,'DisplayName','contour') ;
+                            % Force data on nodes
+                                if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
+                                    PlotStruct.CData = obj.tri2nod*PlotStruct.CData ; 
+                                end
+                            % Contour levels
+                                nL = min(40,steps) ;
+                                lvl = linspace(CLim(1),CLim(2),2*nL+1) ;
+                                lvl = lvl(2:2:end) ;
+                                lvl(isnan(lvl)) = [] ;
+                            % Compute contour lines
+                                C = NaN*[1 1 1] ;
+                                if ~isempty(lvl)
+                                    C = tricontours(obj.Triangles,PlotStruct.Vertices,PlotStruct.CData,lvl) ;
+                                    C = reshape(C,[],3) ; % A list of vertices with interleaved NaNs
+                                end
+                            % Display
+                                gHi.Vertices = C.*[1 1 0] ;
+                                gHi.CData = C(:,3) ;
+                                gHi.Faces = 1:size(gHi.Vertices,1) ;
                         case 'Scatter'
-                            gHi = findobj(gH,'type','scatter') ;
-                            gHi.XData = PlotStruct.Vertices(:,1) ;
-                            gHi.YData = PlotStruct.Vertices(:,2) ;
-                            gHi.CData = PlotStruct.CData ;
+                            gHi = findobj(gH,'DisplayName','scatter') ;
+                            % Force data on nodes
+                                if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
+                                    PlotStruct.CData = obj.tri2nod*PlotStruct.CData ; 
+                                end
+                            % Display
+                                gHi.XData = PlotStruct.Vertices(:,1) ;
+                                gHi.YData = PlotStruct.Vertices(:,2) ;
+                                gHi.CData = PlotStruct.CData ;
                         case 'Edges'
-                            gHi = findobj(gH,'type','line') ;
+                            gHi = findobj(gH,'DisplayName','line') ;
                     end
                 % Make the object visible
                     gHi.Visible = 'on' ;

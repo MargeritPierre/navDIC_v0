@@ -8,11 +8,11 @@
     % INITIALIZATION PARAMETERS
         camID = 1 ;
         seedNumber = 3 ;
-        frames = '[202:5:282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
+        frames = '[202:2:282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
         dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'last' ; % Reference image ('first' , 'last' or number)
         compConfig = 'Previous' ; % background help configuration ('Reference' or 'Previous') ;
-        startWithNavDICPositions = 'none' ;
+        startWithNavDICPositions = 'all' ;
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
         exportTOnavDIC = true ;
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
