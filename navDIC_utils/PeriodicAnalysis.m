@@ -1,0 +1,153 @@
+%% ANALYSIS OF A PERIODIC STRUCTURE
+
+%% CREATE THE NECESSARY MASKS
+
+    global hd
+    clearvars -except hd
+
+    macroSeed = hd.Seeds(7) ;
+    microSeed = hd.Seeds(2) ;
+    nPx = 100 ; nPy = nPx ;
+    refFrame = 1 ;
+    IMG = @(ii)repmat(hd.Images{1}(:,:,:,ii),[1 1 3]) ;
+
+    indQUADS = logical([0 1 1 1 0]'*[0 1 1 1 1 1 1 0]) ;
+    nQuads = sum(indQUADS(:)) ;
+    QUADS = macroSeed.Quadrangles(indQUADS(:),:) ;
+    
+    % Create the original grid of element coordinates
+        [Ex,Ey] = meshgrid(linspace(0,1,nPx),linspace(0,1,nPy)) ;
+        ex = Ex(:)' ; ey = Ey(:)' ;
+        
+    % Mean quad dimensions
+        Pq = reshape(macroSeed.MovingPoints(QUADS,:,:),[],4,2,hd.nFrames) ;
+        Lq = squeeze(mean(range(Pq,2))) ;
+        
+    % Transport to the image coordinates
+        Pe = Pq(:,1,:,refFrame).*(1-ex).*(1-ey) ...
+                + Pq(:,2,:,refFrame).*(ex).*(1-ey) ...
+                + Pq(:,3,:,refFrame).*(ex).*(ey) ...
+                + Pq(:,4,:,refFrame).*(1-ex).*(ey) ;
+        Pe = reshape(Pe,[],2) ;
+    
+    % Create the interpolation matrix
+        interpMat = microSeed.interpMat(Pe,NaN) ;
+        
+    % Points INSIDE the micro seed mesh
+        vMASK = ~any(isnan(interpMat),2) ; % Pin = Pe(MASK,:) ;
+        
+    % Take the same points for all quads
+        qMASK = reshape(vMASK,nQuads,nPx*nPy) ; % Individual quad mask
+        tMASK = all(qMASK,1) ; % Points valid in all quads
+        cMASK = qMASK & tMASK ; % Common masks
+        
+    % Display
+        clf ;
+            im = imagesc(IMG(1)) ;
+            axis ij
+            axis tight
+            axis equal
+            plIn = plot(Pe(vMASK,1),Pe(vMASK,2),'.b','markersize',5) ;
+            plCommonIn = plot(Pe(cMASK,1),Pe(cMASK,2),'.g','markersize',5) ;
+            plOut = plot(Pe(~vMASK,1),Pe(~vMASK,2),'.c','markersize',1) ;
+            plQ = plot(Pq(:,:,1),Pq(:,:,2),'.r','markersize',20) ;
+            
+            
+%% INTERPOLATION OF DISPLACEMENTS
+
+    % Retrieve Positions of the points
+        interpMat(~cMASK(:),1) = NaN ;
+        PPP = reshape(interpMat*reshape(microSeed.MovingPoints,size(interpMat,2),[]),[],2,hd.nFrames) ;
+        UUU = PPP-PPP(:,:,refFrame) ;
+        
+    % Display
+        ii = 118 ;
+        clf ;
+            im = imagesc(IMG(ii)) ;
+            axis ij
+            axis tight
+            axis equal
+            scat = scatter(PPP(cMASK(:),1,ii),PPP(cMASK(:),2,ii),10,sqrt(sum(UUU(cMASK(:),:,ii).^2,2))) ;
+            scat.Marker = '.' ;
+            
+%% SUBSTRACTION OF THE MACRO FIELD
+
+    % Macro displacement (circumcenter of the quads)
+        Pc = mean(Pq,2) ;
+        Uc = Pc-Pc(:,:,:,refFrame) ;
+
+    % Return to the quads
+        PPPq = reshape(PPP,nQuads,[],2,hd.nFrames) ;
+    
+    % Cancel the initial shape
+        PPPq = PPPq-reshape(Pe,nQuads,[],2) ;
+        PPPq = PPPq + cat(3,ex*Lq(1),ey*Lq(2)) ;
+        PPPq = PPPq-Uc ;
+        
+    % Substract the macro displacement
+        UUUq = PPPq - PPPq(:,:,:,refFrame) ;
+        %UUUq = UUUq - Uc ;
+        
+    % Compute macro fields
+        macroSeed.computeDataFields() ;
+        
+    % Display
+        ii = 118 ;
+        qq = 18 ;
+        amp = 1 ;
+        ax = gobjects(0) ;
+        scat = gobjects(0) ;
+        clf ;
+            ax(1) = mysubplot(1,2,1) ;
+                scat(1) = scatter(PPPq(qq,:,1,ii)+amp*UUUq(qq,:,1,ii),PPPq(qq,:,2,ii)+amp*UUUq(qq,:,2,ii),400,UUUq(qq,:,1,ii)) ;
+                colorbar
+            ax(2) = mysubplot(1,2,2) ;
+                scat(2) = scatter(PPPq(qq,:,1,ii)+amp*UUUq(qq,:,1,ii),PPPq(qq,:,2,ii)+amp*UUUq(qq,:,2,ii),400,UUUq(qq,:,2,ii)) ;
+                colorbar
+        axis(ax,'ij')
+        axis(ax,'tight')
+        axis(ax,'equal')
+        set(scat,'Marker','.') ;
+        set(ax,'xtick',[],'ytick',[],'xcolor','none','ycolor','none')
+        
+        
+        
+%% IDENTIFY STRAIN MODES u_ij
+% u(q,x) = L_11(q)*u_11(x) + L_22(q)*u_22(x) + L_12(q)*u_12(x)
+% u_ij : three modes for each frame (non linear)
+
+    uuu = UUUq(:,tMASK,:,:) ;
+    
+    fields = macroSeed.DataFields ;
+    Lij = cat(2,fields.L11(indQUADS,:,:),fields.L22(indQUADS,:,:),fields.L12(indQUADS,:,:)) ; % size [nQuads nFrames]
+            
+    % A.u_ij = b
+        fr = 118 ;
+        A = Lij(:,:,fr) ;
+        b = reshape(uuu(:,:,:,fr),nQuads,[]) ;
+        X = A\b ;
+        u_ij = reshape(X,3,[],2) ;
+        
+    % Display
+        clf ;
+        ax = gobjects(0) ;
+        scat = gobjects(0) ;
+        amp = .1 ;
+        clf ;
+        for ec = 1:3
+            for uc = 1:2
+                ax(end+1) = mysubplot(2,3,(uc-1)*3 + ec) ;
+                scat(end+1) = scatter(ax(end),...
+                                ex(tMASK)*Lq(1)+amp*u_ij(ec,:,1),...
+                                ey(tMASK)*Lq(2)+amp*u_ij(ec,:,2),...
+                                400,...
+                                u_ij(ec,:,uc)) ;
+            end
+        end
+        axis(ax,'ij')
+        axis(ax,'tight')
+        axis(ax,'equal')
+        set(scat,'Marker','.') ;
+        set(ax,'xtick',[],'ytick',[],'xcolor','none','ycolor','none')
+        
+        

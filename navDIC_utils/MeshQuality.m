@@ -3,7 +3,7 @@
 global hd
 
 qmin = 1/10 ;
-seedNumber = 6
+seedNumber = 1
 mesh = hd.Seeds(seedNumber) ;
 tri = mesh.Triangles ;
 Xm = mesh.Points(:,1) ;
@@ -31,3 +31,4 @@ disp([num2str(sum(q<qmin)) ' elements with a quality less than ' num2str(qmin)])
 %% DELETE TRIANGLES
 
 hd.Seeds(seedNumber).Triangles(q<qmin,:) = [] ;
+

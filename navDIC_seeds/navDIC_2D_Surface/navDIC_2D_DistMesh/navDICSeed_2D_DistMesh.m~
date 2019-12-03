@@ -178,7 +178,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     end
             else % THERE IS DIFFERENT ELEMENT TYPES
                 % Build the element matrices
-                    elems = obj.Elems ;
+                    Elems = [obj.Triangles NaN(size(obj.Triangles,1),1) ; obj.Quadrangles] ;
                 % Coordinates
                     X = refPoints(:,1) ; Y = refPoints(:,2) ;
                 % Compute the mean gradient
@@ -186,9 +186,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     nnn = [] ;
                     vvvD1 = [] ;
                     vvvD2 = [] ;
-                    for elmt = 1:size(elems,1)
+                    for elmt = 1:size(Elems,1)
                         % Element topology
-                            nodes = elems(elmt,~isnan(elems(elmt,:)))' ;
+                            nodes = Elems(elmt,~isnan(Elems(elmt,:)))' ;
                             area = polyarea(X(nodes),Y(nodes)) ;
                             edges = [nodes circshift(nodes,1,1)] ;
                         % Normals
@@ -205,8 +205,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             vvvD2 = [vvvD2 ; reshape(1/2/area.*dl.*normals(:,2).*[1 1],[],1)] ;
                     end
                 % Differentiation matrices
-                    D1 = sparse(eee(:),nnn(:),vvvD1(:),size(elems,1),size(refPoints,1)) ;
-                    D2 = sparse(eee(:),nnn(:),vvvD2(:),size(elems,1),size(refPoints,1)) ;
+                    D1 = sparse(eee(:),nnn(:),vvvD1(:),size(Elems,1),size(refPoints,1)) ;
+                    D2 = sparse(eee(:),nnn(:),vvvD2(:),size(Elems,1),size(refPoints,1)) ;
             end
         end
         
@@ -289,7 +289,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 axes(ax) ;
                 triMesh = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
                                 ,'vertices',obj.Points...
-                                ,'faces',obj.Elems...
+                                ,'faces',obj.Triangles...
                                 ,'edgecolor','k'...
                                 ,'EdgeAlpha', 0.2 ...
                                 ,'linewidth',0.1...
@@ -575,14 +575,15 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         case 'Mesh'
                             gHi = findobj(gH,'DisplayName','mesh') ;
                             % Apply data to mesh
-                                if size(PlotStruct.CData,1) == size(obj.Elems,1)
-                                    gHi.FaceColor = 'flat' ;
+                                if size(PlotStruct.CData,1) == size(obj.Triangles,1)
+                                    PlotStruct.FaceColor = 'flat' ;
                                 else
-                                    gHi.FaceColor = 'interp' ;
+                                    PlotStruct.FaceColor = 'interp' ;
                                 end
                             % Display
                                 gHi.Vertices = PlotStruct.Vertices ;
-                                gHi.FaceVertexCData = PlotStruct.CData ;
+                                gHi.FaceColor = PlotStruct.FaceColor ;
+                                gHi.CData = PlotStruct.CData ;
                         case 'Contours'
                             gHi = findobj(gH,'DisplayName','contour') ;
                             % Force data on nodes
