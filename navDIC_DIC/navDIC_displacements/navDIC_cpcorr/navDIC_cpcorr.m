@@ -58,6 +58,7 @@ end
         valid = ~any(isnan(PtsMov),2) ;
         obj.MovingPoints(:,:,frame) = obj.Points*NaN ;
         obj.MovingPoints(valid,:,frame) = my_cpcorr(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
+        %obj.MovingPoints(valid,:,frame) = icgnCorrMethod(obj.MovingPoints(valid,:,frame),PtsRef,imgMov,imgRef,CorrSize) ;
     end
     
 % Compute Displacements

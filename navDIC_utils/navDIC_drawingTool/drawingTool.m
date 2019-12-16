@@ -131,8 +131,13 @@ function H = drawingTool(varargin)
                 H.Geometries(end).Position = getPosition(H.Shapes{s}) ;
                 H.Geometries(end).isValid = true ;
                 lines = get(H.Shapes{s},'Children') ; 
-                corrSizeX = str2double(H.uiContextMenuData(end).CORRSIZEX) ;
-                corrSizeY = str2double(H.uiContextMenuData(end).CORRSIZEY) ;
+                if ~isempty(H.uiContextMenuData)
+                    corrSizeX = str2double(H.uiContextMenuData(end).CORRSIZEX) ;
+                    corrSizeY = str2double(H.uiContextMenuData(end).CORRSIZEY) ;
+                else
+                    corrSizeX = 10 ;
+                    corrSizeY = 10 ;
+                end
                 switch class(H.Shapes{s})
                     case 'imline'
                         lines(1).Marker = 'none' ;

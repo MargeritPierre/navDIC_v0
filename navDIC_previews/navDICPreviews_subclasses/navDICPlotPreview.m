@@ -31,7 +31,7 @@ classdef navDICPlotPreview < navDICPreview
                                 'ListString',plTyp);
                     plotMachin = plTyp{nb};
                     timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
-                    if ~strcmpi(plotMachin,'force_strain_Comp-fil')
+                    if ~strcmpi(plotMachin,'force_strain_Comp-fil') && ~isempty(hd.Seeds)
                         prev = listeSource(prev,hd) ;
                         lst = listdlg('PromptString','Select the output you want to plot : ',...
                                 'SelectionMode','multiple',...
@@ -180,7 +180,9 @@ classdef navDICPlotPreview < navDICPreview
             
             function prev = listeSource(prev,hd)
                 % Superclass updating function
-                    prev.sources = {hd.Seeds(:).Name} ;
+                
+                prev.sources = {hd.Seeds(:).Name} ;
+                
                     %=======================================
             end
             

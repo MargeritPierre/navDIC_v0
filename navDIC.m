@@ -9,8 +9,7 @@ function navDIC()
         navDICTag = 'navDIC' ;
         defaultFrameRate = 1 ; % Hz
         maximumFrameRate = 25 ; % Hz
-        
-        
+              
     % Is navDIC already running ?
         set(0,'ShowHiddenHandles','on') ; % Force handle visibility
         navDICFigs = findobj(groot,'tag',navDICTag) ;

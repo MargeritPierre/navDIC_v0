@@ -5,7 +5,7 @@ disp(['Setting of position and properties of the camera ', num2str(num),' : ',hd
 disp('------------------------------------------------------------------') ;
 
 if ~isempty(hd.Images)
-    rep = inputdlg('utiliser image de calibration diff?rente (oui/non)') ;
+    rep = inputdlg('utiliser image de calibration differente (oui/non)') ;
     if strcmpi(rep{1},'oui') 
         [file,path] = uigetfile('*.tif',['selectionner l''image de calibration de la camera : ',...
             hd.Cameras(num).Name,' ? utiliser. ']) ;

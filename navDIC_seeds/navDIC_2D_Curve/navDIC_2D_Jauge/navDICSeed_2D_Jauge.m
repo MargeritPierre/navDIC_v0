@@ -5,6 +5,9 @@ classdef navDICSeed_2D_Jauge < navDICSeed
         L0 = [] ;
         A = [] ;
         K = [] ;
+        Uhp = [] ; 
+        theta = [] ;
+        IDrefHP = []
     end
     
     methods
@@ -23,9 +26,9 @@ classdef navDICSeed_2D_Jauge < navDICSeed
                 'CORRSIZEY',num2cell(num2str((5:40)'),2),{'10'};...
                 } ;
                 obj.drawToolH = drawingTool('drawROI',true ...
-                                            ,'background', obj.refImgs{1} ...
-                                            ,'uicontextmenu',uiContextMenu ...
-                                            ) ;
+                      ,'background', obj.refImgs{1} ...
+                      ,'uicontextmenu',uiContextMenu ...
+                      ) ;
            %  obj.drawToolH
                
                if strcmpi(obj.drawToolH.Geometries(1).Class, 'impoint')

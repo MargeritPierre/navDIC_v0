@@ -2,7 +2,7 @@
    
     properties
         ROI = [] ;
-        corrSize = [6, 6] ; % taille fenetre de correlation cam 1 et cam 2
+        %corrSize = [6, 6] ; % taille fenetre de correlation cam 1 et cam 2
         L0 = [] ;
         cam = [] ;
         t = [] ;

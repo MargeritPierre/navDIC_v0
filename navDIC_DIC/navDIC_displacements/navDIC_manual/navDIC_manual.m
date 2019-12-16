@@ -1,4 +1,4 @@
-function [obj,hd] = navDIC_ICGN(obj,hd)
+function [obj,hd] = navDIC_manual(obj,hd)
 
 %disp('icgn')
 
@@ -30,13 +30,12 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
                 case 'abs'
                     PtsRef = obj.Points(:,:,i) ;
                     imgRef = hd.Images{obj.RefFrame}{camIDs(i)} ;
-                    imgMov = hd.Images{frame}{camIDs(i)} ;
-                    disp(num2str(frame));
                     if isnan(sum(sum(obj.MovingPoints(:,:,frame,i))))
                         PtsMov = obj.MovingPoints(:,:,frame-1,i) ;
                     else
                         PtsMov = obj.MovingPoints(:,:,frame,i) ;
                     end
+                    imgMov = hd.Images{frame}{camIDs(i)} ;
                 case 'rel'
                     PtsRef = obj.MovingPoints(:,:,frame-1,i) ;
                     imgRef = hd.Images{frame-1}{camIDs(i)} ;
@@ -57,11 +56,13 @@ function [obj,hd] = navDIC_ICGN(obj,hd)
             if isa(imgRef,'uint8') 
                 imgRef = double(imgRef)/255 ;
             end
-            obj.MovingPoints(valid,:,frame,i) = icgnCorrMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize(i,:)) ;
+            obj.MovingPoints(valid,:,frame,i) = manualCorrMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize(i,:)) ;
+            obj.MovingPoints(valid,:,frame,i) = icgnCorrMethod(obj.MovingPoints(valid,:,frame,i),PtsRef,imgMov,imgRef,CorrSize) ;
         end
         % Compute Displacements
         obj.Displacements(:,:,frame,i) = obj.MovingPoints(:,:,frame,i)-obj.Points(:,:,i) ;
     end
+  
     
 % Display Object
     %disp(obj)

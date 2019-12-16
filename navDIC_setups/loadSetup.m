@@ -17,8 +17,14 @@ function [setup,hd] = loadSetup(hd,path)
             imgExt = {'png','tif','jpg','jpeg','bmp'} ;
             Images = {} ;
             Cameras = struct([]) ;
-            nImgs = inputdlg('Entrer le nombre d''imagez a charger dans la memoire vive, enter 0 for all') ;
-            nImgs = str2double(nImgs{1}) ;
+            prompt = {'Entrer le numero de l''image max , enter 0 for all',...
+                'entrer le nombre de pas sur les photos à charger,( entrer 1 toutes les photos)'};
+            title = 'Input parameters' ;
+            dims = [1,50] ;
+            definput = {'0','1'} ;
+            nbIms = inputdlg(prompt,title,dims,definput ) ;
+            nMax = str2double(nbIms{1}) ;
+            pas = str2double(nbIms{2}) ;
             for cam = 1:nCams    % Possible image extensions
                 % Get files
                     files = dir('*.anImpossibleExtension') ;
@@ -58,12 +64,12 @@ function [setup,hd] = loadSetup(hd,path)
                     end
                     [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
                     idSTR = idSTR(ind(~isnan(idNUM))) ;
-                    if nImgs == 0 || nImgs >=length(idSTR)
-                        nImgs = length(idSTR) ;
+                    if nMax == 0 || nMax >=length(idSTR)
+                        nMax = length(idSTR) ;
                     end
                     
                 % Load images
-                    for i = 1:nImgs
+                    for i = 1:pas:nMax
                         Images{i}{cam} = {double(imread([camFolders{cam},'/',commonName,idSTR{i},ext]))/255} ;
                     end
                 % SET THE CAMERA
@@ -93,9 +99,11 @@ function [setup,hd] = loadSetup(hd,path)
             dataInFile = load([inputPath,inputFiles{in}]) ;
             for fi = fieldnames(dataInFile)
                  data = dataInFile.(fi{1}) ;
-                 InputData(1:length(data),end+1) = data ;
+                 InputData(1:length(data),end+1) = data ;    
             end
         end
+        % remove steps non chargés
+        InputData = InputData(1:pas:nMax,:) ;
             
 % Put everything in the setup
     setup.Path = path ;
