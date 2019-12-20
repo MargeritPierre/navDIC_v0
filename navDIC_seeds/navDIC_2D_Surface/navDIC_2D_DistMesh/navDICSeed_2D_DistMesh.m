@@ -226,6 +226,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         function DATA = computeDataFields(obj)
         % Compute all (scalar) data fields associated to the object motion
             DATA = struct() ;
+            if isempty(obj.MovingPoints) ; return ; end
             nFrames = size(obj.MovingPoints,3) ;
             % NaNs
                 DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
