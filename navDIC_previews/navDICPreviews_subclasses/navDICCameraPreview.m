@@ -76,7 +76,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Actualize preview image
                     % Process
                         %img = single(img) ;
-                        img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
+                        %img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
                     nBands = size(img,3) ;
                     if nBands == 1
                         prev.Img.CData = repmat(img,[1 1 3]) ;

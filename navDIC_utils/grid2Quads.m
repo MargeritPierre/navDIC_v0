@@ -1,7 +1,7 @@
 global hd
 clearvars -except hd
 
-Seed = hd.Seeds(end) ;
+Seed = hd.Seeds(1) ;
 
 nX = 9 ;
 nY = 6 ;
