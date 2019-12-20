@@ -9,7 +9,7 @@ dataField = 'W' ;
 domainRadius = 50 ;
 domainShift = [0 -1]*domainRadius ;
 nPint = 2500 ;
-config = 'current' ; 'reference' ;
+config = 'reference' ; 'current' ;
 showZone = true ;
 
 % Create a domain in which to evaluate the integral
