@@ -313,16 +313,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 DATA.DeigTau = bbb ; % Maximum Shear
                 DATA.DeigTheta = 1/2*atan(2*DATA.D12./(DATA.D11-DATA.D22)) ; % Principal Angle
             % True Strains
-                DATA.TS11 = cumsum(DATA.D11,3) ;
-                DATA.TS22 = cumsum(DATA.D22,3) ;
-                DATA.TS12 = cumsum(DATA.D12,3) ;
-            % Eigen True Strains
-                aaa = 1/2*(DATA.TS11+DATA.TS22) ;
-                bbb = sqrt(1/4*(DATA.TS11-DATA.TS22).^2 + DATA.TS12.^2) ;
-                DATA.TSeig1 = aaa+bbb ; % Major strain
-                DATA.TSeig2 = aaa-bbb ; % Minor Strain
-                DATA.TSeigTau = bbb ; % Maximum Shear
-                DATA.TSeigTheta = 1/2*atan(2*DATA.TS12./(DATA.TS11-DATA.TS22)) ; % Principal Angle
+                DATA.D11 = reshape(D1*DATA.v1(:),[],1,nFrames) ;
+                DATA.D22 = reshape(D2*DATA.v2(:),[],1,nFrames) ;
+                DATA.D12 = 0.5*reshape(D2*DATA.v1(:)+D1*DATA.v2(:),[],1,nFrames) ;
             % Save
                 obj.DataFields = DATA ;
         end

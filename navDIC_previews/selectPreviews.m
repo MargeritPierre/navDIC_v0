@@ -11,8 +11,7 @@ function [IDs,valid] = selectPreviews(hd,SelectionMode)
             return ;
         end
     % Otherwise, choose a preview
-        listPreviews = [hd.Previews{:}] ;
-        listPreviews = [listPreviews.fig] ;
+        listPreviews = [hd.Previews.fig] ;
         listPreviews = {listPreviews.Name} ;
         [IDs,valid] = listdlg('PromptString','Select a Preview :',...
                                     'SelectionMode',SelectionMode,...

@@ -10,7 +10,7 @@ function out = prepareAnimation(hd)
         if ~valid ; warning('NO VALID PREVIEW TO EXPORT') ; return ; end
         
     % Retrieve the preview
-        prev = [hd.Previews{IDs}] ;
+        prev = [hd.Previews(IDs)] ;
         if any(~[prev.isValid]) ; warning('AT LEAST ONE OF THE SELECTED PREVIEWS IS NOT VALID') ; return ; end
         
     % Set the previews as current figures

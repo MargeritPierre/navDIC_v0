@@ -70,17 +70,13 @@ classdef navDICPlotPreview < navDICPreview
                                     xdata = xdata(:,:) ;
                                     ydata = ydata(:,:) ;
                                 % To 1D ;
-                                    % Column vector to row-vector
-                                        if size(xdata,2)==1 ; xdata = xdata(:)' ; end
-                                        if size(ydata,2)==1 ; ydata = ydata(:)' ; end
-                                    % Mean over the 1st dim.
-                                        xdata = mean(xdata,1,'omitnan') ;
-                                        ydata = mean(ydata,1,'omitnan') ;
-                                % Apply to curves
-                                    prev.Curves(l).XData = xdata(1:length(ydata)) ;
-                                    prev.Curves(l).YData = ydata ;
-                                    prev.TimeMarkers(l).XData = xdata(hd.CurrentFrame) ;
-                                    prev.TimeMarkers(l).YData = ydata(hd.CurrentFrame) ;
+                                    % Row-vector to Column vector
+                                    if size(xdata,1)==1 ; xdata = xdata(:) ; end
+                                    if size(ydata,1)==1 ; ydata = ydata(:) ; end
+                                prev.Curves(l).XData = xdata(1:length(ydata)) ;
+                                prev.Curves(l).YData = ydata ;
+                                prev.TimeMarkers(l).XData = xdata(hd.CurrentFrame) ;
+                                prev.TimeMarkers(l).YData = ydata(hd.CurrentFrame) ;
                             end
                     end
             end
@@ -98,7 +94,7 @@ classdef navDICPlotPreview < navDICPreview
                                         ,'Position vs. Time' ...
                                         ,'Displacement vs. Time' ...
                                         ,'Velocity vs. Time' ...
-                                        ,'Strain vs. Time' ...
+                                        ,'Green Strain vs. Time' ...
                                         ,'Poisson' ...
                                         ,'Input vs. Time' ...
                                         ,'Input vs. Strain' ...
@@ -140,14 +136,14 @@ classdef navDICPlotPreview < navDICPreview
                         end
                     case 'POISSON'
                         prev.addCurve('Poisson' ...
-                                        ,['-' seedStr '.DataFields.Leig2'] ...
-                                        ,[seedStr '.DataFields.Leig1']) ;
+                                        ,['-' seedStr '.DataFields.L22'] ...
+                                        ,[seedStr '.DataFields.L11']) ;
                     case 'FORCE VS. STRAIN'
                         prev.addCurve('Poisson' ...
-                                        ,['-' seedStr '.DataFields.Leig1'] ...
+                                        ,['-' seedStr '.DataFields.Eps1'] ...
                                         ,'hd.InputData-hd.InputData(1)') ;
                     case 'CUSTOM'
-                        prev.addCurve(['curve.' num2str(numel(prev.CurveList.String)+1)]) ; 
+                        prev.addCurve(['plot #' num2str(numel(prev.CurveList.String)+1)]) ; 
                 end
                 %title(regexprep(preset,{'_'},{' '}))
                 prev = updatePreview(prev,hd) ;
@@ -226,7 +222,6 @@ classdef navDICPlotPreview < navDICPreview
                     prev.CurveList.String{end+1} = name ;
                     prev.XDataSources{end+1} = xdata ;
                     prev.YDataSources{end+1} = ydata ;
-                    prev.CurveList.Value = numel(prev.CurveList.String) ;
                 % Init the curve plots
                     prev.Curves(end+1) = plot(prev.Axes ...
                                                 ,NaN,NaN ...
@@ -236,7 +231,7 @@ classdef navDICPlotPreview < navDICPreview
                                                 ,'markersize',10 ...
                                                 ,'tag',name ...
                                                 ) ;
-                    prev.Axes.ColorOrderIndex = max(1,prev.Axes.ColorOrderIndex-1) ;
+                    prev.Axes.ColorOrderIndex = prev.Axes.ColorOrderIndex-1 ;
                     prev.TimeMarkers(end+1) = plot(prev.Axes ...
                                                     ,NaN,NaN ...
                                                     ,'linestyle','none' ...
@@ -259,7 +254,6 @@ classdef navDICPlotPreview < navDICPreview
                     delete(prev.TimeMarkers(crv)) ; prev.TimeMarkers(crv) = [] ;
                 % Remove from the curve list
                     prev.CurveList.String(crv) = [] ;
-                    prev.CurveList.Value = min(prev.CurveList.Value,numel(prev.CurveList.String)) ;
                 % Update Preview
                     if update ; prev.updatePreview ; end
             end

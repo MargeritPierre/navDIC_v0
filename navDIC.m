@@ -101,7 +101,7 @@ function navDIC(varargin)
             % DIC
                 hd.Seeds = [] ;
             % Previews
-                hd.Previews = [] ;
+                hd.Previews = navDICPlotPreview.empty ;
         % TIMER
             hd.TIMER = timer('ExecutionMode','FixedRate'...
                             ,'Period',1/defaultFrameRate ...
@@ -977,7 +977,7 @@ function navDIC(varargin)
         if isempty(hd.Seeds) ; return ; end
         prev = navDIC2DSeedPreview(hd) ;
         if prev.isValid
-            hd.Previews{end+1} = prev ;
+            hd.Previews(end+1) = prev ;
         end
     end
 
@@ -1011,7 +1011,7 @@ function navDIC(varargin)
     function camPreview
         prev = navDICCameraPreview(hd) ;
         if prev.isValid
-            hd.Previews{end+1} = prev ;
+            hd.Previews(end+1) = prev ;
         end
     end
 
@@ -1022,13 +1022,13 @@ function navDIC(varargin)
 
 % ADD A PLOT PREVIEW
     function plotPreview()
-        hd.Previews{end+1} = navDICPlotPreview(hd) ;
+        hd.Previews(end+1) = navDICPlotPreview(hd) ;
     end
 
 
 % START THE SLICING TOOL
     function sliceTool()
-        hd.Previews{end+1} = navDICSlicingTool(hd) ;
+        hd.Previews(end+1) = navDICSlicingTool(hd) ;
     end
 
 % AUTO LAYOUT OF PREVIEWS

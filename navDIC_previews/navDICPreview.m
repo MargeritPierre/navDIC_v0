@@ -1,4 +1,4 @@
-classdef navDICPreview < matlab.mixin.Heterogeneous
+classdef navDICPreview < handle & matlab.mixin.Heterogeneous
     
     properties
         fig = [] ; % the main figure
