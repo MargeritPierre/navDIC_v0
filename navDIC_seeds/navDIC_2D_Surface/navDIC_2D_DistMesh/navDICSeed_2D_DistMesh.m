@@ -225,23 +225,28 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         
         function DATA = computeDataFields(obj)
         % Compute all (scalar) data fields associated to the object motion
+        % Empty fields are here as section headings
             DATA = struct() ;
             if isempty(obj.MovingPoints) ; return ; end
             nFrames = size(obj.MovingPoints,3) ;
             nPoints = size(obj.MovingPoints,1) ;
-            % NaNs
-                DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
-            % Reference Coordinates
-                DATA.X1 = obj.MovingPoints(:,1,1) ;
-                DATA.X2 = obj.MovingPoints(:,2,1) ;
-            % Current Coordinates
-                DATA.x1 = obj.MovingPoints(:,1,:) ;
-                DATA.x2 = obj.MovingPoints(:,2,:) ;
+            % POSITION
+                DATA.Position = 'Position' ;
+                % NaNs
+                    DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
+                % Reference Coordinates
+                    DATA.X1 = obj.MovingPoints(:,1,1) ;
+                    DATA.X2 = obj.MovingPoints(:,2,1) ;
+                % Current Coordinates
+                    DATA.x1 = obj.MovingPoints(:,1,:) ;
+                    DATA.x2 = obj.MovingPoints(:,2,:) ;
             % Displacements
+                DATA.Displacement = 'Displacement' ;
                 DATA.u1 = DATA.x1 - DATA.X1 ;
                 DATA.u2 = DATA.x2 - DATA.X2 ;
                 DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
             % Velocity (pixels/image)
+                DATA.Velocity = 'Velocity' ; 
                 DATA.v1 = cat(3,zeros(nPoints,1),diff(DATA.u1,1,3)) ;
                 DATA.v2 = cat(3,zeros(nPoints,1),diff(DATA.u2,1,3)) ;
                 DATA.V = sqrt(DATA.v1.^2 + DATA.v2.^2) ;
@@ -250,81 +255,87 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     % Derivation matrices
                         [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
                     % Transformation Gradient
+                        DATA.Transformation = 'Transformation' ; 
                         DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
                         DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
                         DATA.F21 = reshape(D1*squeeze(DATA.x2),[],1,nFrames) ;
                         DATA.F22 = reshape(D2*squeeze(DATA.x2),[],1,nFrames) ;
-                    % Jacobian
-                        DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ;
+                        DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % Jacobian
                     % Cauchy Strains
+                        DATA.CauchyStrains = 'Cauchy Strains' ; 
                         DATA.C11 = DATA.F11.*DATA.F11 + DATA.F21.*DATA.F21 ;
                         DATA.C22 = DATA.F12.*DATA.F12 + DATA.F22.*DATA.F22 ;
                         DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
+                        [l1,l2,~,DATA.Ctheta] = eigenValues(obj,DATA.C11,DATA.C22,DATA.C12) ;
+                        DATA.lambda1 = sqrt(l1) ; 
+                        DATA.lambda2 = sqrt(l2) ; 
+                        DATA.lambda3 = 1./(DATA.lambda1.*DATA.lambda2) ;
                     % Green-Lagrange Strains
+                        DATA.Green_LagrangeStrains = 'Green-Lagrange Strains' ; 
                         DATA.L11 = 0.5*(DATA.C11 - 1) ;
                         DATA.L22 = 0.5*(DATA.C22 - 1) ;
                         DATA.L12 = 0.5*(DATA.C12) ;
                         DATA.L33 = -DATA.L11-DATA.L22 ;
                         DATA.Lmean = 1/3*(DATA.L11+DATA.L22+DATA.L33) ;
-                    % Deviatoric part
                         DATA.Ldev11 = DATA.L11-DATA.Lmean ;
                         DATA.Ldev22 = DATA.L22-DATA.Lmean ;
                         DATA.Ldev33 = DATA.L33-DATA.Lmean ;
                         DATA.Ldev12 = DATA.L12 ;
-                    % Equivalent strain
                         DATA.Leq = sqrt(2/3*(DATA.Ldev11.^2 + DATA.Ldev22.^2 + DATA.Ldev12.^2 + DATA.Ldev33.^2)) ;
-                    % Eigen Strains
-                        aaa = 1/2*(DATA.L11+DATA.L22) ;
-                        bbb = sqrt(1/4*(DATA.L11-DATA.L22).^2 + DATA.L12.^2) ;
-                        DATA.Leig1 = aaa+bbb ; % Major strain
-                        DATA.Leig2 = aaa-bbb ; % Minor Strain
-                        DATA.LeigTau = bbb ; % Maximum Shear
-                        DATA.LeigTheta = 1/2*atan(2*DATA.L12./(DATA.L11-DATA.L22)) ; % Principal Angle
-                    % Linearized Euler-Lagrange Strains
+                        [DATA.Le1,DATA.Le2,DATA.Ltau,DATA.Ltheta] = eigenValues(obj,DATA.L11,DATA.L22,DATA.L12) ;
+                    % Strain rate tensor (using Lagrangian fields)
+                    % D = inv(F').Ldot.inv(F)
+                        Ldot11 = cat(3,0*DATA.L11(:,:,1),diff(DATA.L11,1,3)) ;
+                        Ldot22 = cat(3,0*DATA.L22(:,:,1),diff(DATA.L22,1,3)) ;
+                        Ldot12 = cat(3,0*DATA.L12(:,:,1),diff(DATA.L12,1,3)) ;
+                        idet2 = (DATA.F11.*DATA.F22 - DATA.F21.*DATA.F12).^-2 ;
+                        DATA.StrainRate = 'Strain Rate' ; 
+                        DATA.D11 = idet2.*(Ldot11.*DATA.F22.^2 + Ldot22.*DATA.F21.^2 - 2*Ldot12.*DATA.F21.*DATA.F22) ;
+                        DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
+                        DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
+                        DATA.D33 = -DATA.D11-DATA.D22 ;
+                        DATA.Dmean = 1/3*(DATA.D11+DATA.D22+DATA.D33) ;
+                        DATA.Ddev11 = DATA.D11-DATA.Dmean ;
+                        DATA.Ddev22 = DATA.D22-DATA.Dmean ;
+                        DATA.Ddev33 = DATA.D33-DATA.Dmean ;
+                        DATA.Ddev12 = DATA.D12 ;
+                        DATA.Deq = sqrt(2/3*(DATA.Ddev11.^2 + DATA.Ddev22.^2 + DATA.Ddev12.^2 + DATA.Ddev33.^2)) ;
+                        [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
+                    % True Strains
+                        DATA.TrueStrain = 'True Strain' ; 
+                        DATA.TS11 = cumsum(DATA.D11,3) ;
+                        DATA.TS22 = cumsum(DATA.D22,3) ;
+                        DATA.TS12 = cumsum(DATA.D12,3) ;
+                        [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
+                    % Linearized Green-Lagrange Strains
+                        DATA.LinearizedStrains = 'Linearized Strains' ; 
                         DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
                         DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
                         DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
+                        [DATA.Ee1,DATA.Ee2,DATA.Etau,DATA.Etheta] = eigenValues(obj,DATA.E11,DATA.E22,DATA.E12) ;
                 end
             % Save in the object
                 obj.DataFields = DATA ;
         end
         
-        function DATA = computeEulerianFields(obj)
-        % Compute Eulerian data fields (requires nFrames x gradMat)
-            if isempty(obj.MovingPoints) ; return ; end
-            nFrames = size(obj.MovingPoints,3) ;
-            DATA = obj.computeDataFields ;
-            % Gradient matrices (on the current config)
-                D1 = cell(nFrames,1) ; D2 = cell(nFrames,1) ;
-                for fr = 1:nFrames
-                    [D1{fr},D2{fr}] = gradMat(obj,[DATA.x1(:,fr) DATA.x2(:,fr)]) ;
-                end
-                D1 = blkdiag(D1{:}) ;
-                D2 = blkdiag(D2{:}) ;
-            % Strain rate tensor
-                DATA.D11 = reshape(D1*DATA.v1(:),[],1,nFrames) ;
-                DATA.D22 = reshape(D2*DATA.v2(:),[],1,nFrames) ;
-                DATA.D12 = 0.5*reshape(D2*DATA.v1(:)+D1*DATA.v2(:),[],1,nFrames) ;
-            % Eigen Strain Rates
-                aaa = 1/2*(DATA.D11+DATA.D22) ;
-                bbb = sqrt(1/4*(DATA.D11-DATA.D22).^2 + DATA.D12.^2) ;
-                DATA.Deig1 = aaa+bbb ; % Major strain
-                DATA.Deig2 = aaa-bbb ; % Minor Strain
-                DATA.DeigTau = bbb ; % Maximum Shear
-                DATA.DeigTheta = 1/2*atan(2*DATA.D12./(DATA.D11-DATA.D22)) ; % Principal Angle
-            % True Strains
-                DATA.TS11 = cumsum(DATA.D11,3) ;
-                DATA.TS22 = cumsum(DATA.D22,3) ;
-                DATA.TS12 = cumsum(DATA.D12,3) ;
-            % Eigen True Strains
-                aaa = 1/2*(DATA.TS11+DATA.TS22) ;
-                bbb = sqrt(1/4*(DATA.TS11-DATA.TS22).^2 + DATA.TS12.^2) ;
-                DATA.TSeig1 = aaa+bbb ; % Major strain
-                DATA.TSeig2 = aaa-bbb ; % Minor Strain
-                DATA.TSeigTau = bbb ; % Maximum Shear
-                DATA.TSeigTheta = 1/2*atan(2*DATA.TS12./(DATA.TS11-DATA.TS22)) ; % Principal Angle
-            % Save
-                obj.DataFields = DATA ;
+        function [e1,e2,tau,theta] = eigenValues(obj,M11,M22,M12)
+        % Return eigen values of a 2x2 symmetric matrix
+            aaa = 1/2*(M11+M22) ;
+            bbb = sqrt(1/4*(M11-M22).^2 + M12.^2) ;
+            e1 = aaa+bbb ; % Major
+            e2 = aaa-bbb ; % Minor
+            tau = bbb ; % Shear
+            theta = 1/2*atan(2*M12./(M11-M22)) ; % Principal Angle
+        end
+        
+        function [iM11,iM22,iM21,iM12] = inverse(obj,M11,M22,M21,M12)
+        % Return the inverse of a 2x2 matrix
+            if nargin<5 ; M12 = M21 ; end
+            det = M11.*M22-M21.*M12 ;
+            iM11 = M22./det ;
+            iM22 = M11./det ;
+            iM21 = -M21./det ;
+            iM12 = -M12./det ;
         end
         
         
@@ -386,15 +397,18 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             % Get dete fields
                                 fieldNames = fieldnames(obj.DataFields) ;
                             % Add a menu for each of them
-                                letters = @(str)upper(str(uint8(str)>=65 & uint8(str)<=122)) ;
+                                letters = @(str)str(uint8(str)>=65 & uint8(str)<=122) ;
                                 for f = 1:numel(fieldNames)
+                                    % Add a menu if needed (the field is empty)
+                                        if ischar(obj.DataFields.(fieldNames{f}))
+                                            mParent = uimenu(mData,'Label',obj.DataFields.(fieldNames{f})) ;
+                                            continue ;
+                                        end
                                     % Add the submenu
-                                        submenus(end+1) = uimenu(mData,'Label',fieldNames{f}) ;
-                                    % Add a separator if needed (first letter different)
-                                        if f>1
-                                            if ~strcmp(letters(fieldNames{f}),letters(fieldNames{f-1}))
-                                                submenus(end).Separator = 'on' ;
-                                            end
+                                        submenus(end+1) = uimenu(mParent,'Label',fieldNames{f}) ;
+                                    % Add a separator if needed (one letter different)
+                                        if numel(mParent.Children)>1 && ~strcmpi(letters(fieldNames{f}),letters(fieldNames{f-1}))
+                                            submenus(end).Separator = 'on' ;
                                         end
                                 end
                             % Check the default choice
@@ -460,8 +474,6 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 subMenu.Checked = 'on' ;
             % Change the ax userData if needed
                 switch subMenu.Parent.Label
-                    case 'Data'
-                        ax.UserData.dataLabel = subMenu.Label ;
                     case 'Frames'
                         ax.UserData.clrFramesLabel = subMenu.Label ;
                         ax.UserData.clrMode = 'Preset' ;
@@ -505,6 +517,13 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 % Turn on custom mode
                                     ax.UserData.clrMode = 'Custom' ;
                         end
+                    otherwise % Data Menus
+                        ax.UserData.dataLabel = subMenu.Label ;
+                        % Uncheck all Data Menus
+                            set([subMenu.Parent.Parent.Children],'checked','off')
+                            set(cat(1,subMenu.Parent.Parent.Children.Children),'checked','off')
+                        % Check the parent menu
+                            subMenu.Parent.Checked = 'on' ;
                 end
             % Update the preview
                 updateSeedPreview(obj,[],ax)
@@ -596,6 +615,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                 end
                                 if range(CLim)>eps
                                     caxis(ax,CLim) ;
+                                else
+                                    caxis(ax,CLim(1)+abs(CLim(1))*[-1 1]*0.001) ;
                                 end
                         end
                     % Color Steps

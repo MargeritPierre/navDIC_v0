@@ -521,7 +521,7 @@ function navDIC(varargin)
             nFrames = max(cellfun(@(c)size(c,4),hd.Images)) ;
             nFrames = [nFrames(:)' size(hd.TimeLine,1)] ;
             nFrames = [nFrames(:)' size(hd.InputData,1)] ;
-            hd.nFrames = max(nFrames) ;
+            hd.nFrames = maxnFrames ;
             hd.CurrentFrame = min(hd.nFrames,1) ;
         % Update the navDIC Interface
             updateMainMenu() ;
