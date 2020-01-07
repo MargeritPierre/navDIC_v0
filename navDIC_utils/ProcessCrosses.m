@@ -2,7 +2,7 @@
 
 % Parameters
     crossSeedNumber = 4 ;
-    macroSeedNumber = 3 ;
+    macroSeedNumber = 2 ;
     nMembers = 4 ;
     
     
@@ -23,11 +23,21 @@
 % Edge Lengths
     EdgLen = abs(Edg) ;
     meanEdgLen = mean(EdgLen,4) ;
-    devEdgLen = EdgLen-meanEdgLen ;
+    devEdgLen = mean(abs(EdgLen-meanEdgLen),4) ;
 % Edge Rotations
     EdgRot = angle(Edg(:,:,:,:)./Edg(:,:,1,:)) ;
     meanEdgRot = mean(EdgRot,4) ;
     devEdgRot = mean(abs(EdgRot-meanEdgRot),4) ;
+    
+% Compute cross seed fields, then add the new fields
+    hd.Seeds(crossSeedNumber).computeDataFields ;
+    hd.Seeds(crossSeedNumber).DataFields.CrossAnalysis = 'Crosses Analysis' ;
+    hd.Seeds(crossSeedNumber).DataFields.MeanEdgLen = repmat(meanEdgLen,[nMembers+1 1 1]) ;
+    hd.Seeds(crossSeedNumber).DataFields.DevEdgLen = repmat(devEdgLen,[nMembers+1 1 1]) ;
+    hd.Seeds(crossSeedNumber).DataFields.MeanEdgRot = repmat(meanEdgRot,[nMembers+1 1 1]) ;
+    hd.Seeds(crossSeedNumber).DataFields.DevEdgRot = repmat(devEdgRot,[nMembers+1 1 1]) ;
+    
+%%
     
 % Macroscopic felds
     MacroL11 = hd.Seeds(macroSeedNumber).tri2nod*squeeze(hd.Seeds(macroSeedNumber).DataFields.L11) ;

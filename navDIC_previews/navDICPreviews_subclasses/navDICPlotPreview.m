@@ -14,6 +14,7 @@ classdef navDICPlotPreview < navDICPreview
         RemoveCurveBtn = gobjects(0)
         DupplicateCurveBtn = gobjects(0)
         CurveList = gobjects(0)
+        CurveType = gobjects(0)
         CurveXData = gobjects(0)
         CurveYData = gobjects(0)
         Legend = gobjects(0)
@@ -63,12 +64,37 @@ classdef navDICPlotPreview < navDICPreview
                     for l = 1:length(prev.Curves)
                         [xdata,ydata] = str2data(prev,hd,prev.XDataSources{l},prev.YDataSources{l}) ;
                         if ~isempty(xdata) && ~isempty(ydata)
+                            % Format the data
+                                currentFrame = min(size(ydata,1),hd.CurrentFrame) ;
+                                xdata = xdata + 0*ydata ;
+                                ydata = ydata + 0*xdata ;
+                                % Process
+                                    if size(xdata,2)>1 
+                                            switch prev.CurveType.String{prev.CurveType.Value}
+                                                case 'all' % Do nothing
+                                                case 'mean'
+                                                    xdata = mean(xdata,2,'omitnan') ;
+                                                    ydata = mean(ydata,2,'omitnan') ;
+                                                case 'median'
+                                                    xdata = median(xdata,2,'omitnan') ;
+                                                    ydata = median(ydata,2,'omitnan') ;
+                                                case 'confidence'
+                                                    xdata = mean(xdata,2,'omitnan')+[-1 1].*std(xdata,1,2,'omitnan') ;
+                                                    ydata = mean(ydata,2,'omitnan')+[-1 1].*std(ydata,1,2,'omitnan') ;
+                                                case 'minmax'
+                                                    xdata = [min(xdata,[],2) max(xdata,[],2)] ;
+                                                    ydata = [min(ydata,[],2) max(ydata,[],2)] ;
+                                                otherwise
+                                            end
+                                    end
+                                % Concatenate
+                                    nans = NaN(size(ydata(1,:))) ;
+                                    xdata = cat(1,xdata,nans) ; ydata = cat(1,ydata,nans) ;
                             % Apply to curves
-                                prev.Curves(l).XData = xdata(1:length(ydata)) ;
-                                prev.Curves(l).YData = ydata ;
-                                currentFrame = min(numel(ydata),hd.CurrentFrame) ;
-                                prev.TimeMarkers(l).XData = xdata(currentFrame) ;
-                                prev.TimeMarkers(l).YData = ydata(currentFrame) ;
+                                prev.Curves(l).XData = xdata(:) ;
+                                prev.Curves(l).YData = ydata(:) ;
+                                prev.TimeMarkers(l).XData = xdata(currentFrame,:) ;
+                                prev.TimeMarkers(l).YData = ydata(currentFrame,:) ;
                         end
                     end
             end
@@ -102,10 +128,11 @@ classdef navDICPlotPreview < navDICPreview
                     if ~ismember({'INPUT VS. TIME','CUSTOM'},upper(preset))
                         [seedID,valid] = selectSeeds(hd,'single') ;
                         if ~valid ; return ; end
-                        seedStr = ['hd.Seeds(',num2str(seedID),')'] ;
+                        %seedStr = ['hd.Seeds(',num2str(seedID),').DataFields.'] ;
+                        seedStr = ['@' hd.Seeds(seedID).Name] ;
                     end
                 % Prepare the data
-                    timeString = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
+                    timeString = '@time' ;
                     switch upper(preset)
                         case 'INPUT VS. TIME'
                             prev.addCurve('Input/Time' ... % Name
@@ -114,32 +141,32 @@ classdef navDICPlotPreview < navDICPreview
                                             ) ;
                         case 'DISPLACEMENT VS. TIME'
                             for fi = {'u1','u2'}
-                                prev.addCurve([fi{:}],[seedStr '.DataFields.' [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
                             end
                         case 'STRAIN VS. TIME'
                             for fi = {'L11','L22','L12'}
-                                prev.addCurve([fi{:}],[seedStr '.DataFields.' [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
                             end
                         case 'POSITION VS. TIME'
                             for fi = {'x1','x2'}
-                                prev.addCurve([fi{:}],[seedStr '.DataFields.' [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
                             end
                         case 'VELOCITY VS. TIME'
                             for fi = {'v1','v2'}
-                                prev.addCurve([fi{:}],[seedStr '.DataFields.' [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
                             end
                         case 'POISSON'
                             prev.addCurve('Poisson' ...
-                                            ,['-' seedStr '.DataFields.TSe2'] ...
-                                            ,[seedStr '.DataFields.TSe1']) ;
+                                            ,['-' seedStr '.TSe2'] ...
+                                            ,[seedStr '.TSe1']) ;
                         case 'INPUT VS. STRAIN'
                             prev.addCurve('Input/Strain' ...
                                             ,'hd.InputData' ...
-                                            ,[seedStr '.DataFields.Le1']) ;
+                                            ,[seedStr '.Le1']) ;
                         case 'TRUE STRESS VS. TRUE STRAIN'
                             prev.addCurve('TrueStress/TrueStrain' ...
-                                            ,['(1/(1*1)).*reshape(hd.InputData,1,1,[]).*' seedStr '.DataFields.lambda1' ] ...
-                                            ,[seedStr '.DataFields.TSe1']) ;
+                                            ,['(1/(1*1)).*reshape(hd.InputData,1,1,[]).*' seedStr '.lambda1' ] ...
+                                            ,[seedStr '.TSe1']) ;
                         case 'CUSTOM'
                             prev.addCurve(['curve.' num2str(numel(prev.CurveList.String)+1)]) ; 
                     end
@@ -153,7 +180,13 @@ classdef navDICPlotPreview < navDICPreview
                 % Process the strings with keywords and replacement
                     keywords = {} ; replace = {} ;
                     % Time line
-                        keywords{end+1} = '@time' ; replace{end+1} = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ; 
+                        keywords{end+1} = '@time' ;
+                        if isempty(hd.TimeLine)
+                            replace{end+1} = '1:hd.nFrames' ;
+                        else
+                            replace{end+1} = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
+                        end
+                    % Seed names
                         for s = 1:numel(hd.Seeds)
                             keywords{end+1} = ['@' hd.Seeds(s).Name '.'] ; 
                             replace{end+1} = ['hd.Seeds(' num2str(s) ').DataFields.'] ;
@@ -168,18 +201,14 @@ classdef navDICPlotPreview < navDICPreview
                     catch error
                         warning(error.message) ;
                     end
-                % Format the data
+                % Format the data to a 2D matrix ([nFrames nCurves])
                     if ~isempty(X) && ~isempty(Y)
                         % To 2D
-                            X = X(:,:) ;
-                            Y = Y(:,:) ;
-                        % To 1D ;
-                            % Column vector to row-vector
-                                if size(X,2)==1 ; X = X(:)' ; end
-                                if size(Y,2)==1 ; Y = Y(:)' ; end
-                            % Mean over the 1st dim.
-                                X = mean(X,1,'omitnan') ;
-                                Y = mean(Y,1,'omitnan') ;
+                            X = X(:,:)' ;
+                            Y = Y(:,:)' ;
+                        % Row vector to column-vector (for InputData)
+                            if size(X,1)==1 ; X = X(:) ; end
+                            if size(Y,1)==1 ; Y = Y(:) ; end
                     end
             end
             
@@ -193,6 +222,9 @@ classdef navDICPlotPreview < navDICPreview
                 panelHeight = 0.1 ;
                 btnWidth = 0.04 ;
                 listWidth = 0.2 ;
+                lblWidth = 0.04 ;
+                popupWidth = 0.08 ;
+                curveTypes = {'mean','median','confidence','minmax','all'} ;
                 prev.CurvePanel = uipanel(prev.fig ...
                                             ,'units','normalized' ...
                                             ,'OuterPosition',[0 0 1 panelHeight] + [1 1 -2 -2]*margin ...
@@ -224,19 +256,40 @@ classdef navDICPlotPreview < navDICPreview
                                             ,'units','normalized' ...
                                             ,'OuterPosition',[btnWidth 0 listWidth 1]  + [1 1 -2 -2]*margin ...
                                             ,'Callback',@(src,evt)updatePreview(prev) ...
-                                        ) ; 
+                                        ) ;   
+                uicontrol(prev.CurvePanel ...
+                                ,'style','pushbutton' ...
+                                ,'String','XData' ...
+                                ,'enable','off' ...
+                                ,'units','normalized' ...
+                                ,'OuterPosition',[btnWidth+listWidth 0.5 lblWidth .5]  + [1 1 -2 -2]*margin ...
+                            ) ; 
+                uicontrol(prev.CurvePanel ...
+                                ,'style','pushbutton' ...
+                                ,'String','YData' ...
+                                ,'enable','off' ...
+                                ,'units','normalized' ...
+                                ,'OuterPosition',[btnWidth+listWidth 0 lblWidth .5]  + [1 1 -2 -2]*margin ...
+                            ) ; 
                 prev.CurveXData = uicontrol(prev.CurvePanel ...
                                             ,'style','edit' ...
                                             ,'units','normalized' ...
-                                            ,'OuterPosition',[btnWidth+listWidth .5 1-btnWidth-listWidth .5]  + [1 1 -2 -2]*margin ...
+                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth .5 1-btnWidth-listWidth-lblWidth-popupWidth .5]  + [1 1 -2 -2]*margin ...
                                             ,'Callback',@(src,evt)changeDataSource(prev) ...
                                         ) ; 
                 prev.CurveYData = uicontrol(prev.CurvePanel ...
                                             ,'style','edit' ...
                                             ,'units','normalized' ...
-                                            ,'OuterPosition',[btnWidth+listWidth 0 1-btnWidth-listWidth .5]  + [1 1 -2 -2]*margin ...
+                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth 0 1-btnWidth-listWidth-lblWidth-popupWidth .5]  + [1 1 -2 -2]*margin ...
                                             ,'Callback',@(src,evt)changeDataSource(prev) ...
                                         ) ; 
+                prev.CurveType = uicontrol(prev.CurvePanel ...
+                                            ,'style','listbox' ...
+                                            ,'String',curveTypes ...
+                                            ,'units','normalized' ...
+                                            ,'OuterPosition',[1-popupWidth 0 popupWidth 1]  + [1 1 -2 -2]*margin ...
+                                            ,'Callback',@(src,evt)updatePreview(prev) ...
+                                        ) ;
                 prev.showCurvePanel ;
             end
         

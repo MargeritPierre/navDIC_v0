@@ -1,6 +1,6 @@
 global hd
 
-Seed = hd.Seeds(1) ;
+Seed = hd.Seeds(end) ;
 
 Pts = Seed.Points ; Seed.MovingPoints(:,:,1) ;
 IMG = repmat(Seed.refImgs{1},[1 1 3]) ;

@@ -82,6 +82,25 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         end
         
         
+        function set.Elems(obj,elems)
+        % Set mesh elements (triangles, quadrangles)
+            elems = round(unique(elems,'rows')) ;
+            nNotNan = sum(~isnan(elems),2) ;
+            obj.Triangles = elems(nNotNan==3,:) ;
+            obj.Quadrangles = elems(nNotNan==4,:) ;
+            if ~ isempty(obj.Triangles) 
+                obj.Triangles = obj.Triangles(:,1:3) ; 
+            else
+                obj.Triangles = [] ;
+            end
+            if ~isempty(obj.Quadrangles) 
+                obj.Quadrangles = obj.Quadrangles(:,1:4) ;  
+            else
+                obj.Quadrangles = [] ;
+            end
+        end
+        
+        
         function elems = get.Elems(obj)
         % Return all elements of the mesh
             elems = [obj.Triangles NaN(size(obj.Triangles,1),1) ; obj.Quadrangles] ;
