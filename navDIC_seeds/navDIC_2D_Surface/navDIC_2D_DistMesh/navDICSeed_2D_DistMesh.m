@@ -543,6 +543,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             set(cat(1,subMenu.Parent.Parent.Children.Children),'checked','off')
                         % Check the parent menu
                             subMenu.Parent.Checked = 'on' ;
+                            subMenu.Checked = 'on' ;
                 end
             % Update the preview
                 updateSeedPreview(obj,[],ax)

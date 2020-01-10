@@ -1,0 +1,14 @@
+%% IMPORT A MESH CREATED IN LINK
+
+    newSeedNumber = 5 ;
+    newSeedName = 'Micro' ;
+    meshPort = ans ;
+
+    global hd
+    hd.Seeds(newSeedNumber) = copy(hd.Seeds(1)) ;
+    newSeed = hd.Seeds(newSeedNumber) ;
+    newSeed.Name = newSeedName ;
+    
+    mesh = meshPort.Data ;
+    newSeed.Elems = mesh.Faces
+    

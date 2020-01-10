@@ -240,7 +240,8 @@ for ii = dicFrames
                         mesh.Faces = Elems(VALID.Elems(:,ii),:) ;
                         mesh.FaceVertexCData = ones(nNodes,1)*NaN ; mesh.FaceVertexCData(VALID.Nodes(:,ii)) = sqrt(sum(dU.^2,2)) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ;
-                        lastPlotTime = tic ; 
+                        lastPlotTime = tic ;
+                        drawnow ; 
                     end
             % Pause execution ?
                 if pauseAtPlot && ~continueBtn.Value
@@ -254,7 +255,7 @@ for ii = dicFrames
                     end
                 end
             % Draw
-                drawnow ;
+                %drawnow ;
         end
         % Modify the reference image if needed
             if weightCurrentImage>0
