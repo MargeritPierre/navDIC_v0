@@ -3,14 +3,18 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
     properties
         Triangles = [] ;
         Quadrangles = [] ;
-        Edges = [] ;
         ROI = [] ;
         Shapes = [] ;
         DataOnNodes = false ;
     end
     
-    properties (Transient,Dependent)
+    properties
         Elems
+    end
+    
+    properties (Transient,Dependent)
+        %Triangles, Quadrangles % <TODO> Later
+        Edges
     end
     
     properties (Transient)
@@ -100,12 +104,64 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             end
         end
         
-        
         function elems = get.Elems(obj)
         % Return all elements of the mesh
             elems = [obj.Triangles NaN(size(obj.Triangles,1),1) ; obj.Quadrangles] ;
         end
         
+        function set.Edges(obj,edges)
+        % Set the object's edges
+            %obj.Edges = round(unique(edges,'rows')) ;
+        end
+           
+        function edges = get.Edges(obj)
+        % Get the object's unique edges
+            [edges,~] = getEdges(obj) ;
+        end
+        
+        function [edges,elem2edg] = getEdges(obj)
+        % Get object's edges connectivity
+            % Edge nodes
+                e1 = obj.Elems ;
+                Nn = sum(~isnan(e1),2) ;
+                e2 = circshift(e1,-1,2) ;
+                e2(sub2ind(size(e2),1:size(e2,1),Nn')) = e2(:,end) ;
+            % Sorting 
+                edges = [e1(:) e2(:)] ;
+                edges = sort(edges,2) ;
+            % Corresponding element
+                elmt = repmat((1:size(e1,1))',[size(e1,2) 1]) ;
+            % Cull invalid edges
+                nans = any(isnan(edges),2) ;
+                edges = edges(~nans,:) ;
+                elmt = elmt(~nans) ;
+            % Unique list
+                [edges,~,ie] = unique(edges,'rows') ;
+                elem2edg = sparse(ie(:),elmt(:),1,size(edges,1),size(e1,1)) ;
+        end
+        
+        function outE = boundaryEdges(obj)
+        % Return a logical array with true for edges on mesh boundaries
+            [~,elem2edg] = obj.getEdges ;
+            outE = sum(elem2edg,2)==1 ;
+        end
+        
+        function M = elem2nod(obj,values)
+        % Return a matrix so that f = M*F, where f is defined on Nodes and
+        % F is defined on elements; size(M) = [nNodes nElems]
+            if nargin<2 ; values = 'mean' ; end
+            M = sparse(obj.Triangles(:),reshape(repmat((1:size(obj.Triangles,1))',[1 3]),[],1),1,size(obj.Points,1),size(obj.Triangles,1)) ;
+            switch values
+                case 'ones' % Do nothing
+                case 'logical'
+                    M = logical(M) ;
+                case 'mean'
+                    M = (1./sum(M,2)).*M ;
+                otherwise % double values
+            end
+            valance = sum(M,2) ; % number of elements associated to each node
+            M = M./valance(:) ;
+        end
         
         function T = interpMat(obj,Points,extrap,refPoints)
         % Return the interpolation matrix of the mesh on query points so
@@ -192,7 +248,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         D2 = sparse(iii(:),jjj(:),vvvD2(:),nTris,nPts) ;
                 % Apply to nodes if needed (mean over connected triangles)
                     if obj.DataOnNodes
-                        T = obj.tri2nod ;
+                        T = obj.elem2nod ;
                         D1 = T*D1 ; D2 = T*D2 ;
                     end
             else % THERE IS DIFFERENT ELEMENT TYPES
@@ -229,12 +285,28 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             end
         end
         
-        function M = tri2nod(obj)
-        % Return a matrix so that f = M*F, where f is defined on Nodes and
-        % F is defined on elements; size(M) = [nNodes nElems]
-            M = sparse(obj.Triangles(:),reshape(repmat((1:size(obj.Triangles,1))',[1 3]),[],1),1,size(obj.Points,1),size(obj.Triangles,1)) ;
-            valance = sum(M,2) ; % number of elements associated to each node
-            M = M./valance(:) ;
+        function [v,areas] = integMat(obj,refPoints)
+        % Return a vector v so that \int(f(x).dx) = v*f
+        % f can be defined on nodes (DataOnNodes = true) or on elements
+        % (DataOnNodes = false)
+            if nargin==1 ; refPoints = obj.Points ; end
+            elems = obj.Elems ;
+            % Element Areas
+                areas = zeros(size(obj.Elems,1),1) ;
+                for nNodes = 1:size(elems,2) % For each polygonal element shape..
+                    hasNNodes = sum(~isnan(elems),2)==nNodes ;
+                    if ~any(hasNNodes) ; continue ; end
+                    x = reshape(refPoints(elems(hasNNodes,1:nNodes),:),[],nNodes,2) ;
+                    areas(hasNNodes) = polyarea(x(:,:,1),x(:,:,2),2) ;
+                end
+            % Integration matrix
+                if obj.DataOnNodes
+                    elem2nod = obj.elem2nod('ones') ;
+                    elem2nod = elem2nod./sum(elem2nod,1) ;
+                    v = areas(:)'*elem2nod' ;
+                else
+                    v = areas(:)' ;
+                end
         end
         
         function set.DataOnNodes(obj,val)
@@ -295,12 +367,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         DATA.L22 = 0.5*(DATA.C22 - 1) ;
                         DATA.L12 = 0.5*(DATA.C12) ;
                         DATA.L33 = -DATA.L11-DATA.L22 ;
-                        DATA.Lmean = 1/3*(DATA.L11+DATA.L22+DATA.L33) ;
-                        DATA.Ldev11 = DATA.L11-DATA.Lmean ;
-                        DATA.Ldev22 = DATA.L22-DATA.Lmean ;
-                        DATA.Ldev33 = DATA.L33-DATA.Lmean ;
-                        DATA.Ldev12 = DATA.L12 ;
-                        DATA.Leq = sqrt(2/3*(DATA.Ldev11.^2 + DATA.Ldev22.^2 + DATA.Ldev12.^2 + DATA.Ldev33.^2)) ;
+                        [DATA.Ldev11,DATA.Ldev22,DATA.Ldev33,DATA.Ldev12,DATA.Lmean,DATA.Leq] = deviatoric(obj,DATA.L11,DATA.L22,DATA.L33,DATA.L12) ;
                         [DATA.Le1,DATA.Le2,DATA.Ltau,DATA.Ltheta] = eigenValues(obj,DATA.L11,DATA.L22,DATA.L12) ;
                     % Strain rate tensor (using Lagrangian fields)
                     % D = inv(F').Ldot.inv(F)
@@ -313,18 +380,15 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
                         DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
                         DATA.D33 = -DATA.D11-DATA.D22 ;
-                        DATA.Dmean = 1/3*(DATA.D11+DATA.D22+DATA.D33) ;
-                        DATA.Ddev11 = DATA.D11-DATA.Dmean ;
-                        DATA.Ddev22 = DATA.D22-DATA.Dmean ;
-                        DATA.Ddev33 = DATA.D33-DATA.Dmean ;
-                        DATA.Ddev12 = DATA.D12 ;
-                        DATA.Deq = sqrt(2/3*(DATA.Ddev11.^2 + DATA.Ddev22.^2 + DATA.Ddev12.^2 + DATA.Ddev33.^2)) ;
+                        [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
                         [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
                     % True Strains
                         DATA.TrueStrain = 'True Strain' ; 
                         DATA.TS11 = cumsum(DATA.D11,3) ;
                         DATA.TS22 = cumsum(DATA.D22,3) ;
                         DATA.TS12 = cumsum(DATA.D12,3) ;
+                        DATA.TS33 = cumsum(DATA.D33,3) ;
+                        [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
                         [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
                     % Linearized Green-Lagrange Strains
                         DATA.LinearizedStrains = 'Linearized Strains' ; 
@@ -355,6 +419,16 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             iM22 = M11./det ;
             iM21 = -M21./det ;
             iM12 = -M12./det ;
+        end
+        
+        function [Mdev11,Mdev22,Mdev33,Mdev12,Mmean,Meq] = deviatoric(obj,M11,M22,M33,M12)
+        % Return the deviatoric part of a symmetric tensor
+            Mmean = 1/3*(M11+M22+M33) ;
+            Mdev11 = M11-Mmean ;
+            Mdev22 = M22-Mmean ;
+            Mdev33 = M33-Mmean ;
+            Mdev12 = M12 ;
+            Meq = sqrt(2/3*(Mdev11.^2 + Mdev22.^2 + Mdev33.^2 + 2*Mdev12.^2)) ;
         end
         
         
@@ -672,7 +746,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             gHi = findobj(gH,'DisplayName','contour') ;
                             % Force data on nodes
                                 if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
-                                    PlotStruct.CData = obj.tri2nod*PlotStruct.CData ; 
+                                    PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
                                 end
                             % Contour levels
                                 nL = min(40,steps) ;
@@ -693,7 +767,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                             gHi = findobj(gH,'DisplayName','scatter') ;
                             % Force data on nodes
                                 if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
-                                    PlotStruct.CData = obj.tri2nod*PlotStruct.CData ; 
+                                    PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
                                 end
                             % Display
                                 gHi.XData = PlotStruct.Vertices(:,1) ;

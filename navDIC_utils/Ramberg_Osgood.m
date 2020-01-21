@@ -30,26 +30,29 @@ function [SIG,Es,Nus] = Ramberg_Osgood(EPS,tol,E,Sy,n,alpha,Nu)
         
     % Modulus and Poisson Ratio
         if nargout>1
-            Es = E./(1+alpha*(SIG/Sy).^(n-1));
-            Nus = 0.5+Es/E*(Nu-0.5);
+            Es = SIG./EPS ;
+            Nus = 0.5+Es/E*(Nu-0.5) ;
         end
 
-end
+return
 
 
 %% RAMBERG-OSGOOD MODEL
 
-%     E = 18*10e9 ;
-%     Sy = 300e6 ;
-%     n = 91/10 ;
-%     alpha = E/Sy*0.002 ;
-% 
-%     SIG = linspace(0,600e6,1000) ;
-%     EPS = SIG/E.*(1+alpha*(SIG/Sy).^(n-1)) ;
-%     Ep = SIG/E.*(1+alpha*(SIG/Sy).^(n-1))
-% 
-%     tag = 'jnfeubue' ;
-%     delete(findobj(gca,'tag',tag)) ;
-%     plot(EPS,SIG*1e-6,'k','tag',tag) ;
+    E = 150e9 ;
+    Sy = 320*1e6 ;
+    n = 9 ;
+    alpha = E/Sy*0.002 ;
+    Nu = 0.33;
+    tol = abs(1000*eps*Sy) ;
+    
+    ax = gca ;
+    EPS = linspace(0,ax.XLim(2),10000) ;
+    
+    [SIG,Es,Nus] = Ramberg_Osgood(EPS,tol,E,Sy,n,alpha,Nu) ;
+
+    tag = 'Ramberg-Osgood' ;
+    delete(findobj(gca,'tag',tag)) ;
+    plot(EPS,SIG*1e-6,'-.k','linewidth',1,'tag',tag,'DisplayName','R-O') ;
     
     
