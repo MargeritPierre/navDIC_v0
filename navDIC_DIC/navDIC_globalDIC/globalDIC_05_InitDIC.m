@@ -5,11 +5,12 @@
     btnWidth = 0.05 ;
     margin = 0.003 ;
     fontSize = 12 ;
+    horizontalAxesStack = (nJ/nI)*(figDIC.Position(4)/figDIC.Position(3))<1 ;
     figure(figDIC) ;
     figDIC = clf(figDIC,'reset') ;
     figDIC.Tag = figTag ;
         ax = gobjects(0) ;
-        ax(1) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,1) ;
+        ax(1) = mysubplot(~horizontalAxesStack+1,horizontalAxesStack+1,1) ;
             ax(1).Position = ax(1).Position.*[1 1-infosHeight 1 1-infosHeight] ;
             im = imagesc(1:nJ,1:nI,Smooth(img0)) ;
             mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,Nodes(:,1)*NaN...
@@ -21,7 +22,7 @@
             markers = plot(NaN,NaN,'.b','markersize',15) ; % Deugging...
             colormap(ax(1),jet)
             %set(ax(1),'Clipping','off') ;
-        ax(2) = mysubplot((nI<nJ)+1,(nI>=nJ)+1,2) ;
+        ax(2) = mysubplot(~horizontalAxesStack+1,horizontalAxesStack+1,2) ;
             ax(2).Position = ax(2).Position.*[1 1-infosHeight 1 1-infosHeight] ;
             imRes = imagesc(1:nJ,1:nI,Smooth(img0)*NaN) ; 
             colormap(ax(2),gray)

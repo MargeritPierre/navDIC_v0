@@ -163,7 +163,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
         % IMAGE LOADING AND PROCESSING
             % Load function
-                loadFrame = @(id) imread([path,'\',commonName,idSTR{id},ext]) ;
+                loadFrame = @(id) imread([path,filesep,commonName,idSTR{id},ext]) ;
                 imData = loadFrame(1) ;
             % Get Infos
                 [nI,nJ,nColors] = size(imData) ;
@@ -309,9 +309,9 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 H.axImg.LooseInset = [1 1 1 1]*0.005 ;
                 H.axImg.YDir = 'reverse' ;
                 H.axImg.XTick = [] ; H.axImg.YTick = [] ;
-                axis tight
-                axis equal
             H.ImgH = image(H.currentImg) ;
+                axis(H.axImg,'tight')
+                axis(H.axImg ,'equal')
         % ImRect for the ROI
             H.rectROI = imrect(H.axImg,[1 1 H.vidRes]) ;
             fcn = makeConstrainToRectFcn('imrect',[1 H.vidRes(1)],[1 H.vidRes(2)]) ;

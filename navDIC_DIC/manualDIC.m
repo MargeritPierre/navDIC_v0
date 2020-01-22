@@ -7,14 +7,14 @@
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 3 ;
-        frames = '[1,202,282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
-        dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
-        refFrame = 'last' ; % Reference image ('first' , 'last' or number)
+        seedNumber = 4 ;
+        frames = '[1:end]' ; '[1,202,282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
+        dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
+        refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         compConfig = 'Previous' ; % background help configuration ('Reference' or 'Previous') ;
-        startWithNavDICPositions = 'none' ;
+        startWithNavDICPositions = 'all' ;
         addPreviousCorrection = false ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
-        exportTOnavDIC = true ;
+        exportTOnavDIC = false ;
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
         normToImageClassRange = true ; % Normalize images to their dataclass range
         timeMeanLength = 0 ; % Time averaging of images
