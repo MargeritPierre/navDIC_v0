@@ -202,6 +202,9 @@ classdef navDICPlotPreview < navDICPreview
                         warning(error.message) ;
                     end
                 % Format the data to a 2D matrix ([nFrames nCurves])
+                    % To double
+                        if istable(X) ; X = table2array(X) ; end
+                        if istable(Y) ; Y = table2array(Y) ; end
                     if ~isempty(X) && ~isempty(Y)
                         % To 2D
                             X = X(:,:)' ;
