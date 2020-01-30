@@ -150,7 +150,11 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         % Return a matrix so that f = M*F, where f is defined on Nodes and
         % F is defined on elements; size(M) = [nNodes nElems]
             if nargin<2 ; values = 'mean' ; end
-            M = sparse(obj.Triangles(:),reshape(repmat((1:size(obj.Triangles,1))',[1 3]),[],1),1,size(obj.Points,1),size(obj.Triangles,1)) ;
+            list = obj.Elems ;
+            ii = list(:) ;
+            jj = repmat([1:size(list,1)]',[size(list,2) 1]) ;
+            nans = isnan(ii) | isnan(jj) ;
+            M = sparse(ii(~nans),jj(~nans),1,size(obj.Points,1),size(list,1)) ;
             switch values
                 case 'ones' % Do nothing
                 case 'logical'
@@ -159,8 +163,6 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                     M = (1./sum(M,2)).*M ;
                 otherwise % double values
             end
-            valance = sum(M,2) ; % number of elements associated to each node
-            M = M./valance(:) ;
         end
         
         function T = interpMat(obj,Points,extrap,refPoints)
