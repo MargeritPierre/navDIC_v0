@@ -99,14 +99,14 @@
             dL = [0 ; diff(L(:))] ;
 
         % Verify
-        %     clf
-        %     ii = 282 ;
-        %     axis ij ; axis equal ; axis off
-        %         patch('Faces',seed.Elems,'Vertices',seed.MovingPoints(:,:,ii),'Facecolor','none','edgecolor','k')
-        %         plot(x1e(vertEdge,:,ii)',x2e(vertEdge,:,ii)','k')
-        %         plot(x1e(leftEdge,:,ii)',x2e(leftEdge,:,ii)','b')
-        %         plot(x1e(rightEdge,:,ii)',x2e(rightEdge,:,ii)','r')
-        %     return ;
+%             clf
+%             ii = 1 ;
+%             axis ij ; axis equal ; axis off
+%                 patch('Faces',seed.Elems,'Vertices',seed.MovingPoints(:,:,ii),'Facecolor','none','edgecolor','k')
+%                 plot(x1e(vertEdge,:,ii)',x2e(vertEdge,:,ii)','k')
+%                 plot(x1e(leftEdge,:,ii)',x2e(leftEdge,:,ii)','b')
+%                 plot(x1e(rightEdge,:,ii)',x2e(rightEdge,:,ii)','r')
+%             return ;
 
         F = hd.InputData ; F(isnan(F)) = 0 ;
         Pi_Fdl = F(:).*dL(:)/pixelsByMeters ;
@@ -142,10 +142,10 @@
 %% SET THE INTEGRAL CONTOUR INTERACTIVELY AND COMPUTE THE INTEGRAL
     
     figure(figContours) ;
-    crackPos = [0.5 0.84].*[nJ nI] ; % Crack tip position
+    crackPos = [0.5 0.80].*[nJ nI] ; % Crack tip position
     crackVec = [0 -1] ; % Crack direction
-    zoneWidth = 0.75*nJ ;
-    zoneHeight = 0.72*nI ;
+    zoneWidth = 0.30*nJ ;
+    zoneHeight = 0.3*nI ;
     crackWidth = 0.05*nJ ;
     rulerLength = 0.007 ;
     
