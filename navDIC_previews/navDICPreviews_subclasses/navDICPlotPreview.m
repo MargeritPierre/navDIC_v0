@@ -6,6 +6,7 @@ classdef navDICPlotPreview < navDICPreview
         TimeMarkers = gobjects(0)
         XDataSources = {}
         YDataSources = {}
+        ZDataSources = {}
     end
     
     properties (Hidden) % UI controls
@@ -17,6 +18,7 @@ classdef navDICPlotPreview < navDICPreview
         CurveType = gobjects(0)
         CurveXData = gobjects(0)
         CurveYData = gobjects(0)
+        CurveZData = gobjects(0)
         Legend = gobjects(0)
     end
     
@@ -34,6 +36,9 @@ classdef navDICPlotPreview < navDICPreview
                     prev.Axes = axes('outerposition',[0 0 1 1]) ;
                         box(prev.Axes,'on')
                         grid(prev.Axes,'on')
+                        xlabel(prev.Axes,'XData') ;
+                        ylabel(prev.Axes,'YData') ;
+                        zlabel(prev.Axes,'ZData') ;
                     prev.Legend = legend(prev.Axes) ;
                         prev.Legend.EdgeColor = 'k' ;
                         prev.Legend.Color = 'none' ;
@@ -56,18 +61,21 @@ classdef navDICPlotPreview < navDICPreview
                     if isempty(prev.XDataSources)
                         prev.CurveXData.String = '' ;
                         prev.CurveYData.String = '' ;
+                        prev.CurveZData.String = '' ;
                     else
                         prev.CurveXData.String = prev.XDataSources{crv} ;
                         prev.CurveYData.String = prev.YDataSources{crv} ;
+                        prev.CurveZData.String = prev.ZDataSources{crv} ;
                     end
                 % Update curves
                     for l = 1:length(prev.Curves)
-                        [xdata,ydata] = str2data(prev,hd,prev.XDataSources{l},prev.YDataSources{l}) ;
-                        if ~isempty(xdata) && ~isempty(ydata)
+                        [xdata,ydata,zdata] = str2data(prev,hd,prev.XDataSources{l},prev.YDataSources{l},prev.ZDataSources{l}) ;
+                        if ~isempty(xdata) && ~isempty(ydata) && ~isempty(zdata)
                             % Format the data
                                 currentFrame = min(size(ydata,1),hd.CurrentFrame) ;
-                                xdata = xdata + 0*ydata ;
-                                ydata = ydata + 0*xdata ;
+                                xdata = xdata + 0*ydata + 0*zdata ;
+                                ydata = ydata + 0*xdata + 0*zdata ;
+                                zdata = zdata + 0*xdata + 0*ydata ;
                                 % Process
                                     if size(xdata,2)>1 
                                             switch prev.CurveType.String{prev.CurveType.Value}
@@ -75,26 +83,32 @@ classdef navDICPlotPreview < navDICPreview
                                                 case 'mean'
                                                     xdata = mean(xdata,2,'omitnan') ;
                                                     ydata = mean(ydata,2,'omitnan') ;
+                                                    zdata = mean(zdata,2,'omitnan') ;
                                                 case 'median'
                                                     xdata = median(xdata,2,'omitnan') ;
                                                     ydata = median(ydata,2,'omitnan') ;
+                                                    zdata = median(zdata,2,'omitnan') ;
                                                 case 'confidence'
                                                     xdata = mean(xdata,2,'omitnan')+[-1 1].*std(xdata,1,2,'omitnan') ;
                                                     ydata = mean(ydata,2,'omitnan')+[-1 1].*std(ydata,1,2,'omitnan') ;
+                                                    zdata = mean(zdata,2,'omitnan')+[-1 1].*std(zdata,1,2,'omitnan') ;
                                                 case 'minmax'
                                                     xdata = [min(xdata,[],2) max(xdata,[],2)] ;
                                                     ydata = [min(ydata,[],2) max(ydata,[],2)] ;
+                                                    zdata = [min(zdata,[],2) max(zdata,[],2)] ;
                                                 otherwise
                                             end
                                     end
                                 % Concatenate
                                     nans = NaN(size(ydata(1,:))) ;
-                                    xdata = cat(1,xdata,nans) ; ydata = cat(1,ydata,nans) ;
+                                    xdata = cat(1,xdata,nans) ; ydata = cat(1,ydata,nans) ; zdata = cat(1,zdata,nans) ;
                             % Apply to curves
                                 prev.Curves(l).XData = xdata(:) ;
                                 prev.Curves(l).YData = ydata(:) ;
+                                prev.Curves(l).ZData = zdata(:) ;
                                 prev.TimeMarkers(l).XData = xdata(currentFrame,:) ;
                                 prev.TimeMarkers(l).YData = ydata(currentFrame,:) ;
+                                prev.TimeMarkers(l).ZData = zdata(currentFrame,:) ;
                         end
                     end
             end
@@ -113,6 +127,7 @@ classdef navDICPlotPreview < navDICPreview
                                             ,'Displacement vs. Time' ...
                                             ,'Velocity vs. Time' ...
                                             ,'Strain vs. Time' ...
+                                            ,'Strain Tensor' ...
                                             ,'Poisson' ...
                                             ,'Input vs. Time' ...
                                             ,'Input vs. Strain' ...
@@ -136,24 +151,26 @@ classdef navDICPlotPreview < navDICPreview
                     switch upper(preset)
                         case 'INPUT VS. TIME'
                             prev.addCurve('Input/Time' ... % Name
-                                            ,'hd.InputData-hd.InputData(1)' ... % YData
+                                            ,'hd.InputData(:,1)' ... % YData
                                             , timeString ... % XData
                                             ) ;
                         case 'DISPLACEMENT VS. TIME'
                             for fi = {'u1','u2'}
-                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
                             end
+                        case 'STRAIN TENSOR'
+                            prev.addCurve('Strain Tensor',[seedStr '.TS22'],[seedStr '.TS11'],[seedStr '.TS12']) ;
                         case 'STRAIN VS. TIME'
                             for fi = {'L11','L22','L12'}
-                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
                             end
                         case 'POSITION VS. TIME'
                             for fi = {'x1','x2'}
-                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
                             end
                         case 'VELOCITY VS. TIME'
                             for fi = {'v1','v2'}
-                                prev.addCurve([fi{:}],[seedStr [fi{:}]],timeString) ;
+                                prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
                             end
                         case 'POISSON'
                             prev.addCurve('Poisson' ...
@@ -161,7 +178,7 @@ classdef navDICPlotPreview < navDICPreview
                                             ,[seedStr '.TSe1']) ;
                         case 'INPUT VS. STRAIN'
                             prev.addCurve('Input/Strain' ...
-                                            ,'hd.InputData' ...
+                                            ,'hd.InputData(:,1)' ...
                                             ,[seedStr '.Le1']) ;
                         case 'TRUE STRESS VS. TRUE STRAIN'
                             prev.addCurve('TrueStress/TrueStrain' ...
@@ -175,8 +192,8 @@ classdef navDICPlotPreview < navDICPreview
             end
         
         % TRANSLATE STRING TO DATA
-            function [X,Y] = str2data(obj,hd,Xstr,Ystr)
-                X = [] ; Y = [] ;
+            function [X,Y,Z] = str2data(obj,hd,Xstr,Ystr,Zstr)
+                X = [] ; Y = [] ; Z = [] ;
                 % Process the strings with keywords and replacement
                     keywords = {} ; replace = {} ;
                     % Time line
@@ -186,6 +203,9 @@ classdef navDICPlotPreview < navDICPreview
                         else
                             replace{end+1} = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
                         end
+                    % Frames
+                        keywords{end+1} = '@frame' ;
+                        replace{end+1} = '1:hd.nFrames' ;
                     % Seed names
                         for s = 1:numel(hd.Seeds)
                             keywords{end+1} = ['@' hd.Seeds(s).Name '.'] ; 
@@ -194,21 +214,29 @@ classdef navDICPlotPreview < navDICPreview
                     % Process
                         Xstr = regexprep(Xstr,keywords,replace) ;
                         Ystr = regexprep(Ystr,keywords,replace) ;
+                        Zstr = regexprep(Zstr,keywords,replace) ;
                 % Try retrieving the data
                     try
                         X = eval(Xstr) ;
                         Y = eval(Ystr) ;
+                        Z = eval(Zstr) ;
                     catch error
                         warning(error.message) ;
                     end
                 % Format the data to a 2D matrix ([nFrames nCurves])
-                    if ~isempty(X) && ~isempty(Y)
+                    % To double
+                        if istable(X) ; X = table2array(X) ; end
+                        if istable(Y) ; Y = table2array(Y) ; end
+                        if istable(Z) ; Z = table2array(Z) ; end
+                    if ~isempty(X) && ~isempty(Y) && ~isempty(Z)
                         % To 2D
                             X = X(:,:)' ;
                             Y = Y(:,:)' ;
+                            Z = Z(:,:)' ;
                         % Row vector to column-vector (for InputData)
                             if size(X,1)==1 ; X = X(:) ; end
                             if size(Y,1)==1 ; Y = Y(:) ; end
+                            if size(Z,1)==1 ; Z = Z(:) ; end
                     end
             end
             
@@ -262,27 +290,40 @@ classdef navDICPlotPreview < navDICPreview
                                 ,'String','XData' ...
                                 ,'enable','off' ...
                                 ,'units','normalized' ...
-                                ,'OuterPosition',[btnWidth+listWidth 0.5 lblWidth .5]  + [1 1 -2 -2]*margin ...
+                                ,'OuterPosition',[btnWidth+listWidth 2/3 lblWidth 1/3]  + [1 1 -2 -2]*margin ...
                             ) ; 
                 uicontrol(prev.CurvePanel ...
                                 ,'style','pushbutton' ...
                                 ,'String','YData' ...
                                 ,'enable','off' ...
                                 ,'units','normalized' ...
-                                ,'OuterPosition',[btnWidth+listWidth 0 lblWidth .5]  + [1 1 -2 -2]*margin ...
+                                ,'OuterPosition',[btnWidth+listWidth 1/3 lblWidth 1/3]  + [1 1 -2 -2]*margin ...
+                            ) ; 
+                uicontrol(prev.CurvePanel ...
+                                ,'style','pushbutton' ...
+                                ,'String','ZData' ...
+                                ,'enable','off' ...
+                                ,'units','normalized' ...
+                                ,'OuterPosition',[btnWidth+listWidth 0 lblWidth 1/3]  + [1 1 -2 -2]*margin ...
                             ) ; 
                 prev.CurveXData = uicontrol(prev.CurvePanel ...
                                             ,'style','edit' ...
                                             ,'units','normalized' ...
-                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth .5 1-btnWidth-listWidth-lblWidth-popupWidth .5]  + [1 1 -2 -2]*margin ...
+                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth 2/3 1-btnWidth-listWidth-lblWidth-popupWidth 1/3]  + [1 1 -2 -2]*margin ...
                                             ,'Callback',@(src,evt)changeDataSource(prev) ...
                                         ) ; 
                 prev.CurveYData = uicontrol(prev.CurvePanel ...
                                             ,'style','edit' ...
                                             ,'units','normalized' ...
-                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth 0 1-btnWidth-listWidth-lblWidth-popupWidth .5]  + [1 1 -2 -2]*margin ...
+                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth 1/3 1-btnWidth-listWidth-lblWidth-popupWidth 1/3]  + [1 1 -2 -2]*margin ...
                                             ,'Callback',@(src,evt)changeDataSource(prev) ...
                                         ) ; 
+                prev.CurveZData = uicontrol(prev.CurvePanel ...
+                                            ,'style','edit' ...
+                                            ,'units','normalized' ...
+                                            ,'OuterPosition',[btnWidth+listWidth+lblWidth 0 1-btnWidth-listWidth-lblWidth-popupWidth 1/3]  + [1 1 -2 -2]*margin ...
+                                            ,'Callback',@(src,evt)changeDataSource(prev) ...
+                                        ) ;
                 prev.CurveType = uicontrol(prev.CurvePanel ...
                                             ,'style','listbox' ...
                                             ,'String',curveTypes ...
@@ -307,20 +348,22 @@ classdef navDICPlotPreview < navDICPreview
             end
             
         % ADD/REMOVE CURVES
-            function addCurve(prev,name,ydata,xdata,update)
+            function addCurve(prev,name,ydata,xdata,zdata,update)
                 if nargin<2 ; prev.addPreset ; return ; end
                 if nargin<3 ; ydata = 'NaN(hd.nFrames,1)' ; end
                 if nargin<4 ; xdata = '(1:hd.nFrames)''' ; end
-                if nargin<5 ; update = true ; end
+                if nargin<5 ; zdata = '0' ; end
+                if nargin<6 ; update = true ; end
                 % Add the curve data
                     prev.CurveList.String{end+1} = name ;
                     prev.XDataSources{end+1} = xdata ;
                     prev.YDataSources{end+1} = ydata ;
+                    prev.ZDataSources{end+1} = zdata ;
                     prev.CurveList.Value = numel(prev.CurveList.String) ;
                 % Init the curve plots
                     clrOrder = prev.Axes.ColorOrderIndex ;
-                    prev.Curves(end+1) = plot(prev.Axes ...
-                                                ,NaN,NaN ...
+                    prev.Curves(end+1) = plot3(prev.Axes ...
+                                                ,NaN,NaN,NaN ...
                                                 ,'linestyle','-' ...
                                                 ,'linewidth',1 ...
                                                 ,'marker','.' ...
@@ -329,8 +372,8 @@ classdef navDICPlotPreview < navDICPreview
                                                 ,'displayname',name ...
                                                 ) ;
                     prev.Axes.ColorOrderIndex = clrOrder ;
-                    prev.TimeMarkers(end+1) = plot(prev.Axes ...
-                                                    ,NaN,NaN ...
+                    prev.TimeMarkers(end+1) = plot3(prev.Axes ...
+                                                    ,NaN,NaN,NaN ...
                                                     ,'linestyle','none' ...
                                                     ,'marker','.' ...
                                                     ,'markersize',25 ...
@@ -347,8 +390,9 @@ classdef navDICPlotPreview < navDICPreview
                     name = ['copy-' prev.CurveList.String{crv}] ;
                     xdata = prev.XDataSources{crv} ;
                     ydata = prev.YDataSources{crv} ;
+                    zdata = prev.ZDataSources{crv} ;
                 % Add the new curve
-                    addCurve(prev,name,ydata,xdata,update)
+                    addCurve(prev,name,ydata,xdata,zdata,update)
             end
             function removeCurve(prev,crv,update)
                 if nargin<2 ; crv = prev.CurveList.Value ; end
@@ -356,6 +400,7 @@ classdef navDICPlotPreview < navDICPreview
                 % Remove data sources
                     prev.XDataSources(crv) = [] ;
                     prev.YDataSources(crv) = [] ;
+                    prev.ZDataSources(crv) = [] ;
                 % Delete graphical objects
                     delete(prev.Curves(crv)) ; prev.Curves(crv) = [] ;
                     delete(prev.TimeMarkers(crv)) ; prev.TimeMarkers(crv) = [] ;
@@ -378,6 +423,7 @@ classdef navDICPlotPreview < navDICPreview
                 crv = prev.CurveList.Value ;
                 prev.XDataSources{crv} = prev.CurveXData.String ;
                 prev.YDataSources{crv} = prev.CurveYData.String ;
+                prev.ZDataSources{crv} = prev.CurveZData.String ;
                 prev.updatePreview ;
             end
     end

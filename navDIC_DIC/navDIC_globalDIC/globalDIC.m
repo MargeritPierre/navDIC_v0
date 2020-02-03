@@ -7,7 +7,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 5 ;
+        seedNumber = 4 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
@@ -32,10 +32,10 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.025 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.2 ; 0.025 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -50,8 +50,8 @@ end % END OF INITIALIZATION
                         ... 'ZM_N_Diff' ... Normalized Zero-mean difference
                          ;
     % Descent Algorithm
-        method =  'full-GN' ... full Gauss-Newton
-                 ... 'mod-GN' ... modified (assume "grad(g(x+u))=grad(f(x))") OK for small perturbations
+        method = ... 'full-GN' ... full Gauss-Newton
+                  'mod-GN' ... modified (assume "grad(g(x+u))=grad(f(x))") OK for small perturbations
                  ... 'quasi-GN' ... not implemented
                  ... 'ICGN' ... not implemented
                  ... 'FCGN' ... not implemented
@@ -78,7 +78,7 @@ end % END OF INITIALIZATION
         strainOnNodes = true ;
     % Plotting
         plotRate = 0 ; % Plot Refresh Frequency 
-        plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
+        plotEachIteration = true ; % Plot at every iteration (without necessary pausing, bypass plotRate)
         plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
