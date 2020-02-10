@@ -251,10 +251,10 @@
 %% SET THE INTEGRAL CONTOUR INTERACTIVELY AND COMPUTE THE INTEGRAL
     
     figure(figContours) ;
-    crackPos = [0.5 0.825].*[nJ nI] ; % Crack tip position [0.84 0.835 0.83 0.825]
+    crackPos = [0.5 0.84].*[nJ nI] ; % Crack tip position [0.84 0.835 0.83 0.825]
     crackVec = [0 -1] ; % Crack direction
-    zoneWidth = 0.25*nJ ; % [0.7 0.55 0.4 0.25]
-    zoneHeight = 0.69*nI ; % [0.72 0.71 0.70 0.69]
+    zoneWidth = 0.7*nJ ; % [0.7 0.55 0.4 0.25]
+    zoneHeight = 0.72*nI ; % [0.72 0.71 0.70 0.69]
     crackWidth = 0.05*nJ ;
     rulerLength = 0.007 ;
     
@@ -297,7 +297,7 @@
     % Interpolation matrix
         refPts = seed.MovingPoints(:,:,1) ;
         T = seed.interpMat(PtsMid,0,refPts) ;
-        if size(seed.DataFields.J,1)==size(seed.Elems,1) ; T = T*seed.elem2nod ; end
+        if size(
         
     % Interpolated Data
         W = T*squeeze(cumsum(-seed.DataFields.pi_PK2xLdot,3)) ;
