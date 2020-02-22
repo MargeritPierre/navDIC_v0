@@ -328,8 +328,9 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                 % NaNs
                     DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
                 % Reference Coordinates
-                    DATA.X1 = obj.MovingPoints(:,1,1) ;
-                    DATA.X2 = obj.MovingPoints(:,2,1) ;
+                    refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
+                    DATA.X1 = obj.MovingPoints(:,1,refFrame) ;
+                    DATA.X2 = obj.MovingPoints(:,2,refFrame) ;
                 % Current Coordinates
                     DATA.x1 = obj.MovingPoints(:,1,:) ;
                     DATA.x2 = obj.MovingPoints(:,2,:) ;
@@ -349,10 +350,12 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
                     % Transformation Gradient
                         DATA.Transformation = 'Transformation' ; 
-                        DATA.F11 = reshape(D1*squeeze(DATA.x1),[],1,nFrames) ;
-                        DATA.F12 = reshape(D2*squeeze(DATA.x1),[],1,nFrames) ;
-                        DATA.F21 = reshape(D1*squeeze(DATA.x2),[],1,nFrames) ;
-                        DATA.F22 = reshape(D2*squeeze(DATA.x2),[],1,nFrames) ;
+                        x1 = DATA.x1 ; %x1(isnan(x1)) = 1i ;
+                        x2 = DATA.x2 ; %x2(isnan(x2)) = 1i ;
+                        DATA.F11 = reshape(D1*squeeze(x1),[],1,nFrames) ; %DATA.F11(imag(DATA.F11)~=0) = NaN ;
+                        DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ; %DATA.F12(imag(DATA.F12)~=0) = NaN ;
+                        DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ; %DATA.F21(imag(DATA.F21)~=0) = NaN ;
+                        DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ; %DATA.F22(imag(DATA.F22)~=0) = NaN ;
                         DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % Jacobian
                     % Cauchy Strains
                         DATA.CauchyStrains = 'Cauchy Strains' ; 
@@ -709,11 +712,8 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                                         % Set Color Limits
                                             CLim = min(max(avg+N*ec*[-1 1],minData),maxData) ;
                                 end
-                                if range(CLim)>eps
-                                    caxis(ax,CLim) ;
-                                else
-                                    caxis(ax,CLim(1)+abs(CLim(1))*[-1 1]*0.001) ;
-                                end
+                                if range(CLim)<eps ; CLim = CLim(1)+abs(CLim(1))*[-1 1]*eps ; end
+                                if any(CLim~=caxis(ax)) ; caxis(ax,CLim) ; end
                         end
                     % Color Steps
                         steps = ax.UserData.clrStepsLabel ;
@@ -747,7 +747,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         case 'Contours'
                             gHi = findobj(gH,'DisplayName','contour') ;
                             % Force data on nodes
-                                if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
+                                if ~obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Elems,1)
                                     PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
                                 end
                             % Contour levels

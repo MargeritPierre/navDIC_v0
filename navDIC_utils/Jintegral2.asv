@@ -456,18 +456,18 @@
 %                 du2_dx1 = seed.DataFields.F12.*iF11 + seed.DataFields.F22.*iF21 ;
 %                 du1_dx2 = seed.DataFields.F11.*iF12 + seed.DataFields.F21.*iF22 ;
 %                 du2_dx2 = seed.DataFields.F12.*iF12 + seed.DataFields.F22.*iF22 ;
-                du1_dx1 = seed.DataFields.F11 ;
+                du1_dx1 = seed.DataFields.F11-1 ;
                 du2_dx1 = seed.DataFields.F21 ;
                 du1_dx2 = seed.DataFields.F12 ;
-                du2_dx2 = seed.DataFields.F22 ;
+                du2_dx2 = seed.DataFields.F22-1 ;
 %                 S11 = -seed.DataFields.PKII11 ;
 %                 S22 = -seed.DataFields.PKII22 ;
 %                 S12 = -seed.DataFields.PKII12 ;
 %                 S21 = -seed.DataFields.PKII12 ;
                 S11 = seed.DataFields.PKI11 ;
                 S22 = seed.DataFields.PKI22 ;
-                S12 = seed.DataFields.PKI21 ;
-                S21 = seed.DataFields.PKI12 ;
+                S12 = seed.DataFields.PKI12 ;
+                S21 = seed.DataFields.PKI21 ;
         end
         
     % Stress vector
