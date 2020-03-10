@@ -88,25 +88,25 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
         
         function set.Elems(obj,elems)
         % Set mesh elements (triangles, quadrangles)
-            elems = round(unique(elems,'rows')) ;
+            elems = round(unique(elems,'rows','stable')) ;
             nNotNan = sum(~isnan(elems),2) ;
             obj.Triangles = elems(nNotNan==3,:) ;
             obj.Quadrangles = elems(nNotNan==4,:) ;
-            if ~ isempty(obj.Triangles) 
-                obj.Triangles = obj.Triangles(:,1:3) ; 
-            else
-                obj.Triangles = [] ;
+            if ~isempty(obj.Triangles) ; obj.Triangles = obj.Triangles(:,1:3) ; 
+            else ; obj.Triangles = [] ;
             end
-            if ~isempty(obj.Quadrangles) 
-                obj.Quadrangles = obj.Quadrangles(:,1:4) ;  
-            else
-                obj.Quadrangles = [] ;
+            if ~isempty(obj.Quadrangles) ; obj.Quadrangles = obj.Quadrangles(:,1:4) ;  
+            else ; obj.Quadrangles = [] ;
             end
+            obj.Elems = elems ;
         end
         
         function elems = get.Elems(obj)
         % Return all elements of the mesh
-            elems = [obj.Triangles NaN(size(obj.Triangles,1),1) ; obj.Quadrangles] ;
+            elems = obj.Elems ;
+            if ~isempty(obj.Triangles) ; elems = [elems ; obj.Triangles NaN(size(obj.Triangles,1),size(elems,2)-3)] ; end
+            if ~isempty(obj.Quadrangles) ; elems = [elems ; obj.Quadrangles NaN(size(obj.Quadrangles,1),size(elems,2)-4)] ; end
+            elems = unique(elems,'rows','stable') ;
         end
         
         function set.Edges(obj,edges)
@@ -350,18 +350,21 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
                     % Transformation Gradient
                         DATA.Transformation = 'Transformation' ; 
-                        x1 = DATA.x1 ; %x1(isnan(x1)) = 1i ;
-                        x2 = DATA.x2 ; %x2(isnan(x2)) = 1i ;
-                        DATA.F11 = reshape(D1*squeeze(x1),[],1,nFrames) ; %DATA.F11(imag(DATA.F11)~=0) = NaN ;
-                        DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ; %DATA.F12(imag(DATA.F12)~=0) = NaN ;
-                        DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ; %DATA.F21(imag(DATA.F21)~=0) = NaN ;
-                        DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ; %DATA.F22(imag(DATA.F22)~=0) = NaN ;
-                        DATA.J = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % Jacobian
+                        x1 = DATA.x1 ;
+                        x2 = DATA.x2 ;
+                        DATA.F11 = reshape(D1*squeeze(x1),[],1,nFrames) ;
+                        DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ;
+                        DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ;
+                        DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ;
+                        DATA.J2D = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % 2D Jacobian
+                        DATA.J = DATA.J2D*0+1 ; % 3D Jacobian=1 (incompressible)
+                        DATA.F33 = 1./(DATA.J2D) ; %J = det(F_3D) = det(F_2D)*F33 = 1
                     % Cauchy Strains
                         DATA.CauchyStrains = 'Cauchy Strains' ; 
-                        DATA.C11 = DATA.F11.*DATA.F11 + DATA.F21.*DATA.F21 ;
-                        DATA.C22 = DATA.F12.*DATA.F12 + DATA.F22.*DATA.F22 ;
+                        DATA.C11 = DATA.F11.^2 + DATA.F21.^2 ;
+                        DATA.C22 = DATA.F12.^2 + DATA.F22.^2 ;
                         DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
+                        DATA.C33 = DATA.F33.^2 ;
                         [l1,l2,~,DATA.Ctheta] = eigenValues(obj,DATA.C11,DATA.C22,DATA.C12) ;
                         DATA.lambda1 = sqrt(l1) ; 
                         DATA.lambda2 = sqrt(l2) ; 
@@ -371,7 +374,7 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
                         DATA.L11 = 0.5*(DATA.C11 - 1) ;
                         DATA.L22 = 0.5*(DATA.C22 - 1) ;
                         DATA.L12 = 0.5*(DATA.C12) ;
-                        DATA.L33 = -DATA.L11-DATA.L22 ;
+                        DATA.L33 = 0.5*(DATA.C33 - 1) ;
                         [DATA.Ldev11,DATA.Ldev22,DATA.Ldev33,DATA.Ldev12,DATA.Lmean,DATA.Leq] = deviatoric(obj,DATA.L11,DATA.L22,DATA.L33,DATA.L12) ;
                         [DATA.Le1,DATA.Le2,DATA.Ltau,DATA.Ltheta] = eigenValues(obj,DATA.L11,DATA.L22,DATA.L12) ;
                     % Strain rate tensor (using Lagrangian fields)

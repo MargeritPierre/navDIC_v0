@@ -31,11 +31,11 @@
                 seed.DataFields.Seq = SIG ;
                 
     %% Elasto-plastic with Isotropic hardening
-        %E = 150e9 ; nu = .5 ; Sy = 320e6 ; K = 880e6 ; n = .67 ; % MEAN ISOTROPIC
+        E = 150e9 ; nu = .5 ; Sy = 320e6 ; K = 880e6 ; n = .67 ; % MEAN ISOTROPIC
         %E = 148e9 ; nu = .5 ; Sy = 314e6 ; K = 852e6 ; n = .67 ; % ISN_0 (BUILD DIR.)
         %E = 151e9 ; nu = .5 ; Sy = 331e6 ; K = 883e6 ; n = .68 ; % ISN_45 (OBLIQUE DIR.)
         %E = 151e9 ; nu = .5 ; Sy = 323e6 ; K = 902e6 ; n = .63 ; % ISN_90 (PRINT DIR.)
-        E = 151e9 ; nu = .5 ; Sy = 370e6 ; K = 800e6 ; n = .67 ; % ISN_90_CORRECTED (PRINT DIR.)
+        %E = 151e9 ; nu = .5 ; Sy = 370e6 ; K = 800e6 ; n = .67 ; % ISN_90_CORRECTED (PRINT DIR.)
         [S11,S22,S33,S12,Dp11,Dp22,Dp33,Dp12,R] = Isotropic_Hardening(seed.DataFields.D11,seed.DataFields.D22,seed.DataFields.D12,E,nu,Sy,K,n) ;
             seed.DataFields.ElasticStrains = 'Elastic Strains' ;
                 seed.DataFields.De11 = seed.DataFields.D11-Dp11 ;
@@ -68,11 +68,12 @@
                 seed.DataFields.f = (seed.DataFields.Seq-seed.DataFields.R)./seed.DataFields.R ;
                 seed.DataFields.Dplast = seed.DataFields.R.*seed.DataFields.dP ;
                 
-        % STRESS REGULARISATION
+        %% STRESS REGULARISATION
             mu = E/2/(1+nu) ;
             nPts = size(seed.MovingPoints,1) ;
             nElems = size(seed.Elems,1) ;
             lambda = NaN(nPts,2,hd.nFrames) ;
+            regularize = 'total' ; 'rate' ; % regularize the total or rate of elastic strains
             % Boundary points (on which lambda is zero)
                 bndPts = reshape(seed.Edges(seed.boundaryEdges,:),[],1) ;
                 bndPts = ismember(1:nPts,bndPts) ;
@@ -88,6 +89,13 @@
             % REGULARIZATION
                 wtbr = waitbar(0,'Computing Regularization...') ;
                 for ii = 1:hd.nFrames
+                    % Data to regularize
+                        switch regularize
+                            case 'rate'
+                                ee = De(:,ii)-kron([1;0;0;1;1],De(end-nElems+1:end,ii)) ;
+                            case 'total'
+                                ee = sum(De(:,1:ii)-kron([1;0;0;1;1],De(end-nElems+1:end,1:ii)),2) ;
+                        end
                     % Gradient matrices
                         [D1,D2] = seed.gradMat(seed.MovingPoints(:,:,ii)) ;
                         D1(:,bndPts) = [] ; D2(:,bndPts) = [] ;
@@ -98,13 +106,16 @@
                         Bdiv = [O O ; O O ; O O ; O O ; D1 D2] ;
                     % Problem assembly
                         K = B'*(B+3*Bt) ;
-                        f = -2*B'*(De(:,ii)-kron([1;0;0;1;1],De(end-nElems+1:end,ii))) ;
+                        f = -2*B'*ee ;
                     % Solve for lambda
                         ll = K\f ;
                         lambda(~bndPts,:,ii) = reshape(ll,[],2) ;
                         lambda(bndPts,:,ii) = 0 ;
                     % Compute the elastic correction
                         Dc(:,ii) = (1/2*(B + Bt) - Bdiv)*ll ;
+                        if strcmp(regularize,'total') && ii>1
+                            %Dc(:,ii) = Dc(:,ii) - sum(Dc(:,1:ii-1),2) ;
+                        end
                         De(:,ii) = De(:,ii) + Dc(:,ii) ;
                     % Waitbar
                         wtbr = waitbar(ii/hd.nFrames,wtbr,['Computing Regularization...(' num2str(ii) '/' num2str(hd.nFrames) ')']) ;
@@ -355,14 +366,14 @@
 %% SET THE INTEGRAL CONTOUR INTERACTIVELY AND COMPUTE THE INTEGRAL
     
     figure(figContours) ;
-    crackPos = [0.5 0.84].*[nJ nI] ; % Crack tip position [0.84 0.835 0.83 0.825]
+    crackPos = [0.5 0.825].*[nJ nI] ; % Crack tip position [0.84 0.835 0.83 0.825]
     crackVec = [0 -1] ; % Crack direction
-    zoneWidth = 0.7*nJ ; % [0.7 0.55 0.4 0.25]
-    zoneHeight = 0.72*nI ; % [0.72 0.71 0.70 0.69]
+    zoneWidth = 0.25*nJ ; % [0.7 0.55 0.4 0.25]
+    zoneHeight = 0.69*nI ; % [0.72 0.71 0.70 0.69]
     crackWidth = 0.05*nJ ;
     rulerLength = 0.001 ;
     iRef = 1 ; % Reference image ;
-    configuration = 'reference' ; % 'reference' is not working
+    configuration = 'current' ; % 'reference' is not working
     
     nPts = 10000 ;
     
@@ -456,10 +467,10 @@
 %                 du2_dx1 = seed.DataFields.F12.*iF11 + seed.DataFields.F22.*iF21 ;
 %                 du1_dx2 = seed.DataFields.F11.*iF12 + seed.DataFields.F21.*iF22 ;
 %                 du2_dx2 = seed.DataFields.F12.*iF12 + seed.DataFields.F22.*iF22 ;
-                du1_dx1 = seed.DataFields.F11 ;
+                du1_dx1 = seed.DataFields.F11-1 ;
                 du2_dx1 = seed.DataFields.F21 ;
                 du1_dx2 = seed.DataFields.F12 ;
-                du2_dx2 = seed.DataFields.F22 ;
+                du2_dx2 = seed.DataFields.F22-1 ;
 %                 S11 = -seed.DataFields.PKII11 ;
 %                 S22 = -seed.DataFields.PKII22 ;
 %                 S12 = -seed.DataFields.PKII12 ;
@@ -502,15 +513,52 @@
     grid on
     
     
-%% ADD UNLOADING FIELDS
-
-    seed.DataFields.Deq = cat(3,...
-                                                seed.DataFields.Leq(:,:,1)*0,...
-                                                diff(seed.DataFields.Leq,1,3)) ;
-
-    seed.DataFields.Dmax = seed.DataFields.Leq-max(seed.DataFields.Leq,[],3) ;
+%% FOLLOW THE CRACK TIP
+    iRef = 1 ;
+    u1 = seed.DataFields.u1(:,:) ;
     
-    seed.DataFields.logW = log10(seed.DataFields.W) ;
+    Rmax = 100 ; % Query zone radius
+    xc = [800 450] ; % Crack tip position
+    t0 = pi/2 ; % Crack direction (angle)
+    dt = 90*pi/180 ; % Crack opening angle
+    uh = 0 ; % Homogeneous displacement
+    kappa = (3-nu)/(1+nu) ;
+    
+    p0 = [xc dt uh] ; % parameters
+    xc = @(p) p(1:2) ;
+    dt = @(p) p(3) ;
+    uh = @(p) p(4) ;
+    
+    x = seed.MovingPoints(:,:,iRef) ;
+    
+    xp = @(p) (x-xc(p))*[cos(t0) sin(t0) ; -sin(t0) cos(t0)] ;
+    r = @(p) sqrt(sum(xp(p).^2,2)) ;
+    t = @(p) angle(xp(p)*[1 ; 1i]) ;
+    valid = @(p) r(p)<Rmax ;
+    dist = @(p,q) norm((u(p)-q).*valid(p)) ;
+    
+    % u = u0 + t/2/pi.*sin(dt).*r ;
+    u = @(p)  uh(p) + sin(dt(p))*sqrt(r(p)).*((2*kappa+1).*sin(t(p)/2)-sin(3*t(p)/2)) ;
+    
+    u0 = u(p0) ;
+
+    cla ; 
+    ax = gca ;
+        axis equal
+        axis ij
+    mesh = patch('Faces',seed.Elems,'facecolor','none','edgecolor','k') ;
+    pts = plot3(x(valid(p0),1),x(valid(p0),2),u0(valid(p0)),'.r') ;
+    for ii = 240%1:hd.nFrames
+        q = u1(:,ii) ;
+        p = fminsearch(@(p)dist(p,q),p0) ;
+        mesh.Vertices = [x q] ;
+        mesh.Vertices(~valid(p),:) = NaN ;
+        pts.XData = x(valid(p),1) ;
+        pts.YData = x(valid(p),2) ;
+        ui = u(p) ; pts.ZData = ui(valid(p)) ;
+        drawnow ;
+    end
+        
     
     
 %% TRACE CONTOURS ON STRAIN ENERGY MAP
