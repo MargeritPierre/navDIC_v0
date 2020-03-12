@@ -1,6 +1,6 @@
 global hd
 
-Seed = hd.Seeds(4) ;
+Seed = hd.Seeds(1) ;
 
 Pts = Seed.Points ; Seed.MovingPoints(:,:,1) ;
 Elems = Seed.Elems ;

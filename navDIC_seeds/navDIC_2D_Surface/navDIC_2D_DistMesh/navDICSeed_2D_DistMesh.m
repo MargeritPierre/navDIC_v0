@@ -323,12 +323,14 @@ classdef navDICSeed_2D_DistMesh < navDICSeed_2D_Surface
             if isempty(obj.MovingPoints) ; return ; end
             nFrames = size(obj.MovingPoints,3) ;
             nPoints = size(obj.MovingPoints,1) ;
+            % REFERENCE FRAME
+                refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
+                if isempty(refFrame) ; refFrame=1 ; end
             % POSITION
                 DATA.Position = 'Position' ;
                 % NaNs
                     DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
                 % Reference Coordinates
-                    refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
                     DATA.X1 = obj.MovingPoints(:,1,refFrame) ;
                     DATA.X2 = obj.MovingPoints(:,2,refFrame) ;
                 % Current Coordinates
