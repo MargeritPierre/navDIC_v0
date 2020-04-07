@@ -31,11 +31,11 @@
                 seed.DataFields.Seq = SIG ;
                 
     %% Elasto-plastic with Isotropic hardening
-        E = 150e9 ; nu = .5 ; Sy = 320e6 ; K = 880e6 ; n = .67 ; % MEAN ISOTROPIC
-        %E = 148e9 ; nu = .5 ; Sy = 314e6 ; K = 852e6 ; n = .67 ; % ISN_0 (BUILD DIR.)
-        %E = 151e9 ; nu = .5 ; Sy = 331e6 ; K = 883e6 ; n = .68 ; % ISN_45 (OBLIQUE DIR.)
-        %E = 151e9 ; nu = .5 ; Sy = 323e6 ; K = 902e6 ; n = .63 ; % ISN_90 (PRINT DIR.)
-        %E = 151e9 ; nu = .5 ; Sy = 370e6 ; K = 800e6 ; n = .67 ; % ISN_90_CORRECTED (PRINT DIR.)
+        %E = 200e9 ; nu = .5 ; Sy = 427e6 ; K = 1175e6 ; n = .67 ; % MEAN ISOTROPIC
+        %E = 197e9 ; nu = .5 ; Sy = 419e6 ; K = 1136e6 ; n = .67 ; % ISN_0 (BUILD DIR.)
+        %E = 201e9 ; nu = .5 ; Sy = 441e6 ; K = 1177e6 ; n = .68 ; % ISN_45 (OBLIQUE DIR.)
+        E = 201e9 ; nu = .5 ; Sy = 431e6 ; K = 1203e6 ; n = .63 ; % ISN_90 (PRINT DIR.)
+        %E = 201e9 ; nu = .5 ; Sy = 493e6 ; K = 1065e6 ; n = .67 ; % ISN_90_LOADFIT (PRINT DIR.)
         [S11,S22,S33,S12,Dp11,Dp22,Dp33,Dp12,R] = Isotropic_Hardening(seed.DataFields.D11,seed.DataFields.D22,seed.DataFields.D12,E,nu,Sy,K,n) ;
             seed.DataFields.ElasticStrains = 'Elastic Strains' ;
                 seed.DataFields.De11 = seed.DataFields.D11-Dp11 ;
@@ -166,7 +166,7 @@
         
 %% CHECK RESULTANT LOAD
 
-    thickness = .8/1000 ;
+    thickness = .6/1000 ;
     pixelsByMeters = 135000 ; % see below
     S11 = seed.DataFields.Sr11 ; 
     S22 = seed.DataFields.Sr22 ; 
@@ -272,7 +272,7 @@
 
     clf ;
     seed = seed ;
-    thickness = 0.8/1000 ;
+    thickness = 0.6/1000 ;
     pixelsByMeters = 135000 ; % see below
     DATA = seed.DataFields ;
     
@@ -284,7 +284,7 @@
     Pi_PK2xLdot = -sum(DATA.pi_PK2xLdot.*da(:),1,'omitnan') ;
     Pi_Plast = sum(DATA.Drplast.*DATA.J.*da(:),1,'omitnan') ;
     
-    plot(Pi_SeqxDeq(:),'DisplayName','$\mathcal{P}_i = -\int \sigma_{eq} \, D_{eq} \, \mathrm{d}\Omega$') ;
+    %plot(Pi_SeqxDeq(:),'DisplayName','$\mathcal{P}_i = -\int \sigma_{eq} \, D_{eq} \, \mathrm{d}\Omega$') ;
     plot(Pi_SxD(:),'DisplayName','$\mathcal{P}_i = -\int \sigma_{ij} \, D_{ij} \, \mathrm{d}\Omega$') ;
     plot(Pi_PK1xFdot(:),'DisplayName','$\mathcal{P}_i = -\int \Pi^1_{ij} \, \dot F_{ij} \, \mathrm{d}\Omega_0$') ;
     plot(Pi_PK2xLdot(:),'DisplayName','$\mathcal{P}_i = -\int \Pi^2_{ij} \, \dot L_{ij} \, \mathrm{d}\Omega_0$') ;

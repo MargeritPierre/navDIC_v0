@@ -1,10 +1,11 @@
 global hd
 
 Seed = hd.Seeds(1) ;
+frame = 51 ;
 
-Pts = Seed.Points ; Seed.MovingPoints(:,:,1) ;
+Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
 Elems = Seed.Elems ;
-IMG = repmat(Seed.refImgs{1},[1 1 3]) ;
+IMG = repmat(hd.Images{1}(:,:,:,frame),[1 1 3]) ; repmat(Seed.refImgs{1},[1 1 3]) ;
 
 
 clf reset ;
