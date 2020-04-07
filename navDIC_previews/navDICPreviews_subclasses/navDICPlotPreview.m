@@ -129,8 +129,8 @@ classdef navDICPlotPreview < navDICPreview
                                             ,'Strain vs. Time' ...
                                             ,'Strain Tensor' ...
                                             ,'Poisson' ...
-                                            ,'Input vs. Time' ...
-                                            ,'Input vs. Strain' ...
+                                            ,'Inputs vs. Time' ...
+                                            ,'Inputs vs. Strain' ...
                                             ,'True Stress vs. True Strain' ...
                                             } ;
                         [IDs,valid] = listdlg('PromptString','Select A Plot Option :',...
@@ -140,7 +140,7 @@ classdef navDICPlotPreview < navDICPreview
                         preset = availablePlots{IDs} ;
                     end
                 % If needed, choose a seed
-                    if ~ismember({'INPUT VS. TIME','CUSTOM'},upper(preset))
+                    if ~ismember({'INPUTS VS. TIME','CUSTOM'},upper(preset))
                         [seedID,valid] = selectSeeds(hd,'single') ;
                         if ~valid ; return ; end
                         %seedStr = ['hd.Seeds(',num2str(seedID),').DataFields.'] ;
@@ -149,11 +149,24 @@ classdef navDICPlotPreview < navDICPreview
                 % Prepare the data
                     timeString = '@time' ;
                     switch upper(preset)
-                        case 'INPUT VS. TIME'
-                            prev.addCurve('Input/Time' ... % Name
-                                            ,'hd.InputData(:,1)' ... % YData
-                                            , timeString ... % XData
-                                            ) ;
+                        case 'INPUTS VS. TIME'
+                            if isempty(hd.InputData) % Do nothing
+                            elseif istable(hd.InputData) % Table Data
+                                for in = 1:size(hd.InputData,2)
+                                    varName = hd.InputData.Properties.VariableNames{in} ;
+                                    prev.addCurve([varName ' (' hd.InputData.Properties.VariableUnits{in} ')'] ... % Name
+                                                    ,['@' varName] ... % YData
+                                                    , timeString ... % XData
+                                                    ) ;
+                                end
+                            else % Array Data
+                                for in = 1:size(hd.InputData,2)
+                                    prev.addCurve(['Input' num2str(in) ' vs. Time'] ... % Name
+                                                    ,['hd.InputData(:,' num2str(in) ')'''] ... % YData
+                                                    , timeString ... % XData
+                                                    ) ;
+                                end
+                            end
                         case 'DISPLACEMENT VS. TIME'
                             for fi = {'u1','u2'}
                                 prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
@@ -210,6 +223,14 @@ classdef navDICPlotPreview < navDICPreview
                         for s = 1:numel(hd.Seeds)
                             keywords{end+1} = ['@' hd.Seeds(s).Name '.'] ; 
                             replace{end+1} = ['hd.Seeds(' num2str(s) ').DataFields.'] ;
+                        end
+                    % Input names
+                        if istable(hd.InputData)
+                            for in = 1:size(hd.InputData,2)
+                                varName = hd.InputData.Properties.VariableNames{in} ;
+                                keywords{end+1} = ['@' varName] ; 
+                                replace{end+1} = ['hd.InputData.' varName] ;
+                            end
                         end
                     % Process
                         Xstr = regexprep(Xstr,keywords,replace) ;
