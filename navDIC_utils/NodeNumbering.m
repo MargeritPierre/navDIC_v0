@@ -1,18 +1,20 @@
 global hd
 
-Seed = hd.Seeds(1) ;
-frame = 51 ;
+Seed = hd.Seeds(end) ;
+cam = 1 ;
+frame = 1 ;
 
 Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
 Elems = Seed.Elems ;
-IMG = repmat(hd.Images{1}(:,:,:,frame),[1 1 3]) ; repmat(Seed.refImgs{1},[1 1 3]) ;
+IMG = hd.Images{cam}(:,:,:,frame) ;
 
 
 clf reset ;
-    im = image(IMG) ;
+    im = imagesc(IMG) ;
         axis ij
         axis equal
         axis tight
+        colormap gray
     % Elements Labelling
         nod2elem = Seed.elem2nod('ones')' ; nod2elem = nod2elem./sum(nod2elem,2) ;
         C = nod2elem*Pts ;

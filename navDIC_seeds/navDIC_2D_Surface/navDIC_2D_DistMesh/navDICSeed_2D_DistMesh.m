@@ -321,7 +321,7 @@ methods
                     & pts(:,2)<=max(x2) ;
         % In polygon
             if any(in)
-                in(in) = in(in) & inpolygon(pts(in,1),pts(in,2),x1(:),x2(:)) ;
+                in(in) = in(in) & inpolygons(pts(in,1),pts(in,2),x1(:),x2(:)) ;
             end
     end
 
@@ -432,11 +432,12 @@ methods
 
 % ------- DATA DIFFERENTIATION AND INTEGRATION --------------------------
 
-    function [D1,D2] = gradMat(obj,refPoints)
+    function [D1,D2] = gradMat(obj,refPoints,onNodes)
     % Return the differentiation matrices so that df_dxi = Di*f(:)
     % size(Di) = [nElems nNodes] : f is defined on nodes, the gradient
     % is constant over elements
         if nargin==1 ; refPoints = obj.Points ; end
+        if nargin<3 ; onNodes = obj.DataOnNodes ; end
         if isempty(obj.Quadrangles) % TRIANGLES ONLY
             nTris = size(obj.Triangles,1) ; 
             nPts = size(refPoints,1) ;
@@ -460,7 +461,7 @@ methods
                     D1 = sparse(iii(:),jjj(:),vvvD1(:),nTris,nPts) ;
                     D2 = sparse(iii(:),jjj(:),vvvD2(:),nTris,nPts) ;
             % Apply to nodes if needed (mean over connected triangles)
-                if obj.DataOnNodes
+                if onNodes
                     T = obj.elem2nod ;
                     D1 = T*D1 ; D2 = T*D2 ;
                 end
@@ -534,11 +535,12 @@ methods
         obj.computeDataFields ;
     end
 
-    function DATA = computeDataFields(obj)
+    function DATA = computeDataFields(obj,onNodes)
     % Compute all (scalar) data fields associated to the object motion
     % Empty fields are here as section headings
         DATA = struct() ;
         if isempty(obj.MovingPoints) ; return ; end
+        if nargin<2 ; onNodes = obj.DataOnNodes ; end
         nFrames = size(obj.MovingPoints,3) ;
         nPoints = size(obj.MovingPoints,1) ;
         % REFERENCE FRAME
@@ -567,7 +569,7 @@ methods
         % DATA FIELDS WITH GRADIENT
             if ~isempty(obj.Triangles) || ~isempty(obj.Quadrangles)
                 % Derivation matrices
-                    [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2]) ;
+                    [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2],onNodes) ;
                 % Transformation Gradient
                     DATA.Transformation = 'Transformation' ; 
                     x1 = DATA.x1 ;
@@ -888,8 +890,10 @@ methods
         % Data Transformation
             switch ax.UserData.dataScale
                 case 'Linear' % Do nothing
+                    ax.ColorScale = 'linear' ;
                 case 'Log10'
-                    Data = log10(abs(Data)) ;
+                    ax.ColorScale = 'log' ;
+                    %Data = log10(abs(Data)) ;
                 case 'Cummul'
                     [sortData,sortInd] = sort(Data,1) ;
                     sortInd = sortInd + ((1:size(Data,2))-1)*size(Data,1) ;

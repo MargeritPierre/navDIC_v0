@@ -2,14 +2,17 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
-        CorrSize = 81*[1 1] ; % Rectangular window
+        CorrSize = 51*[1 1] ; % Rectangular window
         m = round(CorrSize/4) ; % Margin to truncate borders
         uMax = CorrSize/2 ; 30*[1 1] ; % Maximum allowed displacement per iteration
+        maxImagetShift = CorrSize/2 ; % Maximum allowed imagette shift (close to image borders)
         iterateIfMaxDispHigherThan = 1 ;
         maxIt = 10 ;
         FIT =   ... 'LS' ...
                  'SVD' ...
                 ; 
+        spatialSmoothing = 1 ; prod(CorrSize)<10000 ;
+        spatialSmoothingRatio = 1/3 ;
         windowing = true ; % apply a blackman windowing
         
     % INITIALIZE
@@ -45,29 +48,54 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                     % One imagette centered in 0
                         ii = floor(-CorrSize(1)/2+(1:CorrSize(1))) ; % -floor(CorrSize(1)/2)+(1:CorrSize(1)) ;
                         jj = floor(-CorrSize(2)/2+(1:CorrSize(2))) ; % -floor(CorrSize(2)/2)+(1:CorrSize(2)) ;
+                    % All imagettes centerd in 0
                         [JJ,II] = meshgrid(jj,ii) ;
                         III = repmat(II,[1 1 nPts]) ;
                         JJJ = repmat(JJ,[1 1 nPts]) ;
                     % Imagette for each point
-                        if it==1 ; IIIRef = bsxfun(@plus,III,reshape(disPtsRef(:,2),[1 1 nPts])) ; end
-                        if it==1 ; JJJRef = bsxfun(@plus,JJJ,reshape(disPtsRef(:,1),[1 1 nPts])) ; end
+%                         if it==1 ; IIIRef = bsxfun(@plus,III,reshape(disPtsRef(:,2),[1 1 nPts])) ; end
+%                         if it==1 ; JJJRef = bsxfun(@plus,JJJ,reshape(disPtsRef(:,1),[1 1 nPts])) ; end
+                        IIIRef = bsxfun(@plus,III,reshape(disPtsRef(:,2),[1 1 nPts])) ;
+                        JJJRef = bsxfun(@plus,JJJ,reshape(disPtsRef(:,1),[1 1 nPts])) ;
                         IIIMov = bsxfun(@plus,III,reshape(disPtsMov(:,2),[1 1 nPts])) ;
                         JJJMov = bsxfun(@plus,JJJ,reshape(disPtsMov(:,1),[1 1 nPts])) ;
-                    % If outside of Image
-                        Valid = IIIRef>0 ...
-                                & IIIRef<=imgSize(1) ...
-                                & JJJRef>0 ...
-                                & JJJRef<=imgSize(2) ...
-                                & IIIMov>0 ...
-                                & IIIMov<=imgSize(1) ...
-                                & JJJMov>0 ...
-                                & JJJMov<=imgSize(2) ;
-                        Valid = ~any(any(~Valid,1),2) ;
+                    % Shift imagettes if too close from boundaries
+                        % Get the overlapping pixels
+                            onTop = min(min(IIIRef(1,1,:)-1,0),min(IIIMov(1,1,:)-1,0)) ;
+                            onBottom = max(max(IIIRef(end,end,:)-imgSize(1),0),max(IIIMov(end,end,:)-imgSize(1),0)) ;
+                            onLeft = min(min(JJJRef(1,1,:)-1,0),min(JJJMov(1,1,:)-1,0)) ;
+                            onRight = max(max(JJJRef(end,end,:)-imgSize(2),0),max(JJJMov(end,end,:)-imgSize(2),0)) ;
+                        % Compute the shifts
+                            imagetShiftII = onTop ; 
+                            imagetShiftII(logical(onBottom)) = onBottom(logical(onBottom)) ;
+                            imagetShiftII(logical(onBottom & onTop)) = NaN ;
+                            imagetShiftJJ = onLeft ; 
+                            imagetShiftJJ(logical(onRight)) = onRight(logical(onRight)) ;
+                            imagetShiftJJ(logical(onLeft& onRight)) = NaN ;
+                        % Prevent a too big shift
+                            imagetShiftII(abs(imagetShiftII)>maxImagetShift(1)) = NaN ;
+                            imagetShiftJJ(abs(imagetShiftJJ)>maxImagetShift(2)) = NaN ;
+                        % Apply
+                            IIIMov = IIIMov - imagetShiftII ;
+                            JJJMov = JJJMov - imagetShiftJJ ;
+                            IIIRef = IIIRef - imagetShiftII ;
+                            JJJRef = JJJRef - imagetShiftJJ ;
+                    % If points outside of Image
+                        ValidPts = ~isnan(IIIRef(1,1,:) + JJJRef(1,1,:) + IIIMov(1,1,:) + JJJMov(1,1,:)) ;
+%                         ValidIJ = IIIRef>0 ...
+%                                 & IIIRef<=imgSize(1) ...
+%                                 & JJJRef>0 ...
+%                                 & JJJRef<=imgSize(2) ...
+%                                 & IIIMov>0 ...
+%                                 & IIIMov<=imgSize(1) ...
+%                                 & JJJMov>0 ...
+%                                 & JJJMov<=imgSize(2) ;
+%                         ValidPts = ~any(any(~ValidIJ,1),2) ;
                         %notValid = ~Valid ;
-                        nPtsValid = sum(Valid(:)) ;
+                        nPtsValid = sum(ValidPts(:)) ;
                     % Linear Indices
-                        NNNRef = sub2ind(size(imgRef),IIIRef(:,:,Valid),JJJRef(:,:,Valid)) ;
-                        NNNMov = sub2ind(size(imgMov),IIIMov(:,:,Valid),JJJMov(:,:,Valid)) ;
+                        NNNRef = sub2ind(size(imgRef),IIIRef(:,:,ValidPts),JJJRef(:,:,ValidPts)) ;
+                        NNNMov = sub2ind(size(imgMov),IIIMov(:,:,ValidPts),JJJMov(:,:,ValidPts)) ;
                     % Pixel Values
                         imagettesRef = imgRef(NNNRef) ;
                         imagettesMov = imgMov(NNNMov) ;
@@ -108,8 +136,13 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                 if strcmp(FIT,'SVD')
                     indI = 1+m(1):CorrSize(1)-m(1) ; 
                     indJ = 1+m(2):CorrSize(2)-m(2) ;
-                    N = floor(CorrSize/2) ;
-                    %H = hankel(0:N(1)-1,N(1)-1:CorrSize(1)-1),CorrSize(1)*hankel(
+                    if spatialSmoothing
+                        LL = [numel(indI) numel(indJ)] ;
+                        KK = floor(LL*spatialSmoothingRatio) ;
+                        H1 = 1 + repmat( hankel(0:KK(1)-1,KK(1)-1:LL(1)-1) , [KK(2) LL(2)-KK(2)+1]) ;
+                        H2 = 1 + kron(hankel(0:KK(2)-1,KK(2)-1:LL(2)-1) ,ones(KK(1),LL(1)-KK(1)+1)) ;
+                        HH = H1 + LL(1)*(H2-1) ;
+                    end
                 end
 
 
@@ -157,18 +190,22 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                         for p = 1:nPtsValid
                             % Select and truncate
                                 phi = PHI(indI,indJ,p) ;
+                            % Spatial smoohing
+                                if spatialSmoothing ; phi = phi(HH) ; end
                             % SVD Filtering
-                                if 1
-                                    [U,w] = eig(phi*phi','vector') ;
-                                    [w,ind] = sort(w,'descend') ;
-                                    U = U(:,ind(1)) ;
-                                    V = phi'*diag(1./sqrt(w(1)))*U ;
-                                else
-                                    %[U,~,V] = svd(phi,'econ') ;
-                                end
+                                Cpp = phi*phi' ;
+                                [U,w] = eig(Cpp,'vector') ;
+                                [~,ind] = sort(w,'descend') ;
+                                U = U(:,ind(1)) ;
                             % Shift Invariance
-                                k(p,2) = U(1:end-1,1)\U(2:end,1) ;
-                                k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
+                                if spatialSmoothing
+                                    k(p,2) = U(H1(:,1)<KK(1),1)\U(H1(:,1)>1,1) ;
+                                    k(p,1) = U(H2(:,1)<KK(2),1)\U(H2(:,1)>1,1) ;
+                                else
+                                    V = phi'*diag(1./sqrt(w(1)))*U ;
+                                    k(p,2) = U(1:end-1,1)\U(2:end,1) ;
+                                    k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
+                                end
                         end
                 end
 
@@ -190,14 +227,14 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                 end
 
             % Moving Points
-                MovingPoints(Valid,:) = U + disPtsMov(Valid,:) - (disPtsRef(Valid,:)-PtsRef(Valid,:)) ;
+                MovingPoints(ValidPts,:) = U + disPtsMov(ValidPts,:) - (disPtsRef(ValidPts,:)-PtsRef(ValidPts,:)) ;
 
             % Absolute value of the displacement increment
                 normU = zeros(nPts,1) ;
-                normU(Valid) = sqrt(sum((MovingPoints(Valid,:)-PtsMov(Valid,:)).^2,2)) ;
+                normU(ValidPts) = sqrt(sum((MovingPoints(ValidPts,:)-PtsMov(ValidPts,:)).^2,2)) ;
                 
             % Apply the increment to PtsMov
-                PtsMov(Valid,:) = MovingPoints(Valid,:) ;
+                PtsMov(ValidPts,:) = MovingPoints(ValidPts,:) ;
                 
             % Delete PtsMov for which the increment was smaller than the
             % criterion

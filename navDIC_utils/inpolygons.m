@@ -1,4 +1,4 @@
-function [in,on] = inpolygon(pts,polys)
+function [in,on] = inpolygons(pts,polys)
 
     pts = pts(:,:) ; % [nPts nCoord]
     polys = polys(:,:,:) ; % [nPolys nMaxNodes nCoord]

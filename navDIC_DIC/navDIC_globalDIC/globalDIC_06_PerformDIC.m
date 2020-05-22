@@ -100,7 +100,7 @@ for ii = dicFrames
                             case nNodes
                                 ww = 1./normImg1(VALID.Nodes(:,ii)) ;
                             case nElems
-                                ww = valance_it*normImg1(VALID.Elems(:,ii)) ;
+                                ww = valance_it*(1./normImg1(VALID.Elems(:,ii))) ;
                         end
                         weight = sparse(1:2*nVALID,1:2*nVALID,[ww;ww]) ;
                 end

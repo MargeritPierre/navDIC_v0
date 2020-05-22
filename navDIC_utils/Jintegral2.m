@@ -32,9 +32,9 @@
                 
     %% Elasto-plastic with Isotropic hardening
         %E = 200e9 ; nu = .5 ; Sy = 427e6 ; K = 1175e6 ; n = .67 ; % MEAN ISOTROPIC
-        %E = 197e9 ; nu = .5 ; Sy = 419e6 ; K = 1136e6 ; n = .67 ; % ISN_0 (BUILD DIR.)
+        E = 197e9 ; nu = .5 ; Sy = 419e6 ; K = 1136e6 ; n = .67 ; % ISN_0 (BUILD DIR.)
         %E = 201e9 ; nu = .5 ; Sy = 441e6 ; K = 1177e6 ; n = .68 ; % ISN_45 (OBLIQUE DIR.)
-        E = 201e9 ; nu = .5 ; Sy = 431e6 ; K = 1203e6 ; n = .63 ; % ISN_90 (PRINT DIR.)
+        %E = 201e9 ; nu = .5 ; Sy = 431e6 ; K = 1203e6 ; n = .63 ; % ISN_90 (PRINT DIR.)
         %E = 201e9 ; nu = .5 ; Sy = 493e6 ; K = 1065e6 ; n = .67 ; % ISN_90_LOADFIT (PRINT DIR.)
         [S11,S22,S33,S12,Dp11,Dp22,Dp33,Dp12,R] = Isotropic_Hardening(seed.DataFields.D11,seed.DataFields.D22,seed.DataFields.D12,E,nu,Sy,K,n) ;
             seed.DataFields.ElasticStrains = 'Elastic Strains' ;

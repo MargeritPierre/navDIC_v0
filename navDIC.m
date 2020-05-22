@@ -1079,7 +1079,7 @@ function navDIC(varargin)
         % STOP ALL CAMERAS
             hd = stopAllCameras(hd) ;
         % Close all figures belonging to navDIC 
-            figsToClose = [hd.ToolBar.fig,findobj(0,'tag',navDICTag)] ;
+            figsToClose = [hd.ToolBar.fig,findobj(0,'tag',navDICTag)'] ;
             set(figsToClose,'CloseRequestFcn','closereq')
             close(figsToClose) ;
     end
