@@ -8,8 +8,8 @@ function hd = captureCameras(hd)
         nCams = length(hd.Cameras) ;
         
     % If one Camera was stopped
-        for cam = 1:nCams
-            if strcmp(hd.Cameras(cam).VidObj.Running,'off')
+        for c = 1:nCams
+            if strcmp(hd.Cameras(c).VidObj.Running,'off')
                 hd = startAllCameras(hd) ;
                 return ;
             end
@@ -17,23 +17,24 @@ function hd = captureCameras(hd)
         
     % Get all cams data
         images = cell(1,nCams) ;
-        for cam = 1:nCams
-            cam = hd.Cameras(cam).VidObj ;
+        for c = 1:nCams
+            cam = hd.Cameras(c).VidObj ;
             t = tic ;
 %            while cam.FramesAvailable == 0 && toc(t)<timeOut ; end
 %             if toc(t)>timeOut 
 %                 images{c} = zeros(cam.VideoResolution) ;
 %                 continue ; 
 %             end
-            images{cam} = im2single(peekdata(cam,1)) ;
+            images{c} = peekdata(cam,1) ;
+            %images{c} = im2single(images{c}) ;
         end
         
     % Flush cameras buffers
         flushdata([hd.Cameras.VidObj],'all') ;
         
     % Save Images
-        for cam = 1:nCams
-            hd.Images{cam}(:,:,:,hd.nFrames) = images{cam} ;
+        for c = 1:nCams
+            hd.Images{c}(:,:,:,hd.nFrames) = images{c} ;
         end
 
 end

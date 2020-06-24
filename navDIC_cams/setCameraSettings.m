@@ -66,7 +66,8 @@ function cam = setCameraSettings(cam)
 % UPDATE CAMERA PREVIEW
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-            frame0 = double(event.Data) ;
+            %frame0 = double(event.Data) ;
+            frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
@@ -185,6 +186,15 @@ function cam = setCameraSettings(cam)
                     % Individual infos
                         switch uiInfos.Type
                             case 'integer'
+                                switch uiInfos.Constraint
+                                    case 'bounded'
+                                        theUI.Style = 'slider' ;
+                                        theUI.Min = uiInfos.ConstraintValue(1) ;
+                                        theUI.Max = uiInfos.ConstraintValue(2) ;
+                                    case 'none'
+                                        theUI.Style = 'edit' ;
+                                end
+                            case 'double'
                                 switch uiInfos.Constraint
                                     case 'bounded'
                                         theUI.Style = 'slider' ;

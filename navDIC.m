@@ -89,7 +89,7 @@ function navDIC(varargin)
                 hd.WorkDir = [] ;
                     hd.WorkDir.Path = pwd ;
                     hd.WorkDir.CommonName = 'img' ;
-                    hd.WorkDir.ImagesExtension = '.tif' ;
+                    hd.WorkDir.ImagesExtension = '.png' ;
         % DEVICES
             % Cameras
                 hd.Cameras = [] ;
@@ -460,7 +460,7 @@ function navDIC(varargin)
     function setPath(src,varargin)
         % Open a dialog box if needed
             if strcmp(src,'menu')
-                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT','img.tif') ;
+                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT','img.png') ;
                 if file ==0 ; return ; end
                 [~,file,ext] = fileparts(file) ;
                 varargin = {path,file,ext} ;

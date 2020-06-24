@@ -8,6 +8,8 @@ classdef navDICCameraPreview < navDICPreview
             AxesImg = [] ;
         % Handles to the Image Display
             Img = [] ;
+        % Options
+            BlackAndWhiteImage = true ;
     end
     
     methods
@@ -77,8 +79,7 @@ classdef navDICCameraPreview < navDICPreview
                     % Process
                         %img = single(img) ;
                         %img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
-                    nBands = size(img,3) ;
-                    if nBands == 1
+                    if prev.BlackAndWhiteImage && size(img,3) == 1 
                         prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
                         prev.Img.CData = img ;
