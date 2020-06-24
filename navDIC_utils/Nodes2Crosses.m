@@ -10,14 +10,15 @@
 %
 
 % Parameters
+    global hd
     % New Seed
-        fromSeedNumber = 1 ;
-        newSeedNumber = 2 ;
-        newSeedName = 'Crosses' ;
+        fromSeedNumber = 5 ;
+        newSeedNumber = 6 ;
+        newSeedName = 'CrossesGrid' ;
     % Crosses
         L = 40 ; % Member length (in pixels)
         AngleMembers = [0 90 180 270]*pi/180 ; % Angle of the cross members
-        AngleShift = repmat([1;-1]*5*pi/180,1000,1) ; 60*pi/180 ;
+        AngleShift = repmat([1;-1;1;-1;1;-1;1;-1;1;-1;-1;1;-1;1;-1;1;-1;1;-1;1]*5*pi/180,1000,1) ; 60*pi/180 ;
     
 % Create the new Seed
     hd.Seeds(newSeedNumber) = copy(hd.Seeds(fromSeedNumber)) ;
@@ -37,16 +38,15 @@
         end
     % Other point data
         hd.Seeds(newSeedNumber).Points = hd.Seeds(newSeedNumber).MovingPoints(:,:,1) ; 
-        hd.Seeds(newSeedNumber).Displacements = hd.Seeds(newSeedNumber).MovingPoints - hd.Seeds(newSeedNumber).Points ;
-    % Triangles
-        hd.Seeds(newSeedNumber).Triangles = [] ;
+    % Elements
+        hd.Seeds(newSeedNumber).Elems = [] ;
         for t = 1:nMembers
             if t==nMembers
                 indP = [nMembers+1 t 1] ;
             else
                 indP = [nMembers+1 t 1+t] ;
             end
-            hd.Seeds(newSeedNumber).Triangles((1:nNodes)+(t-1)*nNodes,:) = (1:nNodes)' + (indP(:)'-1)*nNodes ;
+            hd.Seeds(newSeedNumber).Elems((1:nNodes)+(t-1)*nNodes,:) = (1:nNodes)' + (indP(:)'-1)*nNodes ;
         end
         
 % Other Data Fields
@@ -106,7 +106,6 @@
             theta = AngleShift(:)+AngleMembers(m) ;
             % Translate 
                 hd.Seeds(newSeedNumber).MovingPoints((1:nNodes)+(m-1)*nNodes,:,:) = L*[cos(theta) sin(theta)] + hd.Seeds(newSeedNumber).MovingPoints((1:nNodes)+(m-1)*nNodes,:,:) ;
-            end
         end
     % Other point data
         hd.Seeds(newSeedNumber).Points = hd.Seeds(newSeedNumber).MovingPoints(:,:,1) ; 

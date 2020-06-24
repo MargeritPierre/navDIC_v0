@@ -112,16 +112,18 @@ return
 
 %% TEST THE MODEL
 
-    E = 150e9 ;
+    E = 151e9 ;
     nu = .5 ;
-    Sy = 320e6 ;
-    K = 880e6 ;
-    n = .67 ;
+    Sy = 323*1e6 ;
+    K = 902e6 ;
+    n = .63 ;
+    E = 151e9 ; nu = .5 ; Sy = 370e6 ; K = 800e6 ; n = .67 ; % ISN_90_CORRECTED (PRINT DIR.)
     tol = abs(1000*eps*Sy) ;
     
     ax = gca ;
     EPS = linspace(0,ax.XLim(2),10000) ;
     de = 0.0005 ; EPS = [0:de:0.2 0.2:-de:0.1 0.1:de:0.3 0.3:-de:0.298 0.298:de:0.35] ;
+    de = 0.0001 ; EPS = [0:de:0.32 0.32:-de:0.317] ;
     D = [0 diff(EPS)]' ;
     D11 = D ; D22 = -nu*D ; D12 = D.*0 ;
     
@@ -132,9 +134,10 @@ return
 
     tag = 'Power Hardening' ;
     delete(findobj(gca,'tag',tag)) ;
-    plot(EPS,S11*1e-6,'.-.k','linewidth',1,'tag',tag,'DisplayName','PH') ;
-    plot(EPS,R*1e-6,'--r','linewidth',1,'tag',tag,'DisplayName','R') ;
-    %plot(EPS,(Sy+K.*(EPS-SIG/E).^n)*1e-6,':b','linewidth',1,'tag',tag,'DisplayName','Rth') ;
+    plot(EPS,S11*1e-6,'-k','linewidth',2,'tag',tag,'DisplayName','PH') ;
+    %plot(EPS,R*1e-6,'--r','linewidth',1,'tag',tag,'DisplayName','R') ;
+    %plot(EPS,(Sy+K.*(EPS(:)-SIG(:)/E).^n)*1e-6,':b','linewidth',1,'tag',tag,'DisplayName','Rth') ;
+    ax.XLim(1) = 0 ; ax.YLim(1) = 0 ; 
     
     
     

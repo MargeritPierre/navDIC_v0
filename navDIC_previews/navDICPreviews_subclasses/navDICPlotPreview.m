@@ -150,10 +150,23 @@ classdef navDICPlotPreview < navDICPreview
                     timeString = '@time' ;
                     switch upper(preset)
                         case 'INPUT VS. TIME'
-                            prev.addCurve('Input/Time' ... % Name
-                                            ,'hd.InputData(:,1)' ... % YData
-                                            , timeString ... % XData
-                                            ) ;
+                            if isempty(hd.InputData) % Do nothing
+                            elseif istable(hd.InputData) % Table Data
+                                for in = 1:size(hd.InputData,2)
+                                    varName = hd.InputData.Properties.VariableNames{in} ;
+                                    prev.addCurve([varName ' (' hd.InputData.Properties.VariableUnits{in} ')'] ... % Name
+                                                    ,['@' varName] ... % YData
+                                                    , timeString ... % XData
+                                                    ) ;
+                                end
+                            else % Array Data
+                                for in = 1:size(hd.InputData,2)
+                                    prev.addCurve(['Input' num2str(in) ' vs. Time'] ... % Name
+                                                    ,['hd.InputData(:,' num2str(in) ')'''] ... % YData
+                                                    , timeString ... % XData
+                                                    ) ;
+                                end
+                            end
                         case 'DISPLACEMENT VS. TIME'
                             for fi = {'u1','u2'}
                                 prev.addCurve([fi{:}],[seedStr '.' [fi{:}]],timeString) ;
@@ -210,6 +223,14 @@ classdef navDICPlotPreview < navDICPreview
                         for s = 1:numel(hd.Seeds)
                             keywords{end+1} = ['@' hd.Seeds(s).Name '.'] ; 
                             replace{end+1} = ['hd.Seeds(' num2str(s) ').DataFields.'] ;
+                        end
+                    % Input names
+                        if istable(hd.InputData)
+                            for in = 1:size(hd.InputData,2)
+                                varName = hd.InputData.Properties.VariableNames{in} ;
+                                keywords{end+1} = ['@' varName] ; 
+                                replace{end+1} = ['hd.InputData.' varName] ;
+                            end
                         end
                     % Process
                         Xstr = regexprep(Xstr,keywords,replace) ;
