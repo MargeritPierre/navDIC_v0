@@ -27,14 +27,14 @@ disp('cpcorr')
         switch obj.displMode
             case 'abs'
                 PtsRef = obj.Points ;
-                imgRef = hd.Images{obj.RefFrame}{camID} ;%obj.refImgs{1} ;
+                imgRef = hd.Images{camID}{obj.RefFrame} ;%obj.refImgs{1} ;
                 PtsMov = round(obj.MovingPoints(:,:,frame-obj.RefFrame)) ;
-                imgMov = hd.Images{frame}{camID} ;
+                imgMov = hd.Images{camID}{frame} ;
             case 'rel'
                 PtsRef = obj.MovingPoints(:,:,frame-1) ;
-                imgRef = hd.Images{frame-1}{camID} ;
+                imgRef = hd.Images{camID}{frame-1} ;
                 PtsMov = obj.MovingPoints(:,:,frame-1) ;
-                imgMov = hd.Images{frame}{camID} ;
+                imgMov = hd.Images{camID}{frame} ;
         end
         valid = ~any(isnan(PtsMov),2) ;
         obj.MovingPoints(:,:,frame) = obj.Points*NaN ;

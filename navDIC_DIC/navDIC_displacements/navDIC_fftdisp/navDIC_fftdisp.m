@@ -31,10 +31,10 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
             switch obj.displMode
                 case 'abs'
                     PtsRef = obj.Points ;
-                    imgRef = hd.Images{camID}(:,:,:,obj.RefFrame) ;
+                    imgRef = hd.Images{camID}{obj.RefFrame} ;
                 case 'rel'
                     PtsRef = obj.MovingPoints(:,:,frame-1) ;
-                    imgRef = hd.Images{camID}(:,:,:,frame-1) ;
+                    imgRef = hd.Images{camID}{frame-1} ;
             end
         % Current Frame and points
             PtsMov = obj.MovingPoints(:,:,frame-1) ;
@@ -43,7 +43,7 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
                 useable = ~any(isnan(existPts),2) ;
                 PtsMov(useable,:) = existPts(useable,:) ;
             end
-            imgMov = hd.Images{camID}(:,:,:,frame) ;
+            imgMov = hd.Images{camID}{frame} ;
         % Compute new positions
             valid = ~any(isnan(PtsMov),2) ;
             obj.MovingPoints(:,:,frame) = obj.Points*NaN ;

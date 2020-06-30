@@ -66,8 +66,8 @@ function cam = setCameraSettings(cam)
 % UPDATE CAMERA PREVIEW
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-            %frame0 = double(event.Data) ;
-            frame0 = double(getsnapshot(obj)) ;
+            frame0 = double(event.Data) ;
+            %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'

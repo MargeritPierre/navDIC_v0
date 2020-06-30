@@ -34,7 +34,7 @@ function hd = captureCameras(hd)
         
     % Save Images
         for c = 1:nCams
-            hd.Images{c}(:,:,:,hd.nFrames) = images{c} ;
+            hd.Images{c}{hd.nFrames} = images{c} ;
         end
 
 end

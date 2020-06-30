@@ -50,7 +50,7 @@ classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneou
                     % Get reference Images
                         for id = IDs
                             if ~isempty(hd.Images)
-                                obj.refImgs{end+1} = hd.Images{id}(:,:,:,hd.CurrentFrame) ;
+                                obj.refImgs{end+1} = hd.Images{id}{hd.CurrentFrame} ;
                             else
                                 hd = startAllCameras(hd) ;
                                 obj.refImgs{end+1} = im2single(getsnapshot(hd.Cameras(id).VidObj)) ;

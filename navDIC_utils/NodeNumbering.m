@@ -6,7 +6,7 @@ frame = 1 ;
 
 Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
 Elems = Seed.Elems ;
-IMG = hd.Images{cam}(:,:,:,frame) ;
+IMG = hd.Images{cam}{frame} ;
 
 
 clf reset ;

@@ -123,7 +123,7 @@ classdef navDICSlicingTool < navDICCameraPreview
                     ii = Y(1,1).*(1-ee).*(1-nn) + Y(2,1).*(ee).*(1-nn) + Y(1,2).*(1-ee).*(nn) + Y(2,2).*(ee).*(nn) ;
                     %delete(findobj(prev.AxesImg,'tag','markers')) ; %pl = plot(prev.AxesImg,jj(:),ii(:),'.r','tag','markers','hittest','off') ;
                 % Get the Images
-                    IMG = hd.Images{prev.CameraID} ;
+                    IMG = cat(4,hd.Images{prev.CameraID}{:}) ;
                     [nI,nJ,nColors,nFrames] = size(IMG) ;
                     nPix = nI*nJ ;
                     if nColors>1

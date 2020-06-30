@@ -25,8 +25,7 @@ function hd = saveCurrentFrame(hd,varargin)
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
                 nameImg = [folderName,filesep,wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-                %imwrite(uint8(255*hd.Images{camID}(:,:,:,frameToSave)),nameImg) ;
-                imwrite(hd.Images{camID}(:,:,:,frameToSave),nameImg) ;
+                imwrite(hd.Images{camID}{frameToSave},nameImg) ;
         end
     end
 

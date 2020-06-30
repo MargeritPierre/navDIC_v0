@@ -10,7 +10,7 @@ seed = 2 ;
 
 camID = hd.Seeds(seed).CamIDs ;
 
-IMG = hd.Images{camID}(:,:,:,hd.Seeds(seed).RefFrame) ;
+IMG = hd.Images{camID}{hd.Seeds(seed).RefFrame} ;
 %IMG = double(IMG) ;
 %IMG = log10(IMG+1) ;
 

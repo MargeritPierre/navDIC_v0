@@ -1,6 +1,6 @@
 global hd
 
-IMG = hd.Images{1} ;
+IMG = cat(4,hd.Images{1}{:}) ;
 convFilt = @(I)conv2(I,ones(1),'same') ;
 diffImg = @(ii)abs(convFilt(IMG(:,:,:,ii)-IMG(:,:,:,ii-1))) ;
 

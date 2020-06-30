@@ -4,7 +4,7 @@ global hd
 
 crackTipPosition = hd.Seeds(3).MovingPoints ;
 energySeed = hd.Seeds(2) ;
-IMG = repmat(hd.Images{1},[1 1 3 1]) ;
+IMG = repmat(cat(4,hd.Images{1}{:}),[1 1 3 1]) ;
 dataField = 'W' ;
 domainRadius = 50 ;
 domainShift = [0 -1]*domainRadius ;

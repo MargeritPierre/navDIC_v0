@@ -105,6 +105,7 @@ function [setup,hd] = loadSetup(hd,path)
                         Images{cam} = Images{cam}-min(Images{cam}(:)) ;
                         Images{cam} = Images{cam}*(double(max(getrangefromclass(Images{cam})))/double(max(Images{cam}(:)))) ;
                     end
+                    Images{cam} = num2cell(Images{cam},1:3) ;
                     delete(wtbr) ;
                 % SET THE CAMERA
                     CamName = strsplit(camFolders{cam},{'/','\'}) ;

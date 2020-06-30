@@ -518,7 +518,7 @@ function navDIC(varargin)
                 end
             end
         % Update the handles
-            nFrames = max(cellfun(@(c)size(c,4),hd.Images)) ;
+            nFrames = max(cellfun(@(c)numel(c),hd.Images)) ;
             nFrames = [nFrames(:)' size(hd.TimeLine,1)] ;
             nFrames = [nFrames(:)' size(hd.InputData,1)] ;
             hd.nFrames = max(nFrames) ;
@@ -570,10 +570,10 @@ function navDIC(varargin)
                         [path,commonName,ext] = fileparts([path,file]) ;
                     % Save All Images
                         wtbr = waitbar(0,'Writing Images...') ;
-                        nFrames = size(hd.Images{camID},4) ;
+                        nFrames = numel(hd.Images{camID}) ;
                         for fr = 1:nFrames 
                             filename = [path,'/',commonName,'_',num2str(fr),ext] ;
-                            imwrite(hd.Images{camID}(:,:,:,fr),filename) ;
+                            imwrite(hd.Images{camID}{fr},filename) ;
                             wtbr = waitbar(fr/nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
                         end
                         delete(wtbr) ;
@@ -650,7 +650,7 @@ function navDIC(varargin)
                 if strcmp(answer,'No') ; fields(ismember(fields,'Images')) = [] ; end
             end
         % Saving
-            save(filename,'-struct','hd',fields{:}) ;
+            save(filename,'-struct','hd',fields{:},'-v7.3') ;
     end
         
 

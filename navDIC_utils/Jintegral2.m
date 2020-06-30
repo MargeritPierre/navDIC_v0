@@ -341,7 +341,7 @@
             figContours.Position = [figContours.Position(1:2)+figContours.Position(3:4)/2.*[0 .5] figContours.Position(3:4)/2] ;
         end
         clf(figContours) ;
-        refImg = hd.Images{1}(:,:,:,1) ;
+        refImg = hd.Images{1}{1} ;
         im = imagesc(repmat(refImg(:,:,1),[1 1 3])) ;
         mesh = patch('Vertices',seed.MovingPoints(:,:,1),'Faces',seed.Elems,'Facecolor','w','edgecolor','none','Facealpha',0.5) ;
         axis tight

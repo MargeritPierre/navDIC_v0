@@ -25,7 +25,7 @@
 %% INITIALIZE THE FIGURE
     % Init the figure
         clf ;
-        refImg = hd.Images{1}(:,:,:,1) ;
+        refImg = hd.Images{1}{1} ;
         im = imagesc(repmat(refImg(:,:,1),[1 1 3])) ;
         axis tight
         axis equal

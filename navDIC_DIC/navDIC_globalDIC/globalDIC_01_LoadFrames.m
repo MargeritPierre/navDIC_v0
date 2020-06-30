@@ -7,7 +7,7 @@
 % RETRIEVE THE DATA
     navDICFrames = 1:hd.nFrames ;
     frames = eval(['navDICFrames(',frames,')']) ;
-    IMG = hd.Images{camID}(:,:,1,frames) ; % /!\ STILL NO SUPPORT FOR MULTICOLOR IMAGES YET
+    IMG = cat(4,hd.Images{camID}{frames}) ; % /!\ STILL NO SUPPORT FOR MULTICOLOR IMAGES YET
  
 % PROCESS IMAGES
     [nI,nJ,nFrames] = size(IMG) ;

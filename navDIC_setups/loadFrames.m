@@ -90,7 +90,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         end
 
     % Add the images
-        hd.Images{camID} = IMG ;
+        hd.Images{camID} = num2cell(IMG,1:3) ;
             
     % Validate the setup
         valid = true ;

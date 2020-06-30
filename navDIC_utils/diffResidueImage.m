@@ -1,7 +1,7 @@
 global hd
 clearvars -except hd
 
-IMG = hd.Images{1} ;
+IMG = cat(4,hd.Images{1}{:}) ;
 Seed = hd.Seeds(4) ;
 Nodes = Seed.MovingPoints(:,:,1) ;
 
