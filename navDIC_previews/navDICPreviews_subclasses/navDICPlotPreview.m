@@ -221,15 +221,15 @@ classdef navDICPlotPreview < navDICPreview
                         replace{end+1} = '1:hd.nFrames' ;
                     % Seed names
                         for s = 1:numel(hd.Seeds)
-                            keywords{end+1} = ['@' hd.Seeds(s).Name '.'] ; 
-                            replace{end+1} = ['hd.Seeds(' num2str(s) ').DataFields.'] ;
+                            keywords{end+1} = ['@' hd.Seeds(s).Name '\.'] ; 
+                            replace{end+1} = ['hd\.Seeds(' num2str(s) ')\.DataFields\.'] ;
                         end
                     % Input names
                         if istable(hd.InputData)
                             for in = 1:size(hd.InputData,2)
                                 varName = hd.InputData.Properties.VariableNames{in} ;
                                 keywords{end+1} = ['@' varName] ; 
-                                replace{end+1} = ['hd.InputData.' varName] ;
+                                replace{end+1} = ['hd\.InputData\.' varName] ;
                             end
                         end
                     % Process

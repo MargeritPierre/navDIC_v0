@@ -1,6 +1,6 @@
 global hd
 
-Seed = hd.Seeds(end) ;
+Seed = seed ; %Seeds(4) ; %hd.Seeds(4) ;
 cam = 1 ;
 frame = 1 ;
 
@@ -8,7 +8,7 @@ Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
 Elems = Seed.Elems ;
 IMG = hd.Images{cam}{frame} ;
 
-
+% 
 clf reset ;
     im = imagesc(IMG) ;
         axis ij

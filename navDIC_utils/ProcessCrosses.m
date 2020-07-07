@@ -3,7 +3,7 @@
 % Parameters
     crossSeedNumber = 3 ;
     macroSeedNumber = 2 ;
-    unitCellsSeedNumber = 4 ;
+    unitCellsSeedNumber = 6 ;
     nMembers = 4 ;
     
     
@@ -38,7 +38,7 @@
     hd.Seeds(crossSeedNumber).DataFields.MeanEdgRot = repmat(meanEdgRot,[nMembers+1 1 1]) ;
     hd.Seeds(crossSeedNumber).DataFields.DevEdgRot = repmat(devEdgRot,[nMembers+1 1 1]) ;
     
-%% MACRO DATA
+% MACRO DATA
     
 % Macroscopic fields
     macro = hd.Seeds(macroSeedNumber).computeDataFields(true) ; % Data Fields on nodes
@@ -83,22 +83,80 @@
     lgd.EdgeColor = 'k' ;
     
     
-%% 
-    nodesIndices = find(nodeInCell) ; 1:nNodes ;
+%% GENERATE FIGURES FOR THE PAPER
+    crossSeed = hd.Seeds(crossSeedNumber) ;
+    nodesIndices = find(~ismember(nodeInCell,[0 2])) ; 1:nNodes ;
+    fr = 1:hd.nFrames - 0 ;
     ucColors = hsv(nUC) ; jet(nUC) ; linspecer(nUC) ;
 
     E11 = unitcells.E11(nodesIndices,:).' ;
     E22 = unitcells.E22(nodesIndices,:).' ;
     E12 = unitcells.E12(nodesIndices,:).' ;
-    meanRot = meanEdgRot(nodesIndices,:).' ;
-    devRot = devEdgRot(nodesIndices,:).' ;
+    rot = reshape(crossSeed.DataFields.dAtot(nodesIndices(:)+[0:nMembers-1]*nNodes,:),[],nMembers,hd.nFrames) ;
+    meanRot = reshape(mean(rot,2),[],hd.nFrames).' ;
+    devRot = reshape(sqrt(mean(abs(rot-mean(rot,2)).^2,2)),[],hd.nFrames).' ;
+    %
+    %meanRot = meanEdgRot(nodesIndices,:).' ; 
+    %devRot = devEdgRot(nodesIndices,:).' ;
     
     clf
     ax = gca; ax.ColorOrder = ucColors(nodeInCell(nodesIndices),:) ;
-    pl = plot3(E12*100,180/pi*meanRot,E22*100) ; xlabel '$E_{12} (\%)$' ; ylabel 'Mean Cross Rotation ($^\circ$)' ; zlabel '$E_{22} (\%)$' ;
+    %pl = plot(meanRot(fr,:)) ; %xlabel '$image$' ; ylabel 'Mean Cross Rotation ($^\circ$)' ;
+    pl = plot3(E12(fr,:)*100,180/pi*meanRot(fr,:),E22(fr,:)*100) ; xlabel '$E_{12} (\%)$' ; ylabel 'Mean Cross Rotation ($^\circ$)' ; zlabel '$E_{22} (\%)$' ;
+    %pl = plot3(E22(fr,:)*100,180/pi*meanRot(fr,:),E12(fr,:)*100) ; xlabel '$E_{22} (\%)$' ; ylabel 'Mean Cross Rotation ($^\circ$)' ; zlabel '$E_{12} (\%)$' ;
+    %pl = plot3(E12(fr,:)*100,180/pi*devRot(fr,:),E22(fr,:)*100) ; xlabel '$E_{12} (\%)$' ; ylabel 'Mean Member Deviation ($^\circ$)' ; zlabel '$E_{22} (\%)$' ;
+    %pl = plot3(E22(fr,:)*100,180/pi*devRot(fr,:),E12(fr,:)*100) ; xlabel '$E_{22} (\%)$' ; ylabel 'Mean Member Deviation ($^\circ$)' ; zlabel '$E_{12} (\%)$' ;
+    %pl = plot3(E22(fr,:)*100,E11(fr,:)*100,E12(fr,:)*100) ; xlabel '$E_{22} (\%)$' ; ylabel '$E_{11} (\%)$' ; zlabel '$E_{12} (\%)$' ;
+    
+    %set(ax,'xdir','reverse','ydir','reverse')
+    
+    labels = strtrim(num2cell(num2str((1:1000)'),2)) ;
+    %lbl = strcat('C',labels(nodeInCell(nodesIndices))) ;
+    lbl = strcat('N',labels(nodesIndices),'-C',labels(nodeInCell(nodesIndices))) ;
+    [pl.DisplayName] = deal(lbl{:}) ;
+    
+    %%
+    set(pl,'MarkerIndices',round(linspace(1,hd.nFrames,20))) ;
+    set(pl,'MarkerSize',8) ;
+    if 1
+        set(gca,'sortmethod','childorder')
+        set(pl,'color',[1 1 1]*0.6,'linewidth',1.5) ;
+        colors = [1 0 0 ; 0 0 1 ; 0 1 0] ;
+        markers = {'square','^','o','pentagram'} ;
+        cells = [5 8] ;
+        nodes = [41 42 50 51 ; 59 60 68 69] ;
+        for cc = 1:numel(cells)
+            cellNum = cells(cc) ;
+            plCell = findobj(pl,'-regexp','DisplayName',['C' num2str(cellNum)]) ;
+            set(plCell,'color',colors(cc,:))
+            uistack(plCell,'top')
+            for nn = 1:size(nodes,2)
+                plNode = findobj(pl,'-regexp','DisplayName',['N' num2str(nodes(cc,nn))]) ;
+                plNode.Marker = markers{nn} ;
+            end
+        end
+    else
+    end
+    
+%% 
+    nodesIndices = find(nodeInCell) ; 1:nNodes ;
+
+    E11 = unitcells.E11(nodesIndices,:).' ; % [nFrames nNodes]
+    E22 = unitcells.E22(nodesIndices,:).' ; % [nFrames nNodes]
+    E12 = unitcells.E12(nodesIndices,:).' ; % [nFrames nNodes]
+    
+    erot = EdgRot(nodesIndices,:,:,:) ; % [nNodes 1 nFrames nMembers]
+    erot = permute(erot,[3 1 4 2]) ; % [nFrames nNodes nMembers]
+    erot = erot(:,:,2) ; % [nFrames nNodes nMembers]
+    
+    clf
+    ax = gca; %ax.ColorOrder = ucColors(nodeInCell(nodesIndices),:) ;
+    pl = plot3(repmat(E12,[1 size(erot,3)])*100,180/pi*erot(:,:),repmat(E22,[1 size(erot,3)])*100) ; xlabel '$E_{12} (\%)$' ; ylabel 'Member Rotation ($^\circ$)' ; zlabel '$E_{22} (\%)$' ;
     %pl = plot3(E22*100,180/pi*meanRot,E12*100) ; xlabel '$E_{22} (\%)$' ; ylabel 'Mean Cross Rotation ($^\circ$)' ; zlabel '$E_{12} (\%)$' ;
     %pl = plot3(E12*100,180/pi*devRot,E22*100) ; xlabel '$E_{12} (\%)$' ; ylabel 'Mean Member Deviation ($^\circ$)' ; zlabel '$E_{22} (\%)$' ;
     %pl = plot3(E22*100,180/pi*devRot,E12*100) ; xlabel '$E_{22} (\%)$' ; ylabel 'Mean Member Deviation ($^\circ$)' ; zlabel '$E_{12} (\%)$' ;
     %pl = plot3(E11*100,E22*100,E12*100) ; xlabel '$E_{11} (\%)$' ; ylabel '$E_{22} (\%)$' ; zlabel '$E_{12} (\%)$' ;
+   
+    
     
     

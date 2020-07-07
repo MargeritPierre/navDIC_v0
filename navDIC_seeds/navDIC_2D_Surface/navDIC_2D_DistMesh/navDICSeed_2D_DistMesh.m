@@ -438,7 +438,7 @@ methods
     % is constant over elements
         if nargin==1 ; refPoints = obj.Points ; end
         if nargin<3 ; onNodes = obj.DataOnNodes ; end
-        if isempty(obj.Quadrangles) % TRIANGLES ONLY
+        if size(obj.Elems,2)==3 % TRIANGLES ONLY
             nTris = size(obj.Triangles,1) ; 
             nPts = size(refPoints,1) ;
             nDims = size(refPoints,2) ;
@@ -580,67 +580,107 @@ methods
             DATA.V = sqrt(DATA.v1.^2 + DATA.v2.^2) ;
         % DATA FIELDS WITH GRADIENT
             if ~isempty(obj.Triangles) || ~isempty(obj.Quadrangles)
-                % Derivation matrices
-                    [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2],onNodes) ;
-                % Transformation Gradient
-                    DATA.Transformation = 'Transformation' ; 
-                    x1 = DATA.x1 ;
-                    x2 = DATA.x2 ;
-                    DATA.F11 = reshape(D1*squeeze(x1),[],1,nFrames) ;
-                    DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ;
-                    DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ;
-                    DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ;
-                    DATA.J2D = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % 2D Jacobian
-                    DATA.J = DATA.J2D*0+1 ; % 3D Jacobian=1 (incompressible)
-                    DATA.F33 = 1./(DATA.J2D) ; %J = det(F_3D) = det(F_2D)*F33 = 1
-                % Cauchy Strains
-                    DATA.CauchyStrains = 'Cauchy Strains' ; 
-                    DATA.C11 = DATA.F11.^2 + DATA.F21.^2 ;
-                    DATA.C22 = DATA.F12.^2 + DATA.F22.^2 ;
-                    DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
-                    DATA.C33 = DATA.F33.^2 ;
-                    [l1,l2,~,DATA.Ctheta] = eigenValues(obj,DATA.C11,DATA.C22,DATA.C12) ;
-                    DATA.lambda1 = sqrt(l1) ; 
-                    DATA.lambda2 = sqrt(l2) ; 
-                    DATA.lambda3 = 1./(DATA.lambda1.*DATA.lambda2) ;
-                % Green-Lagrange Strains
-                    DATA.Green_LagrangeStrains = 'Green-Lagrange Strains' ; 
-                    DATA.L11 = 0.5*(DATA.C11 - 1) ;
-                    DATA.L22 = 0.5*(DATA.C22 - 1) ;
-                    DATA.L12 = 0.5*(DATA.C12) ;
-                    DATA.L33 = 0.5*(DATA.C33 - 1) ;
-                    [DATA.Ldev11,DATA.Ldev22,DATA.Ldev33,DATA.Ldev12,DATA.Lmean,DATA.Leq] = deviatoric(obj,DATA.L11,DATA.L22,DATA.L33,DATA.L12) ;
-                    [DATA.Le1,DATA.Le2,DATA.Ltau,DATA.Ltheta] = eigenValues(obj,DATA.L11,DATA.L22,DATA.L12) ;
-                % Strain rate tensor (using Lagrangian fields)
-                % D = inv(F').Ldot.inv(F)
-                    Ldot11 = cat(3,0*DATA.L11(:,:,1),diff(DATA.L11,1,3)) ;
-                    Ldot22 = cat(3,0*DATA.L22(:,:,1),diff(DATA.L22,1,3)) ;
-                    Ldot12 = cat(3,0*DATA.L12(:,:,1),diff(DATA.L12,1,3)) ;
-                    idet2 = (DATA.F11.*DATA.F22 - DATA.F21.*DATA.F12).^-2 ;
-                    DATA.StrainRate = 'Strain Rate' ; 
-                    DATA.D11 = idet2.*(Ldot11.*DATA.F22.^2 + Ldot22.*DATA.F21.^2 - 2*Ldot12.*DATA.F21.*DATA.F22) ;
-                    DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
-                    DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
-                    DATA.D33 = -DATA.D11-DATA.D22 ;
-                    [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
-                    [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
-                % True Strains
-                    DATA.TrueStrain = 'True Strain' ; 
-                    DATA.TS11 = cumsum(DATA.D11,3) ;
-                    DATA.TS22 = cumsum(DATA.D22,3) ;
-                    DATA.TS12 = cumsum(DATA.D12,3) ;
-                    DATA.TS33 = cumsum(DATA.D33,3) ;
-                    [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
-                    [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
-                % Linearized Green-Lagrange Strains
-                    DATA.LinearizedStrains = 'Linearized Strains' ; 
-                    DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
-                    DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
-                    DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
-                    [DATA.Ee1,DATA.Ee2,DATA.Etau,DATA.Etheta] = eigenValues(obj,DATA.E11,DATA.E22,DATA.E12) ;
+                DATA = surfaceDataFields(obj,DATA,onNodes) ;
+            elseif size(obj.Elems,2)==2
+                DATA = barDataFields(obj,DATA) ;
             end
         % Save in the object
             obj.DataFields = DATA ;
+    end
+    
+    function DATA = surfaceDataFields(obj,DATA,onNodes)
+    % Compute data fields associated to surfacic elements
+    % Derivation matrices
+        nFrames = size(obj.MovingPoints,3) ;
+        nPoints = size(obj.MovingPoints,1) ;
+        [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2],onNodes) ;
+    % Transformation Gradient
+        DATA.Transformation = 'Transformation' ; 
+        x1 = DATA.x1 ;
+        x2 = DATA.x2 ;
+        DATA.F11 = reshape(D1*squeeze(x1),[],1,nFrames) ;
+        DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ;
+        DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ;
+        DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ;
+        DATA.J2D = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % 2D Jacobian
+        DATA.J = DATA.J2D*0+1 ; % 3D Jacobian=1 (incompressible)
+        DATA.F33 = 1./(DATA.J2D) ; %J = det(F_3D) = det(F_2D)*F33 = 1
+    % Cauchy Strains
+        DATA.CauchyStrains = 'Cauchy Strains' ; 
+        DATA.C11 = DATA.F11.^2 + DATA.F21.^2 ;
+        DATA.C22 = DATA.F12.^2 + DATA.F22.^2 ;
+        DATA.C12 = DATA.F11.*DATA.F12 + DATA.F21.*DATA.F22 ;
+        DATA.C33 = DATA.F33.^2 ;
+        [l1,l2,~,DATA.Ctheta] = eigenValues(obj,DATA.C11,DATA.C22,DATA.C12) ;
+        DATA.lambda1 = sqrt(l1) ; 
+        DATA.lambda2 = sqrt(l2) ; 
+        DATA.lambda3 = 1./(DATA.lambda1.*DATA.lambda2) ;
+    % Green-Lagrange Strains
+        DATA.Green_LagrangeStrains = 'Green-Lagrange Strains' ; 
+        DATA.L11 = 0.5*(DATA.C11 - 1) ;
+        DATA.L22 = 0.5*(DATA.C22 - 1) ;
+        DATA.L12 = 0.5*(DATA.C12) ;
+        DATA.L33 = 0.5*(DATA.C33 - 1) ;
+        [DATA.Ldev11,DATA.Ldev22,DATA.Ldev33,DATA.Ldev12,DATA.Lmean,DATA.Leq] = deviatoric(obj,DATA.L11,DATA.L22,DATA.L33,DATA.L12) ;
+        [DATA.Le1,DATA.Le2,DATA.Ltau,DATA.Ltheta] = eigenValues(obj,DATA.L11,DATA.L22,DATA.L12) ;
+    % Strain rate tensor (using Lagrangian fields)
+    % D = inv(F').Ldot.inv(F)
+        Ldot11 = cat(3,0*DATA.L11(:,:,1),diff(DATA.L11,1,3)) ;
+        Ldot22 = cat(3,0*DATA.L22(:,:,1),diff(DATA.L22,1,3)) ;
+        Ldot12 = cat(3,0*DATA.L12(:,:,1),diff(DATA.L12,1,3)) ;
+        idet2 = (DATA.F11.*DATA.F22 - DATA.F21.*DATA.F12).^-2 ;
+        DATA.StrainRate = 'Strain Rate' ; 
+        DATA.D11 = idet2.*(Ldot11.*DATA.F22.^2 + Ldot22.*DATA.F21.^2 - 2*Ldot12.*DATA.F21.*DATA.F22) ;
+        DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
+        DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
+        DATA.D33 = -DATA.D11-DATA.D22 ;
+        [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
+        [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
+    % True Strains
+        DATA.TrueStrain = 'True Strain' ; 
+        DATA.TS11 = cumsum(DATA.D11,3) ;
+        DATA.TS22 = cumsum(DATA.D22,3) ;
+        DATA.TS12 = cumsum(DATA.D12,3) ;
+        DATA.TS33 = cumsum(DATA.D33,3) ;
+        [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
+        [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
+    % Linearized Green-Lagrange Strains
+        DATA.LinearizedStrains = 'Linearized Strains' ; 
+        DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
+        DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
+        DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
+        [DATA.Ee1,DATA.Ee2,DATA.Etau,DATA.Etheta] = eigenValues(obj,DATA.E11,DATA.E22,DATA.E12) ;
+    end
+    
+    function DATA = barDataFields(obj,DATA)
+    % Compute data fields associated to rod elements
+        nPoints = size(obj.Points,1) ;
+        bars = obj.Elems(:,1:2) ;
+        nBars = size(bars,1) ;
+        nFrames = size(obj.MovingPoints,3) ;
+    % Differenciation matrix
+        D = sparse((1:nBars)'*[1 1],bars,ones(nBars,1).*[-1 1],nBars,nPoints) ;
+    % Differetiation position
+        X = reshape(cat(2,DATA.x1,DATA.x2),nPoints,2*nFrames) ;
+        DX = reshape(D*X,[],2,nFrames) ;
+    % Bars as a complex number
+        P = DX(:,1,:)+1i*DX(:,2,:) ;
+    % Length Measurement
+        DATA.Length = 'Length' ; 
+        DATA.L = abs(P) ;
+        DATA.dL = cat(3,zeros(size(DX,1),1),diff(DATA.L,1,3)) ;
+        DATA.dLtot = cumsum(DATA.dL,3) ;
+    % Strains
+        DATA.Length = 'Stretch' ; 
+        DATA.E = DATA.dLtot./DATA.L(:,1) ;
+        DATA.lambda = DATA.E + 1 ;
+        DATA.D = DATA.dL./DATA.L ;
+        DATA.TS = cumsum(DATA.D,3) ;
+    % Edge Rotation
+        DATA.Rotations = 'Rotation' ; 
+        DATA.A = angle(P) ;
+        DATA.dA = angle(cat(3,zeros(size(DX,1),1),P(:,:,2:end)./P(:,:,1:end-1))) ;
+        DATA.dAtot = cumsum(DATA.dA,3) ;
     end
 
     function [e1,e2,tau,theta] = eigenValues(obj,M11,M22,M12)
@@ -712,6 +752,18 @@ methods
                             ,'Visible','off' ...
                             ,'tag',obj.Name ...
                             ,'DisplayName','contour' ...
+                            ) ;
+            edges = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
+                            ,'vertices',obj.Points...
+                            ,'faces',obj.Edges...
+                            ,'edgecolor','flat'...
+                            ,'EdgeAlpha', 1 ...
+                            ,'linewidth',2 ...
+                            ,'facecolor','none'...
+                            ,'hittest','off' ...
+                            ,'Visible','off' ...
+                            ,'tag',obj.Name ...
+                            ,'DisplayName','edges' ...
                             ) ;
         % ADD A COLORBAR
             clrbr = colorbar(ax) ;
@@ -1013,7 +1065,7 @@ methods
                     case 'Scatter'
                         gHi = findobj(gH,'DisplayName','scatter') ;
                         % Force data on nodes
-                            if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Triangles,1)
+                            if obj.DataOnNodes && size(PlotStruct.CData,1)==size(obj.Elems,1)
                                 PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
                             end
                         % Display
@@ -1021,7 +1073,14 @@ methods
                             gHi.YData = PlotStruct.Vertices(:,2) ;
                             gHi.CData = PlotStruct.CData ;
                     case 'Edges'
-                        gHi = findobj(gH,'DisplayName','line') ;
+                        gHi = findobj(gH,'DisplayName','edges') ;
+                        % Force data on nodes
+                            if size(PlotStruct.CData,1)==size(obj.Elems,1)
+                                PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
+                            end
+                        % Display
+                            gHi.Vertices = PlotStruct.Vertices ;
+                            gHi.FaceVertexCData = PlotStruct.CData ;
                 end
             % Make the object visible
                 gHi.Visible = 'on' ;
