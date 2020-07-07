@@ -201,14 +201,17 @@ for ii = dicFrames
             % POINTS/ELEMENTS VALIDATION/DELETION
                 % DECORRELATED ELEMENTS
                     cullGeo = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
-                    if any(cullGeo) && (any(outFlag) || (normA/minNorm)<thresholdValidGeometry)
+                    if any(outFlag) || (normA/minNorm)<thresholdValidGeometry
                         switch size(WEIGHT,2) 
                             case nElems % Correlation at the element level
-                                VALID.Elems(VALID.Elems(:,ii),ii) = VALID.Elems(VALID.Elems(:,ii),ii) & ~cullGeo ; 
-                            case nNodes % Correlation at the node level$
-                                VALID.Nodes(VALID.Nodes(:,ii),ii) = VALID.Nodes(VALID.Nodes(:,ii),ii) & cullGeo ;
+                                vf = 'Elems' ;
+                            case nNodes % Correlation at the node level
+                                vf = 'Nodes' ;
                         end
-                        outFlag = false ; % Force an new iteration
+                        if any(cullGeo(VALID.(vf)(:,ii)))
+                            VALID.(vf)(VALID.(vf)(:,ii),ii) = VALID.(vf)(VALID.(vf)(:,ii),ii) & ~cullGeo(VALID.(vf)(:,ii)) ;
+                            outFlag = false ; % Force an new iteration
+                        end
                     end
                 % SET THE NON-VALID NODES TO NAN
                     Xn(~VALID.Nodes(:,ii),:,ii) = NaN ;
@@ -228,8 +231,8 @@ for ii = dicFrames
                     if plotEachIteration || (any(outFlag) && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (any(outFlag) && toc(lastPlotTime)>1/plotRate)
                         im.CData = repmat(img2,[1 1 3]) ;
                         %%
-                        residues = ... WEIGHT*corrCoeff ... Correlation coeffient
-                                    abs(diffImg) ... NR residues
+                        residues =  WEIGHT*corrCoeff ... Correlation coeffient
+                                   ... abs(diffImg) ... NR residues
                                    ... Up(:,1) ... Ux displacement
                                    ... WEIGHT*meanSquaredElemResid ... Sum of squared NR residues
                                    ... WEIGHT*((WEIGHT'*abs(diffImg))./sumWEIGHT) ...
@@ -238,7 +241,8 @@ for ii = dicFrames
                         %%
                         mesh.Vertices = Xn(:,:,ii) ;
                         mesh.Faces = Elems(VALID.Elems(:,ii),:) ;
-                        mesh.FaceVertexCData = ones(nNodes,1)*NaN ; mesh.FaceVertexCData(VALID.Nodes(:,ii)) = sqrt(sum(dU.^2,2)) ;
+                        mesh.FaceVertexCData = ones(nNodes,1)*NaN ; 
+                        mesh.FaceVertexCData(VALID.Nodes(:,ii)) = sqrt(sum(dUo(VALID.Nodes(:,ii),:).^2,2)) ;
                         %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ;
                         lastPlotTime = tic ;
                         drawnow ; 

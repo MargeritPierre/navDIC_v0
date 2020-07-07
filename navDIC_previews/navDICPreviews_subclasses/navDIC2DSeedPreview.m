@@ -1,7 +1,7 @@
 classdef navDIC2DSeedPreview < navDICCameraPreview
     
     properties
-        SeedName = {} ;
+        Seed
     end
     
     methods
@@ -18,10 +18,10 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                         camID = seed.CamIDs ;
                     end
                 % Superclass constructor call
-                    prev = prev@navDICCameraPreview(hd,camID) ;
+                    prev = prev@navDICCameraPreview(hd,camID,false) ;
                     if ~prev.isValid ; return ; end
-                    prev.fig.Name = ['navDIC Seed Preview: ',seed.Name] ;
-                    prev.SeedName = seed.Name ;
+                    prev.Seed = seed ;
+                    prev.fig.Name = ['navDIC Seed Preview: ',prev.Seed.Name] ;
                 % Update the preview
                     prev = updatePreview(prev,hd) ;
             end
@@ -32,9 +32,8 @@ classdef navDIC2DSeedPreview < navDICCameraPreview
                     prev = updatePreview@navDICCameraPreview(prev,hd) ;
                     if ~prev.isValid ; return ; end
                 % Update seed preview
-                    seedID = ismember({hd.Seeds.Name},prev.SeedName) ;
                     prev.AxesImg.UserData.currentFrame = hd.CurrentFrame ;
-                    hd.Seeds(seedID).updateSeedPreview(hd,prev.AxesImg) ;
+                    prev.Seed.updateSeedPreview(hd,prev.AxesImg) ;
             end
     end
     

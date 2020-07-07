@@ -58,7 +58,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Contrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
                 % Update the preview
-                    prev = updatePreview(prev,hd) ;
+                    %prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE

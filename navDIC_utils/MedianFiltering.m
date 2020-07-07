@@ -3,7 +3,7 @@ clearvars -except hd
 global hd
 
 cam = 1 ;
-medFiltSize = 3 ;
+medFiltSize = 5 ;
 newCam = 3 ;
 newCamName = 'MedianFiltered' ;
 

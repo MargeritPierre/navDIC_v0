@@ -7,16 +7,16 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 3 ;
+        seedNumber = 2 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
-        dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
-        refFrame = 'first' ; % Reference image ('first' , 'last' or number)
+        dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
+        refFrame = 'last' ; % Reference image ('first' , 'last' or number)
         refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
         normToImageClassRange = true ; % Normalize images to their dataclass range
         timeMeanLength = 0 ; % Time averaging of images
         strainCriterion = 'full' ; % strain gradient penalization: 'full' or 'normal'
-        showInit = false ;
+        showInit = true ;
         codeProfile = false ; % Code timing
         figTag = 'Global DIC' ;
 
@@ -32,10 +32,10 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0*0.025 ; 0.2 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.05 ; 0.2 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -58,14 +58,14 @@ end % END OF INITIALIZATION
                     ;
     % Geometry validation criteria
         cullOutOfFrame = true ; % Cull out of frame points
-        WEIGHT = INSIDE ; % MAPPING ; % For local averaging and difference image moments computations
-        minCorrCoeff = .0 ; % Below this, elements are culled
+        WEIGHT = INSIDE ; MAPPING ; % % % For local averaging and difference image moments computations
+        minCorrCoeff = 0.99 ; % Below this, elements are culled
         maxMeanElemResidue = Inf ; % Above this, elements are culled
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         stepRatio = 1 ;%0.15 ; % Descent step ratio, damping the convergence
-        regCrit = 'abs' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 5*1e4 ; % Strain gradient penalisation coefficient
+        regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
+        beta = 1*1e5 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
@@ -77,9 +77,9 @@ end % END OF INITIALIZATION
         reverseReference = true ;
         strainOnNodes = true ;
     % Plotting
-        plotRate = 1 ; % Plot Refresh Frequency 
+        plotRate = 0 ; % Plot Refresh Frequency 
         plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
-        plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
+        plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
         codeProfile = false ;

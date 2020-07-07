@@ -542,17 +542,29 @@ methods
         if isempty(obj.MovingPoints) ; return ; end
         if nargin<2 ; onNodes = obj.DataOnNodes ; end
         nFrames = size(obj.MovingPoints,3) ;
+        nCoord = size(obj.MovingPoints,2) ;
         nPoints = size(obj.MovingPoints,1) ;
-        % REFERENCE FRAME
-            refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
-            if isempty(refFrame) ; refFrame=1 ; end
+        % REFERENCE CONFIGURATION
+            if 0 % common reference frame
+                refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
+                if isempty(refFrame) ; refFrame=1 ; end
+                X = obj.MovingPoints(:,:,refFrame) ;
+            elseif 1 % one ref frame for each node
+                % max return the first occurrence, so this is equivalent to
+                % find the first valid index
+                [~,refFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
+                X = reshape(permute(obj.MovingPoints,[1 3 2]),[],nCoord) ;
+                X = X(sub2ind([nPoints nFrames],1:nPoints,refFrame(:)'),:) ;
+            else % seed reference frame
+                X = obj.MovingPoints(:,:,obj.RefFrame) ;
+            end
         % POSITION
             DATA.Position = 'Position' ;
             % NaNs
                 DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
             % Reference Coordinates
-                DATA.X1 = obj.MovingPoints(:,1,refFrame) ;
-                DATA.X2 = obj.MovingPoints(:,2,refFrame) ;
+                DATA.X1 = X(:,1) ;
+                DATA.X2 = X(:,2) ;
             % Current Coordinates
                 DATA.x1 = obj.MovingPoints(:,1,:) ;
                 DATA.x2 = obj.MovingPoints(:,2,:) ;
@@ -1017,8 +1029,8 @@ methods
             % Follow point if needed
                 if ~isempty(ax.UserData.axesPositionReference) && ~any(isnan(ax.UserData.axesPositionReference))
                     % Center and range of axis limits
-                        cen = round(obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame)) ; 
-                        ran = round(ax.UserData.axesPositionReference(3:4)) ;
+                        cen = (obj.interpMat(ax.UserData.axesPositionReference(1:2))*obj.MovingPoints(:,:,ax.UserData.currentFrame)) ; 
+                        ran = (ax.UserData.axesPositionReference(3:4)) ;
                     % Update limits
                         if ~any(isnan([cen ran]))
                             [nI,nJ] = size(obj.refImgs{1}) ;
