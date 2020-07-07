@@ -3,7 +3,7 @@
     cam = 1 ;
     refFrame = 1 ;
     
-    refImg = hd.Images{cam}(:,:,refFrame) ;
+    refImg = hd.Images{cam}{refFrame} ;
     [nI,nJ,nC] = size(refImg) ;
         
     clf ;

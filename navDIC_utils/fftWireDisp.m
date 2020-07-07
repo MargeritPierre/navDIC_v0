@@ -15,7 +15,7 @@ fig = clf('reset')  ;
     U0 = 33 ;
 
 % Import Images
-    IMG = hd.Images{camID}(:,:,:,frames) ;
+    IMG = cat(4,hd.Images{camID}{frames}) ;
     
 % Work dimensions 
    dimOrder = [dimDisp,setdiff(1:ndims(IMG),dimDisp)] ;

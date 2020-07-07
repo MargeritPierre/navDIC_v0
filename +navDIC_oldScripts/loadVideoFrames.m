@@ -65,9 +65,9 @@ function [setup,hd] = loadVideoFrames(hd,filename)
 
     % Change the handles
         hd.Images = {} ;
-        hd.Images{1} = IMG ;
+        hd.Images{1} = num2cell(IMG,1:3) ;
         hd.InputData = [] ;
-        hd.nFrames = max(size(IMG,4)) ;
+        hd.nFrames = size(IMG,4) ;
         hd.CurrentFrame = 1 ;
         hd.Cameras = Camera ;
 

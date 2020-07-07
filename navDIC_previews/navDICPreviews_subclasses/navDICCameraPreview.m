@@ -8,6 +8,8 @@ classdef navDICCameraPreview < navDICPreview
             AxesImg = [] ;
         % Handles to the Image Display
             Img = [] ;
+        % Options
+            BlackAndWhiteImage = true ;
     end
     
     methods
@@ -45,8 +47,8 @@ classdef navDICCameraPreview < navDICPreview
                 % Set the figure at the right size
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
-                    roiCam = hd.Cameras(ID).VidObj.ROIPosition ;
-                    resCam = roiCam(3:4) ;
+                    %roiCam = hd.Cameras(ID).VidObj.ROIPosition ; resCam = roiCam(3:4) ;
+                    sz = size(hd.Images{ID}{end}) ; resCam = sz([2,1]) ;
                     ratios = resCam./posFig ;
                     ratios = ratios./max(ratios) ;
                     newSizeFig = posFig.*ratios ;
@@ -56,7 +58,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Contrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
                 % Update the preview
-                    %prev = updatePreview(prev,hd) ;
+                    prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE
@@ -67,7 +69,7 @@ classdef navDICCameraPreview < navDICPreview
                 % Try to get the last acquired image on camera
                     img = [] ;
                     try
-                        img = hd.Images{prev.CameraID}(:,:,:,hd.CurrentFrame) ;
+                        img = hd.Images{prev.CameraID}{hd.CurrentFrame} ;
                     end
                     if isempty(img) 
                         %prev.Img.CData = 0.5 + 0*prev.Img.CData ;
@@ -77,8 +79,7 @@ classdef navDICCameraPreview < navDICPreview
                     % Process
                         %img = single(img) ;
                         %img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
-                    nBands = size(img,3) ;
-                    if nBands == 1
+                    if prev.BlackAndWhiteImage && size(img,3) == 1 && isinteger(img) 
                         prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
                         prev.Img.CData = img ;

@@ -20,12 +20,12 @@ function hd = saveCurrentFrame(hd,varargin)
     if ~isempty(hd.Cameras) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         for camID = 1:length(hd.Cameras)
             % A folder by camera
-                folderName = [wd.Path,camsFolderName,'/',hd.Cameras(camID).Name] ;
+                folderName = [wd.Path,filesep,camsFolderName,filesep,hd.Cameras(camID).Name] ;
             % Is the folder exists ?
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
-                nameImg = [folderName,'\',wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
-                imwrite(uint8(255*hd.Images{camID}(:,:,:,frameToSave)),nameImg) ;
+                nameImg = [folderName,filesep,wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                imwrite(hd.Images{camID}{frameToSave},nameImg) ;
         end
     end
 

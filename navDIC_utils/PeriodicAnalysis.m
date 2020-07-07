@@ -11,7 +11,7 @@
     nodesByQuad = 4 ; % 4 or 8 
     nPx = 40 ; nPy = nPx ;
     refFrame = 1 ;
-    IMG = @(ii)repmat(hd.Images{1}(:,:,:,ii),[1 1 3]) ;
+    IMG = @(ii)repmat(hd.Images{1}{ii},[1 1 3]) ;
 
     indQUADS = logical([0 1 1 1 0]'*[0 0 1 1 1 1 0 0]) ;
     nQuads = sum(indQUADS(:)) ;
