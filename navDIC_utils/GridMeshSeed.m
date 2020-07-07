@@ -1,7 +1,7 @@
 %% CREATE A GRID MESH SEED
     global hd
     cam = 1 ;
-    refFrame = 1 ;
+    refFrame = 109 ;
     
     refImg = hd.Images{cam}{refFrame} ;
     [nI,nJ,nC] = size(refImg) ;
@@ -15,7 +15,7 @@
     
 %% Create the grid
     % Number of nodes
-        nX = 14 ; nY = 14 ;
+        nX = 100 ; nY = 40 ;
     % Initial grid corners position
         pos = [1 1 ; nJ 1 ; nJ nI ; 1 nI] ;
         poly = findobj(gca,'type','images.roi.polygon') ;
@@ -60,7 +60,7 @@
         
 %% Create the seed
     newSeed = copy(hd.Seeds(end)) ;
-    newSeed.Name = 'Macro' ;
+    newSeed.Name = 'Grid' ;
     newSeed.Elems = elems ;
     newSeed.Points = pts.Vertices ;
     newSeed.MovingPoints = repmat(pts.Vertices,[1 1 hd.nFrames])*NaN ;

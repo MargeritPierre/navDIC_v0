@@ -13,7 +13,7 @@ idx([3 17 20 23 46 49 52 75 81 101 107 130 133 139 159 165 188 191 217]) = ...
 idx = 1:2:hd_bkp.nFrames ;
 
 %%
-idx = 2:hd_bkp.nFrames ;
+idx = 3:2:hd_bkp.nFrames-1 ;
 
 %%
 for cam = 1:numel(hd_bkp.Images) ; hd.Images{cam} = hd_bkp.Images{cam}(idx) ; end

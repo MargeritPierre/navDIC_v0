@@ -185,7 +185,7 @@ methods
 
 % ------- GLOBAL/LOCAL COORDINATES MAPPING ------------------------------
 % Works for triangles and quadrangles only (P1)
-% (e1,e2) in [0->1]Â²
+% (e1,e2) in [0->1]²
 %               3        |          4--3
 %        TRI:   | \      |  QUAD:   |  |
 %               1--2     |          1--2
@@ -198,7 +198,7 @@ methods
     end
     
     function [elmtData,isTri,isQuad] = prepareElements(obj,elmt,nodeData)
-    % Prepare the elemtent lists for mapping functions
+    % Prepare the element lists for mapping functions
         if nargin<2 ; elmt = 1:size(obj.Elems,1) ; end
         if nargin<3 ; nodeData = obj.Points ; end
         nodeData = nodeData(:,:) ; nD = size(nodeData,2) ;
@@ -279,10 +279,10 @@ methods
     % Prepare elements
         [elmtPts,isTri,isQuad] = prepareElements(obj,elmt,refPts) ;
     % Hessian
-        H = NaN(size(elmt,1),6) ;
-        if any(isTri) ; H(isTri,:) = 0 ; end
+        H = zeros(size(elmt,1),6) ;
+        %if any(isTri) ; H(isTri,:) = 0 ; end
         if any(isQuad)
-            H(isQuad,[1 2 3 4]) =  0 ;
+            %H(isQuad,[1 2 3 4]) =  0 ;
             H(isQuad,[5 6]) =  elmtPts(isQuad,:,1) + elmtPts(isQuad,:,3) - elmtPts(isQuad,:,4) - elmtPts(isQuad,:,2) ;
         end
     end
@@ -526,7 +526,7 @@ methods
         
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% MESH DATA HANDLING AND COMPUATTION
+% MESH DATA HANDLING AND COMPUTATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
     function set.DataOnNodes(obj,val)

@@ -7,7 +7,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 2 ;
+        seedNumber = 1 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'last' ; % Reference image ('first' , 'last' or number)
@@ -78,7 +78,7 @@ end % END OF INITIALIZATION
         strainOnNodes = true ;
     % Plotting
         plotRate = 0 ; % Plot Refresh Frequency 
-        plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
+        plotEachIteration = true ; % Plot at every iteration (without necessary pausing, bypass plotRate)
         plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
