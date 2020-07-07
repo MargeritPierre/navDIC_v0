@@ -12,13 +12,13 @@
 % Parameters
     global hd
     % New Seed
-        fromSeedNumber = 5 ;
-        newSeedNumber = 6 ;
-        newSeedName = 'CrossesGrid' ;
+        fromSeedNumber = 2 ;
+        newSeedNumber = 3 ;
+        newSeedName = 'Crosses' ;
     % Crosses
         L = 40 ; % Member length (in pixels)
         AngleMembers = [0 90 180 270]*pi/180 ; % Angle of the cross members
-        AngleShift = repmat([1;-1;1;-1;1;-1;1;-1;1;-1;-1;1;-1;1;-1;1;-1;1;-1;1]*5*pi/180,1000,1) ; 60*pi/180 ;
+        AngleShift = zeros(1000,1) ; repmat([1;-1;1;-1;1;-1;1;-1;1;-1;-1;1;-1;1;-1;1;-1;1;-1;1]*5*pi/180,1000,1) ; 60*pi/180 ;
     
 % Create the new Seed
     hd.Seeds(newSeedNumber) = copy(hd.Seeds(fromSeedNumber)) ;
@@ -39,15 +39,16 @@
     % Other point data
         hd.Seeds(newSeedNumber).Points = hd.Seeds(newSeedNumber).MovingPoints(:,:,1) ; 
     % Elements
-        hd.Seeds(newSeedNumber).Elems = [] ;
-        for t = 1:nMembers
-            if t==nMembers
-                indP = [nMembers+1 t 1] ;
-            else
-                indP = [nMembers+1 t 1+t] ;
-            end
-            hd.Seeds(newSeedNumber).Elems((1:nNodes)+(t-1)*nNodes,:) = (1:nNodes)' + (indP(:)'-1)*nNodes ;
-        end
+        hd.Seeds(newSeedNumber).Elems = kron([1:nNodes]',ones(nMembers,2)) + nNodes*kron(ones(nNodes,1),[[0:nMembers-1]' nMembers*ones(nMembers,1)]) ;
+%         hd.Seeds(newSeedNumber).Elems = [] ;
+%         for t = 1:nMembers
+%             if t==nMembers
+%                 indP = [nMembers+1 t 1] ;
+%             else
+%                 indP = [nMembers+1 t 1+t] ;
+%             end
+%             hd.Seeds(newSeedNumber).Elems((1:nNodes)+(t-1)*nNodes,:) = (1:nNodes)' + (indP(:)'-1)*nNodes ;
+%         end
         
 % Other Data Fields
     hd.Seeds(newSeedNumber).computeDataFields ;
@@ -61,10 +62,16 @@
     axis tight
     axis off
     colormap gray
-    pa = patch('Vertices',hd.Seeds(newSeedNumber).Points,'Faces',hd.Seeds(newSeedNumber).Triangles,'facecolor','w','facealpha',.1,'edgecolor','r') ;
+    pa = patch('Vertices',hd.Seeds(newSeedNumber).Points,'Faces',hd.Seeds(newSeedNumber).Elems,'facecolor','w','facealpha',.1,'edgecolor','r') ;
     pts = plot(hd.Seeds(newSeedNumber).Points(:,1),hd.Seeds(newSeedNumber).Points(:,2),'.r','markersize',15) ;
         
-        
+    
+%% CONVERT TO EDGES ONLY
+
+N = 99 ; 
+B = 4 ; 
+clc
+elems = kron([1:N]',ones(B,2)) + N*kron(ones(N,1),[[0:B-1]' B*ones(B,1)])
         
         
 

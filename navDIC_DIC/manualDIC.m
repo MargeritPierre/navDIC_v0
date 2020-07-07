@@ -7,7 +7,7 @@
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 4 ;
+        seedNumber = 2 ;
         frames = '[1:end]' ; '[1,202,282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)

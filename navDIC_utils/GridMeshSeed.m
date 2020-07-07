@@ -15,7 +15,7 @@
     
 %% Create the grid
     % Number of nodes
-        nX = 11 ; nY = 10 ;
+        nX = 14 ; nY = 14 ;
     % Initial grid corners position
         pos = [1 1 ; nJ 1 ; nJ nI ; 1 nI] ;
         poly = findobj(gca,'type','images.roi.polygon') ;
@@ -60,7 +60,7 @@
         
 %% Create the seed
     newSeed = copy(hd.Seeds(end)) ;
-    newSeed.Name = 'MacroGrid' ;
+    newSeed.Name = 'Macro' ;
     newSeed.Elems = elems ;
     newSeed.Points = pts.Vertices ;
     newSeed.MovingPoints = repmat(pts.Vertices,[1 1 hd.nFrames])*NaN ;
