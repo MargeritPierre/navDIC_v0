@@ -47,8 +47,13 @@ classdef navDICCameraPreview < navDICPreview
                 % Set the figure at the right size
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
-                    %roiCam = hd.Cameras(ID).VidObj.ROIPosition ; resCam = roiCam(3:4) ;
-                    sz = size(hd.Images{ID}{end}) ; resCam = sz([2,1]) ;
+                    if ~isempty(hd.Images) && ~isempty(hd.Images{ID})
+                        sz = size(hd.Images{ID}{end}) ; 
+                        resCam = sz([2,1]) ;
+                    else
+                        roiCam = hd.Cameras(ID).VidObj.ROIPosition ; 
+                        resCam = roiCam(3:4) ;
+                    end
                     ratios = resCam./posFig ;
                     ratios = ratios./max(ratios) ;
                     newSizeFig = posFig.*ratios ;
