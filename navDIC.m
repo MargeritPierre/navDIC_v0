@@ -562,17 +562,21 @@ function navDIC(varargin)
                         [camID,valid] = selectCameras(hd,'single') ;
                         if ~valid ; return ; end
                     % Let the user choose an image file name
-                        [file,path] = uiputfile('*.tiff',...
+                        iLength = ceil(log10(numel(hd.Images{camID}))) ;
+                        defaultName = [hd.WorkDir.Path,'\',hd.Cameras(camID).Name,'\img_%0' num2str(iLength) 'i',hd.WorkDir.ImagesExtension] ;
+                        [file,path] = uiputfile(['*.' hd.WorkDir.ImagesExtension],...
                                         'SELECT THE COMMON IMAGE PATH', ... 
-                                        [hd.WorkDir.Path,'\',hd.Cameras(camID).Name,'\img',hd.WorkDir.ImagesExtension] ...
+                                        defaultName ...
                                         ) ;
                         if path==0 ; return ; end
-                        [path,commonName,ext] = fileparts([path,file]) ;
+                        template = regexprep([path file],{'\\'},{'\\\\'}) ;
+                        %[path,commonName,ext] = fileparts([path,file]) ;
                     % Save All Images
                         wtbr = waitbar(0,'Writing Images...') ;
                         nFrames = numel(hd.Images{camID}) ;
                         for fr = 1:nFrames 
-                            filename = [path,'/',commonName,'_',num2str(fr),ext] ;
+                            %filename = [path,'/',commonName,'_',num2str(fr),ext] ;
+                            filename = num2str(fr,template) ;
                             imwrite(hd.Images{camID}{fr},filename) ;
                             wtbr = waitbar(fr/nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
                         end

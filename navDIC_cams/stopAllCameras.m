@@ -7,6 +7,7 @@ function hd = stopAllCameras(hd)
         for c = 1:length(hd.Cameras)
             if strcmp(hd.Cameras(c).CurrentState,'ghost') ; continue ; end
             cam = hd.Cameras(c).VidObj ;
+            if isstruct(cam) ; continue ; end % when the videoinput is unavailable
             if strcmp(cam.Running,'off') ; continue ; end
             stop(cam)
             while strcmp(cam.Running,'on') ; end
