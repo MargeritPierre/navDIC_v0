@@ -3,8 +3,9 @@
 % Get the Seed
     Seed = hd.Seeds(seedNumber) ;
 
+% Convert elements to triangles (<TODO> support fort all element types..)
+    Elems = [Seed.Triangles ; Seed.Quadrangles(:,[1 2 4]) ; Seed.Quadrangles(:,[3 4 2])] ;
 % Get Infos
-    Elems = Seed.Triangles ;
     nNodesByElements = size(Elems,2) ;
     switch refConfig
         case 'Nodes'

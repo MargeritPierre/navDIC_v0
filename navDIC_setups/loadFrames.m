@@ -163,7 +163,9 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
         % IMAGE LOADING AND PROCESSING
             % Load function
-                loadFrame = @(id) imread([path,filesep,commonName,idSTR{id},ext]) ;
+                nFrames = numel(fileNames) ;
+                loadFrame = @(id) imread([path,filesep,fileNames{id}]) ;
+                %loadFrame = @(id) imread([path,filesep,commonName,idSTR{id},ext]) ;
                 imData = loadFrame(1) ;
             % Get Infos
                 [nI,nJ,nColors] = size(imData) ;

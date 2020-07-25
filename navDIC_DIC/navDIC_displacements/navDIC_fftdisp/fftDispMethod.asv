@@ -105,8 +105,8 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                 imagettesMov = double(imagettesMov) ;
                         
             % Zero-mean
-                imagettesRef = imagettesRef-reshape(mean(reshape(imagettesRef,[],nPtsValid),1),[1 1 nPtsValid]) ;
-                imagettesMov = imagettesMov-reshape(mean(reshape(imagettesMov,[],nPtsValid),1),[1 1 nPtsValid]) ;
+                %imagettesRef = imagettesRef-reshape(mean(reshape(imagettesRef,[],nPtsValid),1),[1 1 nPtsValid]) ;
+                %imagettesMov = imagettesMov-reshape(mean(reshape(imagettesMov,[],nPtsValid),1),[1 1 nPtsValid]) ;
 
             % Windowing
                 if windowing

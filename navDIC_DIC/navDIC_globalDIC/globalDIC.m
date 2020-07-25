@@ -7,10 +7,10 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 1 ;
+        seedNumber = 3 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
-        dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
-        refFrame = 'last' ; % Reference image ('first' , 'last' or number)
+        dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
+        refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
         averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
         normToImageClassRange = true ; % Normalize images to their dataclass range
@@ -19,7 +19,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
         showInit = true ;
         codeProfile = false ; % Code timing
         figTag = 'Global DIC' ;
-
+1+1
     % Perform Initialization
         globalDIC_01_LoadFrames ;
         globalDIC_02_0_ProcessSeed ;
@@ -32,10 +32,10 @@ end % END OF INITIALIZATION
 
 % PARAMETERS
     % Displacement guess
-        startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
+        startWithNavDICPositions = 'all' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.05 ; 0.2 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.025 ; 0.2 ; %0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =   ... 'finiteDiff' ... first order finite difference
                          'gaussian' ... optimized gaussian
@@ -59,7 +59,7 @@ end % END OF INITIALIZATION
     % Geometry validation criteria
         cullOutOfFrame = true ; % Cull out of frame points
         WEIGHT = INSIDE ; MAPPING ; % % % For local averaging and difference image moments computations
-        minCorrCoeff = 0.99 ; % Below this, elements are culled
+        minCorrCoeff = 0 ; % Below this, elements are culled
         maxMeanElemResidue = Inf ; % Above this, elements are culled
         thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization

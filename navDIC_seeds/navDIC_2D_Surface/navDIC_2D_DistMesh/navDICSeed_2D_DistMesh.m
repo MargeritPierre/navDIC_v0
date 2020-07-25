@@ -460,11 +460,6 @@ methods
                 % Build sparse matrices
                     D1 = sparse(iii(:),jjj(:),vvvD1(:),nTris,nPts) ;
                     D2 = sparse(iii(:),jjj(:),vvvD2(:),nTris,nPts) ;
-            % Apply to nodes if needed (mean over connected triangles)
-                if onNodes
-                    T = obj.elem2nod ;
-                    D1 = T*D1 ; D2 = T*D2 ;
-                end
         else % THERE IS DIFFERENT ELEMENT TYPES
             % Build the element matrices
                 elems = obj.Elems ;
@@ -496,6 +491,11 @@ methods
             % Differentiation matrices
                 D1 = sparse(eee(:),nnn(:),vvvD1(:),size(elems,1),size(refPoints,1)) ;
                 D2 = sparse(eee(:),nnn(:),vvvD2(:),size(elems,1),size(refPoints,1)) ;
+        end
+    % Apply to nodes if needed (mean over connected elements)
+        if onNodes
+            T = obj.elem2nod ;
+            D1 = T*D1 ; D2 = T*D2 ;
         end
     end
 

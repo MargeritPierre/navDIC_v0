@@ -15,9 +15,9 @@
     
 %% Create the grid
     % Number of nodes
-        nX = 120 ; nY = round(nI/nJ*(nX-1))+1 ;
+        nX = 10 ; nY = round(nI/nJ*(nX-1))+1 ;
     % Initial grid corners position
-        pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.02*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
+        pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.05*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
         poly = findobj(gca,'type','images.roi.polygon') ;
         if isempty(poly) 
             poly = images.roi.Polygon('Parent',gca ...
@@ -60,12 +60,13 @@
         
 %% Create the seed
     newSeed = copy(hd.Seeds(end)) ;
-    newSeed.Name = 'FinestGrid' ;
+    newSeed.Name = 'Grid' ;
     newSeed.Elems = elems ;
     newSeed.Points = pts.Vertices ;
     newSeed.MovingPoints = repmat(pts.Vertices,[1 1 hd.nFrames])*NaN ;
     
 %% Push in navDIC
     hd.Seeds(end+1) = newSeed ;
+    
     
     
