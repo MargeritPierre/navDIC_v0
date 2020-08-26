@@ -7,6 +7,7 @@ classdef navDICSeed_2D_Jauge < navDICSeed
         A = [] ;
     end
     
+    
     methods
         
         function obj = navDICSeed_2D_Jauge(hd)
