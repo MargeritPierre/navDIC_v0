@@ -231,8 +231,8 @@ for ii = dicFrames
                     if plotEachIteration || (any(outFlag) && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (any(outFlag) && toc(lastPlotTime)>1/plotRate)
                         im.CData = repmat(img2,[1 1 3]) ;
                         %%
-                        residues =  WEIGHT*corrCoeff ... Correlation coeffient
-                                   ... abs(diffImg) ... NR residues
+                        residues = ... WEIGHT*corrCoeff ... Correlation coeffient
+                                    abs(diffImg) ... NR residues
                                    ... Up(:,1) ... Ux displacement
                                    ... WEIGHT*meanSquaredElemResid ... Sum of squared NR residues
                                    ... WEIGHT*((WEIGHT'*abs(diffImg))./sumWEIGHT) ...

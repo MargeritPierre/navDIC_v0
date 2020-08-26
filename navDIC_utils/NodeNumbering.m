@@ -1,10 +1,10 @@
 global hd
 
-Seed = seed ; %Seeds(4) ; %hd.Seeds(4) ;
+Seed = hd.Seeds(1) ; %Seeds(4) ; %hd.Seeds(4) ;
 cam = 1 ;
 frame = 1 ;
 
-Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
+Pts = Seed.Points ; Seed.MovingPoints(:,:,frame) ;
 Elems = Seed.Elems ;
 IMG = hd.Images{cam}{frame} ;
 

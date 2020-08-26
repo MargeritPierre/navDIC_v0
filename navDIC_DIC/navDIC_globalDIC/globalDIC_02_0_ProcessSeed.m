@@ -4,7 +4,10 @@
     Seed = hd.Seeds(seedNumber) ;
 
 % Convert elements to triangles (<TODO> support fort all element types..)
-    Elems = [Seed.Triangles ; Seed.Quadrangles(:,[1 2 4]) ; Seed.Quadrangles(:,[3 4 2])] ;
+    Elems = Seed.Triangles ;
+    if ~isempty(Seed.Quadrangles) ; 
+        Elems = [Elems ; Seed.Quadrangles(:,[1 2 4]) ; Seed.Quadrangles(:,[3 4 2])] ; 
+    end
 % Get Infos
     nNodesByElements = size(Elems,2) ;
     switch refConfig
