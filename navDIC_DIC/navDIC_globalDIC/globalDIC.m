@@ -19,7 +19,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
         showInit = true ;
         codeProfile = false ; % Code timing
         figTag = 'Global DIC' ;
-1+1
+        
     % Perform Initialization
         globalDIC_01_LoadFrames ;
         globalDIC_02_0_ProcessSeed ;

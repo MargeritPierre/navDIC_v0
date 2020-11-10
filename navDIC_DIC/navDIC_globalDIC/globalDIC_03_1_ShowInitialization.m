@@ -7,7 +7,7 @@
         axes('position',[0 0 1 1])
             im = imagesc(1:nJ,1:nI,img0) ; colormap(gray)
             ttl = title('','interpreter','none','units','normalized','position',[.005 0.995],'verticalalignment','top','horizontalalignment','left','color','r') ;
-            mesh = trisurf(Elems,Nodes(:,1),Nodes(:,2),Nodes(:,1)*0,'facecolor','none','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
+            mesh = patch('faces',Elems,'vertices',Nodes,'facecolor','none','edgecolor','r','linewidth',0.5,'edgealpha',0.5,'facealpha',0.5) ;
             axis tight
             axis equal
             set(gca,'xtick',[],'ytick',[])

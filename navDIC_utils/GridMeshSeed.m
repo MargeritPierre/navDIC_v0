@@ -1,7 +1,7 @@
 %% CREATE A GRID MESH SEED
     global hd
     cam = 1 ;
-    refFrame = 1 ;
+    refFrame = hd.nFrames ;
     
     refImg = hd.Images{cam}{refFrame} ;
     [nI,nJ,nC] = size(refImg) ;
@@ -15,7 +15,7 @@
     
 %% Create the grid
     % Number of nodes
-        nX = 120 ; nY = round(nI/nJ*(nX-1))+1 ;
+        nX = round(1500/15) ; nY = NaN ; round(nI/nJ*(nX-1))+1 ;
     % Initial grid corners position
         pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.02*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
         poly = findobj(gca,'type','images.roi.polygon') ;
@@ -27,6 +27,10 @@
                                     ) ; 
         end
     % Grid Function
+        if isnan(nY)
+            L = range(poly.Position,1) ;
+            nY = round(L(2)/L(1)*(nX-1))+1 ;
+        end
         [ee,nn] = meshgrid(linspace(0,1,nX),linspace(0,1,nY)) ;
         N = [(1-ee(:)).*(1-nn(:)) ee(:).*(1-nn(:)) ee(:).*nn(:) (1-ee(:)).*nn(:)] ; 
         grid = @(pos) N*pos ;
@@ -47,6 +51,8 @@
                             ,'markersize',25 ...
                             ) ; 
         end
+        pts.Faces = elems ;
+        pts.Vertices = grid(poly.Position) ;
     % Polygon listener
         list = event.listener(poly,'MovingROI',@(src,evt)set(pts,'vertices',grid(poly.Position))) ;
         
@@ -60,12 +66,12 @@
         
 %% Create the seed
     newSeed = copy(hd.Seeds(end)) ;
-    newSeed.Name = 'FinestGrid' ;
+    newSeed.Name = 'Grid' ;
     newSeed.Elems = elems ;
     newSeed.Points = pts.Vertices ;
     newSeed.MovingPoints = repmat(pts.Vertices,[1 1 hd.nFrames])*NaN ;
     
 %% Push in navDIC
-    hd.Seeds(end+1) = newSeed ;
+    hd.Seeds(end) = newSeed ;
     
     

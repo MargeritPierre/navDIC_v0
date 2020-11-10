@@ -1,6 +1,6 @@
 global hd
 
-Seed = seed ; %Seeds(4) ; %hd.Seeds(4) ;
+Seed = hd.Seeds(5) ;
 cam = 1 ;
 frame = 1 ;
 

@@ -24,7 +24,7 @@
             case 'normal'
                 Ed = sparse(2*nEdges,3*nElems) ; % projection on the normal
             case 'full'
-                Ed = sparse(4*nEdges,3*nElems) ; % full gradient
+                Ed = sparse(4*nEdges,4*nElems) ; % full gradient
         end
     % Process
         wtbr = waitbar(0,'Edge constraint...') ;

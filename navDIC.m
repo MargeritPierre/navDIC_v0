@@ -517,6 +517,12 @@ function navDIC(varargin)
                     end
                 end
             end
+        % Compatibility with older versions
+            for cam = 1:numel(hd.Images)
+                if isnumeric(hd.Images{cam})
+                    hd.Images{cam} = num2cell(hd.Images{cam},1:3) ;
+                end
+            end
         % Update the handles
             nFrames = max(cellfun(@(c)numel(c),hd.Images)) ;
             nFrames = [nFrames(:)' size(hd.TimeLine,1)] ;

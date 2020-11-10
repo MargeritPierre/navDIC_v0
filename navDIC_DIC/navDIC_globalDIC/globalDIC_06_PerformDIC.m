@@ -39,7 +39,7 @@ for ii = dicFrames
                         VALID.Nodes(:,ii) = VALID.Nodes(:,ii) & ceil(Xn(:,1,ii))<nJ+1 & floor(Xn(:,1,ii))>=1 & ceil(Xn(:,2,ii))<nI+1 & floor(Xn(:,2,ii))>=1 ;
                     end
                 % Elements
-                    VALID.Elems(:,ii) = VALID.Elems(:,ii) & sum(tri2nod(VALID.Nodes(:,ii),:),1)'==3 ; % triangles with still their three nodes valid
+                    VALID.Elems(:,ii) = VALID.Elems(:,ii) & sum(tri2nod(VALID.Nodes(:,ii),:),1)'==nNodesByElements ; % elements with still all their nodes valid
                 % Edges
                     VALID.Edges(:,ii) = VALID.Edges(:,ii) & sum(edg2nod(VALID.Nodes(:,ii),:),1)'==2 ; % edges with still their two ends points valid
                     VALID.NakedEdges(:,ii) = sum(tri2edg(:,VALID.Elems(:,ii)),2)<2 ; % edges with less than two elements valid
@@ -134,35 +134,43 @@ for ii = dicFrames
                     dr_da = (dImg_da(validDomain_it,:)'*diffImg(validDomain_it)) ;
                 % Contraint on the SECOND displacement gradient
                     validDOF = [VALID.Nodes(:,ii);VALID.Nodes(:,ii)] ;
-                    wCon = ones(1,nVALID) ;
-                    switch strainCriterion
-                        case 'normal'
-                            vEdg = repmat(~VALID.NakedEdges(:,ii),[2 1]) ;
-                            vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
-                            CONS = B(vEle,validDOF)'*(Ed(vEdg,vEle)'*Ed(vEdg,vEle))*B(vEle,validDOF) ;
-                        case 'full'
-                            vEdg = repmat(~VALID.NakedEdges(:,ii),[4 1]) ;
-                            vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
-                            CONS = G(vEle,validDOF)'*(Ed(vEdg,vEle)'*Ed(vEdg,vEle))*G(vEle,validDOF) ;
-                            %if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
-                    end
-                    wCon = sparse(1:2*nVALID,1:2*nVALID,[wCon;wCon]) ;
-                    DU = reshape(Un(VALID.Nodes(:,ii),:,ii),[],1) ;
-                    switch regCrit
-                        case 'abs' % Strain computed from the reference state
-                        case 'rel' % Strain computed from the previous state
-                            if abs(refFrame-ii)>=2
-                                DU = DU - reshape(Un(VALID.Nodes(:,ii),:,ii-dicDir),[],1) ;
-                            end
-                    end
+                    % Edge criterion
+                        wCon = ones(1,nVALID) ;
+                        switch strainCriterion
+                            case 'normal'
+                                vEdg = repmat(~VALID.NakedEdges(:,ii),[2 1]) ;
+                                vEle = [VALID.Elems(:,ii);VALID.Elems(:,ii);VALID.Elems(:,ii)] ;
+                                CONS = B(vEle,validDOF)'*(Ed(vEdg,vEle)'*Ed(vEdg,vEle))*B(vEle,validDOF) ;
+                            case 'full'
+                                vEdg = repmat(~VALID.NakedEdges(:,ii),[4 1]) ;
+                                vEle = repmat(VALID.Elems(:,ii),[4 1]) ;
+                                CONS = G(vEle,validDOF)'*(Ed(vEdg,vEle)'*Ed(vEdg,vEle))*G(vEle,validDOF) ;
+                                %if strcmp(regCrit,'rel') ; wCon = 1./max(epsTrsh,abs(repmat(valance_it,[1 4])*G(vEle,validDOF)*[Un(VALID.Nodes(:,ii),1,ii);Un(VALID.Nodes(:,ii),2,ii)])) ; end
+                        end
+                        wCon = sparse(1:2*nVALID,1:2*nVALID,[wCon;wCon]) ;
+                        CONS = wCon*CONS*wCon ;
+                    % Bulk criterion
+                        if exist('G2','var')
+                            vEle = repmat(VALID.Elems(:,ii),[6 1]) ;
+                            CONS = CONS + G2(vEle,validDOF)'*G2(vEle,validDOF) ;
+                        end
+                    % Displacement taken into account
+                        DU = reshape(Un(VALID.Nodes(:,ii),:,ii),[],1) ;
+                        switch regCrit
+                            case 'abs' % Strain computed from the reference state
+                            case 'rel' % Strain computed from the previous state
+                                if abs(refFrame-ii)>=2
+                                    DU = DU - reshape(Un(VALID.Nodes(:,ii),:,ii-dicDir),[],1) ;
+                                end
+                        end
                 % Updating DOFs, X*a=b
                     X = ( ...
                             weight*Hess(validDOF,validDOF)*weight...
-                            + beta*wCon*CONS*wCon...
+                            + beta*CONS...
                         ) ; 
                     b = (...
                             weight*dr_da(validDOF)...
-                            - beta*wCon*CONS*DU...
+                            - beta*CONS*DU...
                         ) ;
                     a = X\b ;
                     descent = -b'*a ; % Descent direction (should be always<0)
@@ -209,7 +217,8 @@ for ii = dicFrames
                                 vf = 'Nodes' ;
                         end
                         if any(cullGeo(VALID.(vf)(:,ii)))
-                            VALID.(vf)(VALID.(vf)(:,ii),ii) = VALID.(vf)(VALID.(vf)(:,ii),ii) & ~cullGeo(VALID.(vf)(:,ii)) ;
+                            stillValid = VALID.(vf)(:,ii) ;
+                            VALID.(vf)(stillValid,ii) = VALID.(vf)(stillValid,ii) & ~cullGeo(stillValid) ;
                             outFlag = false ; % Force an new iteration
                         end
                     end

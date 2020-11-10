@@ -379,7 +379,7 @@ methods
     % that U(pts) = T*U(Nodes)
         if nargin<3 ; extrap = 'extrap' ; end
         if nargin<4 ; refPoints = obj.Points ; end
-        if isempty(obj.Triangles) % NO MESH FOR INTERPOLATION
+        if size(obj.Elems,2)<3 % NO PROPER MESH FOR INTERPOLATION
             % Distance between points and refpoints
                 dist = sum((reshape(full(Points),[],1,2)-reshape(full(refPoints),1,[],2)).^2,3) ;
             % Nearest neightbors
@@ -387,12 +387,21 @@ methods
             % Transfer matrix
                 T = sparse(pt(:),refPt(:),1,size(Points,1),size(refPoints,1)) ;
         else % THERE IS A MESH FOR INTERPOLATION
+            % Convert all elements to triangles (not ideal..)
+                elems = obj.Elems ;
+                if size(elems,2)>3
+                    nDiv = size(elems,2)-2 ;
+                    p1 = repmat(elems(:,1),[nDiv 1]) ;
+                    p2 = elems(:,2:end-1) ;
+                    p3 = elems(:,3:end) ;
+                    elems = [p1(:) p2(:) p3(:)] ;
+                end
             % Triangulation class constructor
-                tri = triangulation(obj.Triangles,refPoints) ; 
+                elems = triangulation(elems,refPoints) ; 
             % Initialization
                 indPts = ones(size(Points,1),3) ;
             % Enclosing element and barycentric positions
-                [elmt,weights] = pointLocation(tri,Points) ; 
+                [elmt,weights] = pointLocation(elems,Points) ; 
             % Outside-of-old-mesh newPoints need to be fixed (elmt=NaN)
                 outside = isnan(elmt) ;
                 if any(outside)
@@ -405,7 +414,7 @@ methods
                                 [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
                                 elmt(outside) = clstElmt ;
                             % Find the (extended) coordinates of the new point in each old closest element frame
-                                elmtNodes = obj.Triangles(clstElmt,:) ;
+                                elmtNodes = elems(clstElmt,:) ;
                                 p1 = refPoints(elmtNodes(:,1),:)' ; 
                                 p2 = refPoints(elmtNodes(:,2),:)' ; 
                                 p3 = refPoints(elmtNodes(:,3),:)' ; 
@@ -422,7 +431,7 @@ methods
                     end
                 end
             % Inside nodes
-                indPts(~outside,:) = obj.Triangles(elmt(~outside),:) ;
+                indPts(~outside,:) = elems(elmt(~outside),:) ;
             % Transfer Matrix
                 nodes = (1:size(Points,1))'*[1 1 1] ;
                 T = sparse(nodes(:),indPts(:),weights(:),size(Points,1),size(refPoints,1)) ;
@@ -549,7 +558,7 @@ methods
                 refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
                 if isempty(refFrame) ; refFrame=1 ; end
                 X = obj.MovingPoints(:,:,refFrame) ;
-            elseif 1 % one ref frame for each node
+            elseif 0 % one ref frame for each node
                 % max return the first occurrence, so this is equivalent to
                 % find the first valid index
                 [~,refFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;

@@ -4,12 +4,12 @@
 
 % Parameters
     % New Seed
-        nodesSeedNumber = 1 ;
-        newSeedNumber = 3 ;
-        newSeedName = 'UnitCells' ;
+        nodesSeedNumber = 2 ;
+        newSeedNumber = 5 ;
+        newSeedName = 'UnitCells2' ;
     % Unit Cell Nodes
-        uNodJ = [1:2:7] + 0.5 ;
-        uNodI = [1:2:7] + 0.5 ;
+        uNodJ = [1:2:9] + 0.5 ;
+        uNodI = [2:2:8] + 0.5 ;
     
 % Create the new Seed
     nodesSeed = hd.Seeds(nodesSeedNumber) ;
@@ -43,10 +43,8 @@
     newSeed.Points = uNodes ;
     % Create quad mesh
         nJ = numel(uNodJ) ; nI = numel(uNodI) ;
-        newSeed.Elems = [] ;
-        for jjj = 1:nJ-1
-            newSeed.Elems = [newSeed.Elems ; [[1:nI-1]' [5:2*nI-1]' [6:2*nI]' [2:nI]']+(jjj-1)*nI] ;
-        end
+        newSeed.Elems = (1:nI-1)' + [0 nI nI+1 1] ;
+        newSeed.Elems = repmat(newSeed.Elems,[nJ-1 1]) + nI*repelem((0:nJ-2)',nI-1) ;
     
     
 % Interpolate to the new nodes
