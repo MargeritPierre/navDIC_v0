@@ -1,11 +1,40 @@
 %% APPLY MEDIAN FILTERING ON A SERIES OF IMAGES
+
+%% FOR RELATIVELY SMALL IMAGE SERIES: vectorization
+clearvars -except hd
+global hd
+
+cam = 1 ;
+medFiltSize = 10 ;
+
+disp('')
+disp('------ Median Filtering -------')
+
+% Retrieving the images
+disp('   Concatenate images..')
+IMG = cat(4,hd.Images{cam}{:}) ;
+
+% Convert to a 2D array
+disp('   to 2D array..')
+[nI,nJ,nC,nIMG] = size(IMG) ;
+IMG = reshape(IMG,[],nIMG) ;
+
+% Median Filtering
+disp('   Median Filtering..')
+IMG = medfilt2(IMG,[1 medFiltSize],'symmetric') ;
+
+% Reshaping back
+disp('   Reshaping..')
+IMG = reshape(IMG,[nI nJ nC nIMG]) ;
+IMG = num2cell(IMG,1:3) ;
+
+
+%% FOR LONG IMAGE SERIES (Huge data): Loop (not implemented yet)
 clearvars -except hd
 global hd
 
 cam = 1 ;
 medFiltSize = 5 ;
-newCam = 3 ;
-newCamName = 'MedianFiltered' ;
 
 disp('')
 disp('------ Median Filtering -------')
@@ -13,35 +42,13 @@ disp('------ Median Filtering -------')
 % Retrieving the images
 disp('   Retrieve images..')
 IMG = hd.Images{cam} ;
-IMG = cat(4,IMG{:}) ;
 
-% Convert to a 2D array
-disp('   to 2D array..')
-sz = size(IMG) ;
-IMG = reshape(IMG,[],sz(end)) ;
+%% PUSH TO navDIC
+newCam = 3 ;
+namePrefix = ['Median ' num2str(medFiltSize)] ;
 
-% Median Filtering
-img = IMG ;
-disp('   Median Filtering..')
-wtbr = waitbar(0,'Median Filtering...') ;
-for fr = 1:size(img,2)
-    ii = fr-floor(medFiltSize/2) + (0:medFiltSize-1) ;
-    ii = min(ii,size(img,2)) ;
-    ii = max(ii,1) ;
-    img(:,fr) = median(img(:,ii),2) ;
-    wtbr = waitbar(fr/size(img,2),wtbr,['Median Filtering... (' num2str(fr) '/' num2str(size(img,2)) ')']) ;
-    drawnow ;
-end
-delete(wtbr) ;
-
-% Reshaping back
-disp('   Reshaping..')
-img = reshape(img,sz) ;
-img = num2cell(img,1:3) ;
-
-% Pushing to navDIC
 disp('   Pushing to navDIC..')
 hd.Cameras(newCam) = hd.Cameras(cam) ;
-hd.Cameras(newCam).Name = newCamName ;
-hd.Images{newCam} = img(:) ;
+hd.Cameras(newCam).Name = [namePrefix ' | ' hd.Cameras(cam).Name] ;
+hd.Images{newCam} = IMG(:) ;
 

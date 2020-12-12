@@ -550,37 +550,34 @@ methods
         DATA = struct() ;
         if isempty(obj.MovingPoints) ; return ; end
         if nargin<2 ; onNodes = obj.DataOnNodes ; end
-        nFrames = size(obj.MovingPoints,3) ;
-        nCoord = size(obj.MovingPoints,2) ;
-        nPoints = size(obj.MovingPoints,1) ;
+        [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
         % REFERENCE CONFIGURATION
-            if 0 % common reference frame
-                refFrame = find(all(all(~isnan(obj.MovingPoints(:,:,:)),1),2),1,'first') ; % <TODO!!!>
-                if isempty(refFrame) ; refFrame=1 ; end
-                X = obj.MovingPoints(:,:,refFrame) ;
-            elseif 0 % one ref frame for each node
-                % max return the first occurrence, so this is equivalent to
-                % find the first valid index
-                [~,refFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
-                X = reshape(permute(obj.MovingPoints,[1 3 2]),[],nCoord) ;
-                X = X(sub2ind([nPoints nFrames],1:nPoints,refFrame(:)'),:) ;
-            else % seed reference frame
-                X = obj.MovingPoints(:,:,obj.RefFrame) ;
-            end
+            DATA.Reference = 'Reference' ;
+            X = reshape(permute(obj.MovingPoints,[1 3 2]),[nPoints*nFrames nCoord]) ;
+            % Indice of the first valid frame (for mechanical fields)
+                [~,firstValidFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
+                DATA.FirstValidFrame = firstValidFrame(:) ;
+                indFirstValid = sub2ind([nPoints nFrames],1:nPoints,firstValidFrame(:)') ;
+                DATA.X1first = X(indFirstValid,1) ;
+                DATA.X2first = X(indFirstValid,2) ;
+            % Indice of the reference frame for gradient data computation
+            % taken as the first frame for which all the points are valid
+                dataRef = max(DATA.FirstValidFrame).*ones(nPoints,1) ;
+                DATA.StrainReference = dataRef ;
+                indRef = sub2ind([nPoints nFrames],1:nPoints,dataRef') ;
+                DATA.X1ref = X(indRef,1) ;
+                DATA.X2ref = X(indRef,2) ;
         % POSITION
             DATA.Position = 'Position' ;
             % NaNs
                 DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
-            % Reference Coordinates
-                DATA.X1 = X(:,1) ;
-                DATA.X2 = X(:,2) ;
             % Current Coordinates
                 DATA.x1 = obj.MovingPoints(:,1,:) ;
                 DATA.x2 = obj.MovingPoints(:,2,:) ;
         % Displacements
             DATA.Displacement = 'Displacement' ;
-            DATA.u1 = DATA.x1 - DATA.X1 ;
-            DATA.u2 = DATA.x2 - DATA.X2 ;
+            DATA.u1 = DATA.x1 - DATA.X1first ;
+            DATA.u2 = DATA.x2 - DATA.X2first ;
             DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
         % Velocity (pixels/image)
             DATA.Velocity = 'Velocity' ; 
@@ -600,9 +597,8 @@ methods
     function DATA = surfaceDataFields(obj,DATA,onNodes)
     % Compute data fields associated to surfacic elements
     % Derivation matrices
-        nFrames = size(obj.MovingPoints,3) ;
-        nPoints = size(obj.MovingPoints,1) ;
-        [D1,D2] = gradMat(obj,[DATA.X1 DATA.X2],onNodes) ;
+        [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
+        [D1,D2] = gradMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
     % Transformation Gradient
         DATA.Transformation = 'Transformation' ; 
         x1 = DATA.x1 ;
@@ -611,6 +607,29 @@ methods
         DATA.F12 = reshape(D2*squeeze(x1),[],1,nFrames) ;
         DATA.F21 = reshape(D1*squeeze(x2),[],1,nFrames) ;
         DATA.F22 = reshape(D2*squeeze(x2),[],1,nFrames) ;
+    % Modify the transformation if needed (reference change)
+    % F(t) = dx(t)/dXfirst 
+    %      = dx(t)/dXref * dXref/dXfirst
+    %      = Fref(t)*(Fref(tfirst))^{-1}
+        changeRef = DATA.FirstValidFrame~=DATA.StrainReference ;
+        if any(changeRef)
+            DATA.Fref11 = DATA.F11 ;
+            DATA.Fref12 = DATA.F12 ;
+            DATA.Fref21 = DATA.F21 ;
+            DATA.Fref22 = DATA.F22 ;
+        % First valid linear index
+            nData = size(DATA.F11,1) ;
+            [~,fvi] = max(~isnan(DATA.F11),[],3) ;
+            fvi = sub2ind([nData nFrames],(1:nData)',fvi) ;
+        % Inverse transformation (Fref(tfirst))^{-1}
+            [iF11,iF22,iF21,iF12] = inverse(obj,DATA.F11(fvi),DATA.F22(fvi),DATA.F21(fvi),DATA.F12(fvi)) ;
+        % New Values
+            DATA.F11 = DATA.Fref11.*iF11 + DATA.Fref12.*iF21 ;
+            DATA.F12 = DATA.Fref11.*iF12 + DATA.Fref12.*iF22 ;
+            DATA.F21 = DATA.Fref21.*iF11 + DATA.Fref22.*iF21 ;
+            DATA.F22 = DATA.Fref21.*iF12 + DATA.Fref22.*iF22 ;
+        end
+    % Other transfoermation data
         DATA.J2D = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % 2D Jacobian
         DATA.J = DATA.J2D*0+1 ; % 3D Jacobian=1 (incompressible)
         DATA.F33 = 1./(DATA.J2D) ; %J = det(F_3D) = det(F_2D)*F33 = 1
@@ -846,10 +865,8 @@ methods
                             submenus(end+1) = uimenu(mClrLims,'Label','6*sigma') ;
                             submenus(end+1) = uimenu(mClrLims,'Label','cummul','separator','on') ;
                         mClrSteps = uimenu(mColors,'Label','Steps') ;
+                            for ss = 4:4:24 ; submenus(end+1) = uimenu(mClrSteps,'Label',num2str(ss)) ; end
                             submenus(end+1) = uimenu(mClrSteps,'Label','Continuous','checked','on') ;
-                            submenus(end+1) = uimenu(mClrSteps,'Label','11') ;
-                            submenus(end+1) = uimenu(mClrSteps,'Label','7') ;
-                            submenus(end+1) = uimenu(mClrSteps,'Label','4') ;
                         submenus(end+1) = uimenu(mColors,'Label','Custom') ;
                 % Axes Behavior
                     mAxesMode = uimenu(mDisplay,'Label','Axes') ;

@@ -58,8 +58,10 @@ classdef navDICCameraPreview < navDICPreview
                     ratios = ratios./max(ratios) ;
                     newSizeFig = posFig.*ratios ;
                     prev.fig.Position = [prev.fig.Position(1:2)+(posFig-newSizeFig)/2 newSizeFig] ;
-                % Create an empty image
-                    prev.Img = imagesc(ones([fliplr(resCam) 3])*.5) ;
+                % Create an empty image as surface (for caxis scaling)
+                    img = ones([fliplr(resCam) 3])*.5 ;
+                    prev.Img = imagesc(img) ;
+                    %prev.Img = surf(JJ-0.5,II-0.5,JJ*0,img,'facecolor','flat','edgecolor','none') ;
                 % Contrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
                 % Update the preview

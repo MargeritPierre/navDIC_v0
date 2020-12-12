@@ -81,8 +81,8 @@ for ii = dicFrames
                     if refImageChanged ; img1m = img1v-WEIGHT*meanImg1 ; end
                     img2m = img2v-WEIGHT*meanImg2 ;
                 % Norm over element
-                    if refImageChanged ; normImg1 = sqrt(WEIGHT'*(img1m.^2)) ; end
-                    normImg2 = sqrt(WEIGHT'*(img2m.^2)) ;
+                    if refImageChanged ; normImg1 = sqrt((WEIGHT'*(img1m.^2))./sumWEIGHT) ; end
+                    normImg2 = sqrt((WEIGHT'*(img2m.^2))./sumWEIGHT) ;
                 % Zero-local-mean-normalized images
                     if refImageChanged ; img1mz = img1m./(WEIGHT*normImg1) ; end
                     img2mz = img2m./(WEIGHT*normImg2) ;
@@ -197,8 +197,8 @@ for ii = dicFrames
                 % Residues Maps
                     RMSE(ii,it) = norm(X*a-b) ; %sqrt(sum(diffImg(:).^2)) ;
                     relativeResidueVariation = (RMSE(ii,it)-RMSE(ii,max(1,it-1)))/RMSE(ii,max(1,it-1)) ;
-                    meanSquaredElemResid = ((WEIGHT'*abs(diffImg))) ;
-                    corrCoeff = abs(WEIGHT'*(img1mz.*img2mz)) ;
+                    meanSquaredElemResid = (WEIGHT'*(diffImg.^2))./sumWEIGHT ;
+                    corrCoeff = sqrt(abs(WEIGHT'*(img1mz.*img2mz))./sumWEIGHT) ;
                 % Criterions
                     normA = max(abs(a)) ; norm(a)/nNodes ;
                 % Convergence criterion
@@ -208,7 +208,7 @@ for ii = dicFrames
                     if it>1 && relativeResidueVariation>maxResidueRelativeVariation ; outFlag = 'RMSE did not decreased sufficiently' ; end
             % POINTS/ELEMENTS VALIDATION/DELETION
                 % DECORRELATED ELEMENTS
-                    cullGeo = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue ;
+                    cullGeo = corrCoeff<minCorrCoeff | meanSquaredElemResid>maxMeanElemResidue^2 ;
                     if any(outFlag) || (normA/minNorm)<thresholdValidGeometry
                         switch size(WEIGHT,2) 
                             case nElems % Correlation at the element level
@@ -238,23 +238,58 @@ for ii = dicFrames
                                          ] ; 
                 % Heavy Plots
                     if plotEachIteration || (any(outFlag) && plotEachFrame) || toc(lastPlotTime)>1/plotRate % (any(outFlag) && toc(lastPlotTime)>1/plotRate)
+                    % Update the current frame
                         im.CData = repmat(img2,[1 1 3]) ;
-                        %%
-                        residues = ... WEIGHT*corrCoeff ... Correlation coeffient
-                                    abs(diffImg) ... NR residues
-                                   ... Up(:,1) ... Ux displacement
-                                   ... WEIGHT*meanSquaredElemResid ... Sum of squared NR residues
-                                   ... WEIGHT*((WEIGHT'*abs(diffImg))./sumWEIGHT) ...
-                                   ;
-                        imRes.CData(indDOMAIN) = residues ;
-                        %%
+                    % Update the seed mesh
                         mesh.Vertices = Xn(:,:,ii) ;
                         mesh.Faces = Elems(VALID.Elems(:,ii),:) ;
                         mesh.FaceVertexCData = ones(nNodes,1)*NaN ; 
                         mesh.FaceVertexCData(VALID.Nodes(:,ii)) = sqrt(sum(dUo(VALID.Nodes(:,ii),:).^2,2)) ;
-                        %figure(figDebug) ; clf ; ind = (0:nJ-1)*nI+ceil(nI/2) ; plot(img1v(ind)) ; plot(img2v(ind)) ;
-                        lastPlotTime = tic ;
+                    % Update the other image plot
+                        if ii==dicFrames(1) && it==1
+                            plotMenu.String = {'Residue' ...
+                                              ,'Ref. Img.' ...
+                                              ,'Current Domain' ...
+                                              ,'Corr. Coeff.' ...
+                                              ,'RMSE' ...
+                                              ,'u1','u2','U' ...
+                                               } ;
+                        end
+                        idx = indDOMAIN ;
+                        switch plotMenu.String{plotMenu.Value}
+                            case 'Residue' % NR residues
+                                im2Data = diffImg ;
+                            case 'Ref. Img.' % NR residues
+                                im2Data = img1(indDOMAIN) ;
+                            case 'Current Domain'
+                                im2Data = full(validDomain_it) ;
+                            case 'i(x)-I(X) [original]' % NR residues
+                                im2Data = img2v-img1v ;
+                            case 'i(x)-I(X) [zero mean]' % NR residues
+                                im2Data = img2m-img1m ;
+                            case 'i(x)-I(X) [normalized]' % NR residues
+                                im2Data = img2mz-img1mz ;
+                            case 'Corr. Coeff.' % Correlation coefficient
+                                im2Data = WEIGHT*corrCoeff ;
+                            case 'RMSE' % Sum of squared NR residues
+                                im2Data = WEIGHT*sqrt(meanSquaredElemResid) ;
+                            case 'u1'
+                                im2Data = Up(:,1) ;
+                            case 'u2'
+                                im2Data = Up(:,2) ;
+                            case 'U' % Sum of squared NR residues
+                                im2Data = sqrt(sum(Up.^2,2)) ;
+                            otherwise
+                                im2Data = WEIGHT*sqrt((WEIGHT'*(img2v-img1v).^2)./sumWEIGHT) ;
+                        end
+                        idx = idx(validDomain_it) ;
+                        im2Data = im2Data(validDomain_it) ;
+                        imRes.CData(:) = NaN ;
+                        imRes.CData(idx) = im2Data ;
+                        caxis(imRes.Parent,'auto')
+                    % Draw
                         drawnow ; 
+                        lastPlotTime = tic ;
                     end
             % Pause execution ?
                 if pauseAtPlot && ~continueBtn.Value
