@@ -1,6 +1,4 @@
-# navDIC_v0
-
-An Open Source Matlab DIC App. *Beta version*.
+# navDIC_v0: An Open Source Matlab DIC App. *Beta version*.
 
 Written in [Laboratoire NAVIER](https://navier.enpc.fr/?lang=en), Ecole des Ponts ParisTech, Champs-sur-Marne, France.
 
