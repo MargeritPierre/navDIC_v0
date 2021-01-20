@@ -8,11 +8,11 @@
     clearvars -except hd
 
 % INITIALIZATION PARAMETERS
-    camID = 1 ;
-    seedNumber = 1 ;
-    frames = '[1:219]' ; % Frames taken for DIC (allows decimation)
+    camID = 3 ;
+    seedNumber = 2 ;
+    frames = '[14:207]' ; % Frames taken for DIC (allows decimation)
     dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
-    refFrame = 219 ; % Reference image ('first' , 'last' or number)
+    refFrame = 'last' ; % Reference image ('first' , 'last' or number)
     refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
     strainCriterion = 'full' ;
     averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
@@ -82,43 +82,50 @@
     INSIDE = sparse(1:nROI,ie(:)',true,nROI,dicMesh.nElems) ;
     
     
-%% SECOND GRADIENT CRITERION: EDGES (all elements)
+%% SECOND GRADIENT CRITERION: 
 
-% Gradient matrix
-    Gr = dicMesh.gradMat ;
-    O = sparse(dicMesh.nElems,dicMesh.nNodes) ;
-    G = [Gr{1} O ; O Gr{1} ; Gr{2} O ; O Gr{2}] ;
-    
-% Linearized Green-Lagrange strains
-    B = [Gr{1} O ; O Gr{2} ; Gr{2} Gr{1}] ;
-    
-% Edge differenciation matrix
-        bndEdg = dicMesh.boundaryEdges ;
-    % Element 2 edge connectivity (interior edges only)
-        elem2edge = tri2edg ;
-        elem2edge(bndEdg,:) = 0 ;
-    % Retrieve indices
-        [edg,ele] = find(elem2edge) ;
-        [edg,is] = sort(edg) ;
-        ele = ele(is) ;
-    % Change values to [-1 1] for differenciation
-        val = repmat([-1;1],[numel(edg)/2 1]) ;
-    % Differenciation
-        De = sparse(edg,ele,val,dicMesh.nEdges,dicMesh.nElems) ;
-    % Normalize with centroid distance
-        dC = De*dicMesh.centroid ;
-        dC = sqrt(sum(dC.^2,2)) ;
-        idC = 1./dC(:) ;
-        De(~bndEdg,:) = idC(~bndEdg).*De(~bndEdg,:) ;
-        
-% Strain Criterion Matrix
-    Ed = blkdiag(De,De,De,De) ; % [4*nEdges 4*nElems]
-    
+% EDGES (all elements)
+
+    % Gradient matrix
+        Gr = dicMesh.gradMat ;
+        O = sparse(dicMesh.nElems,dicMesh.nNodes) ;
+        G = [Gr{1} O ; O Gr{1} ; Gr{2} O ; O Gr{2}] ;
+
+    % Linearized Green-Lagrange strains
+        B = [Gr{1} O ; O Gr{2} ; Gr{2} Gr{1}] ;
+
+    % Edge differenciation matrix
+            bndEdg = dicMesh.boundaryEdges ;
+        % Element 2 edge connectivity (interior edges only)
+            elem2edge = tri2edg ;
+            elem2edge(bndEdg,:) = 0 ;
+        % Retrieve indices
+            [edg,ele] = find(elem2edge) ;
+            [edg,is] = sort(edg) ;
+            ele = ele(is) ;
+        % Change values to [-1 1] for differenciation
+            val = repmat([-1;1],[numel(edg)/2 1]) ;
+        % Differenciation
+            De = sparse(edg,ele,val,dicMesh.nEdges,dicMesh.nElems) ;
+        % Normalize with centroid distance (finite difference)
+            dC = De*dicMesh.centroid ;
+            dC = sqrt(sum(dC.^2,2)) ;
+            idC = 1./dC(:) ;
+            De(~bndEdg,:) = idC(~bndEdg).*De(~bndEdg,:) ;
+        % Integration: use element size
+            areas = dicMesh.elemSize ;
+            meanArea = sparse(edg,ele,1/2,dicMesh.nEdges,dicMesh.nElems)*areas ;
+            De = sqrt(meanArea).*De ;
+    % Strain Criterion Matrix
+        Ed = blkdiag(De,De,De,De) ; % [4*nEdges 4*nElems]
     
 % STRAIN GRADIENT CRITERION: BULK (2nd-order elements)
 
     % Second gradient
         G2 = dicMesh.grad2Mat ;
+    % Integration weights
+        for cc = 1:numel(G2) ; G2{cc} = sqrt(areas).*G2{cc} ; end
+    % Matrix
         O = sparse(dicMesh.nElems,dicMesh.nNodes) ;
         G2 = [...
                 G2{1,1} O ; ... % d2u1_dx1dx1
@@ -137,7 +144,7 @@
         startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = false ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =    'finiteDiff' ... first order finite difference
                         ... 'gaussian' ... optimized gaussian
@@ -162,20 +169,20 @@
         cullOutOfFrame = true ; % Cull out of frame points
         WEIGHT = INSIDE ; MAPPING ; % % % For local averaging and difference image moments computations
         minCorrCoeff = 0.9 ; % Below this, elements are culled
-        maxMeanElemResidue = Inf ; % Above this, elements are culled
-        thresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
+        maxMeanElemResidue = 0.2 ; % Above this, elements are culled
+        thresholdValidGeometry = 10 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         stepRatio = 1 ; %0.15 ; % Descent step ratio, damping the convergence
         regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e9 ; % Strain gradient penalisation coefficient
+        beta = 1*1e8 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-2 ; % Maximum displacement of a node
+        minNorm = 1e-3 ; % Maximum displacement of a node
         maxResidueRelativeVariation = -.001 ; % Maximum relative variation of the image residue (RMSE)
         minCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
-        exportTOnavDIC = true ;
+        exportTOnavDIC = false ;
         reverseReference = true ;
         strainOnNodes = true ;
     % Plotting
@@ -194,9 +201,9 @@
     % Run
         if codeProfile ; profile on ; end
         globalDIC_06_PerformDIC ;
-        if codeProfile; profile viewer ; profile off ; end
+        if codeProfile; profile off ; profile off ; end
     % Send to navDIC
         if exportTOnavDIC
-            seed.MovingPoints = Xn ;
+            seed.MovingPoints(:,:,frames) = Xn ;
             seed.DataFields = [] ;
         end

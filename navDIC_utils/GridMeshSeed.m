@@ -15,7 +15,7 @@
     
 %% Create the grid
     % Number of nodes
-        nX = round(1500/15) ; nY = NaN ; round(nI/nJ*(nX-1))+1 ;
+        nX = round(1500/25) ; nY = NaN ; round(nI/nJ*(nX-1))+1 ;
     % Initial grid corners position
         pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.02*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
         poly = findobj(gca,'type','images.roi.polygon') ;

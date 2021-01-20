@@ -139,6 +139,7 @@ fig = clf('reset')  ;
     gammaMax = 1e-1 ;
     dKmax = 1e-4 ;
     relAmin = 1e-2 ;
+    res = 6000 ; % pix/m
 
     F = reshape(f(indF),[],1)*ones(1,max(R0)) ;
     gamma = abs(imag(K)./real(K)) ;
@@ -154,7 +155,7 @@ fig = clf('reset')  ;
     fig = clf('reset') ;
         ax = gobjects(0) ;
         ax(1) = mysubplot(2,1,1) ;
-            plot(F(valid),2*pi*F(valid)./abs(real(K(valid))),'.k') ;
+            plot(F(valid),2*pi*F(valid)./abs(real(K(valid)))/res,'.k','tag','experimental') ;
             %scatter(F(valid),2*pi*F(valid)./abs(real(K(valid))),2,log10(abs(gamma(valid)))) ; colorbar
             set(gca,'yscale','log')
             grid on
@@ -181,10 +182,10 @@ E = 2.8e9 ;
 rho = 1150 ;
 N = 2.25 ;
 D = .6e-3 ;
-res = 6000 ; % pix/m
 
 S = pi*(D/2)^2 ;
 I = pi*D^4/64 ;
+sigma = N/S
 omega = 2*pi*f(indF) ;
 kb = sqrt(omega).*(rho*S/E/I)^(1/4) ;
 
@@ -193,7 +194,7 @@ alpha = N/2/sqrt(rho*S*E*I) ;
 k = sqrt((sqrt(alpha^2./omega.^2 + 1) - alpha./omega)).*kb ;
 
 delete(findobj(gcf,'tag','prediction')) ;
-plot(ax(1),f(indF),real(omega./k)*res,'linewidth',1,'tag','prediction') ;
+plot(ax(1),f(indF),real(omega./k),'linewidth',1,'tag','prediction') ;
     
         
 
