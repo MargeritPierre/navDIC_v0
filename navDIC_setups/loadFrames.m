@@ -157,7 +157,9 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                         idNUM(i) = NaN ;
                     end
                 end
+            % Sort images by name
                 [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
+                fileNames = fileNames(ind) ;
                 idSTR = idSTR(ind(~isnan(idNUM))) ;
                 nFrames = length(idSTR) ;
                 disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
