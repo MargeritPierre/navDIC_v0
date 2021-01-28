@@ -16,7 +16,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
         normToImageClassRange = true ; % Normalize images to their dataclass range
         timeMeanLength = 0 ; % Time averaging of images
         strainCriterion = 'full' ; % strain gradient penalization: 'full' or 'normal'
-        showInit = true ;
+        showInit = false ;
         codeProfile = false ; % Code timing
         figTag = 'Global DIC' ;
         
@@ -41,7 +41,7 @@ end % END OF INITIALIZATION
                          'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 2 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 3 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
