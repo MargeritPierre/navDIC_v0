@@ -3,6 +3,9 @@ clearvars -except hd
 global hd
 hd_bkp = hd ;
 
+%%
+idx = setdiff(1:hd_bkp.nFrames,[1:6 472:476 803:809 936:10000]) ;
+
 
 %% 2020.07.03 FirstWall 
 idx = round(0:4.345:955)+34 ; 1:numel(hd_bkp.Images{end}) ;

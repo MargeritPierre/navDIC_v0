@@ -3,16 +3,16 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
         CorrSize = 51*[1 1] ; % Rectangular window
-        m = round(CorrSize/4) ; % Margin to truncate borders
+        m = round(CorrSize/6) ; % Margin to truncate borders
         uMax = CorrSize/2 ; 30*[1 1] ; % Maximum allowed displacement per iteration
         maxImagetShift = CorrSize/2 ; % Maximum allowed imagette shift (close to image borders)
         iterateIfMaxDispHigherThan = 1 ;
         maxIt = 10 ;
-        FIT =  ... 'LS' ...
-                 'SVD' ...
+        FIT =   'LS' ...
+                ... 'SVD' ...
                 ; 
         spatialSmoothing = 1 ; prod(CorrSize)<10000 ;
-        spatialSmoothingRatio = 1/3 ;
+        spatialSmoothingRatio = 1/2 ;
         windowing = true ; % apply a blackman windowing
         
     % INITIALIZE
