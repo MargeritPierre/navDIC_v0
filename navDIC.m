@@ -132,7 +132,7 @@ function navDIC(varargin)
 % INITIALIZE/CLEAR DATA IN HANDLES
     function initHandleData(confirm)
         % If needed, answer the user to confirm
-            if confirm
+            if confirm && hd.nFrames>0
                 answer = questdlg('DO YOU WANT TO CLEAR THE DATA ACQUIRED PREVIOUSLY ?','Clearing Data','Yes','No','No') ;
                 if isempty(answer) ; return ; end
                 if strcmp(answer,'No') ; return ; end
