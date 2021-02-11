@@ -12,6 +12,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             imaqreset ;
             CAMERAS = [] ;
         end
+        camsHasChanged = false ;
     
     % Init CAMERA List
         adaptors = [] ;
@@ -35,7 +36,6 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         updateLists() ;
         
     % Wait for the figure to be closed 
-        camsHasChanged = false ;
         while ishandle(fig) ; drawnow ; end
         
     % Return CAMERAS
