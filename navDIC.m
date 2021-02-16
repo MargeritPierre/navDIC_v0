@@ -95,6 +95,8 @@ function navDIC(varargin)
                 hd.Cameras = [] ;
             % DAQInputs
                 hd.DAQInputs = [] ;
+            % OTInputs
+                hd.OTModel = [] ;
         % DATA
             initHandleData(false)
         % MACROS
@@ -290,6 +292,11 @@ function navDIC(varargin)
                 hd.ToolBar.MainMenu.manageInputs = uimenu(hd.ToolBar.MainMenu.realTime,...
                                                         'Label','Manage Inputs', ...
                                                         'callback',@(src,evt)manageInputs) ;
+                                                    
+            % OPTITRACKS INPUTS
+                hd.ToolBar.MainMenu.manageInputs = uimenu(hd.ToolBar.MainMenu.realTime,...
+                                                        'Label','Manage Optitracks', ...
+                                                        'callback',@(src,evt)manageOT) ;
            % SAVING
                 hd.ToolBar.MainMenu.saving = uimenu(hd.ToolBar.MainMenu.realTime,...
                                                         'Label','Saving', ...
@@ -876,6 +883,17 @@ function navDIC(varargin)
         % Open the manageDAQInputs Tool
             [hd.DAQInputs,inputsHasChanged] = manageDAQInputs(hd.DAQInputs) ;
             if ~inputsHasChanged ; return ; end
+        % Ask to clear the data
+            initHandleData(true) ;
+        % Update Infos
+            updateToolbar() ;
+    end
+
+% SET THE OPTITRACKS INPUTS
+    function manageOT
+        % Open the manageOTInputs Tool
+            [hd.OTModel, inputsOTHasChanged] = manageOTInputs() ;
+            if ~inputsOTHasChanged ; return ; end
         % Ask to clear the data
             initHandleData(true) ;
         % Update Infos
