@@ -16,7 +16,7 @@ function navDIC(varargin)
             infosTxtHeight = 16 ; % Pixels
             frameSliderWidth = .4 ; % relative to toolbar size
         % Handles Saving Parameters
-            canBeSaved = {'WorkDir','Cameras','DAQInputs'...
+            canBeSaved = {'WorkDir','Cameras','DAQInputs','Macros'...
                             ,'TimeLine','Images','InputData','Seeds'} ;
         
     % Process the varargin

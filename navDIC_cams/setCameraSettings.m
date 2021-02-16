@@ -67,8 +67,9 @@ function cam = setCameraSettings(cam)
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
             frame0 = double(event.Data) ;
-            frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
+        % RGB colorscale in [0 1]
+            if size(frame0,3)>1 ; frame0 = frame0*(1./max(getrangefromclass(event.Data))) ; end
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
