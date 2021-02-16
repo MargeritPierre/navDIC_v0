@@ -88,7 +88,7 @@ function navDIC(varargin)
             % Working Directory
                 hd.WorkDir = [] ;
                     hd.WorkDir.Path = pwd ;
-                    hd.WorkDir.CommonName = 'img' ;
+                    hd.WorkDir.CommonName = 'img_%05i' ;
                     hd.WorkDir.ImagesExtension = '.png' ;
         % DEVICES
             % Cameras
@@ -820,10 +820,13 @@ function navDIC(varargin)
                     disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
                     lastTime = toc(startTime) ;
             % Execute macros
-                hd = runMacros(hd) ;
-                t = toc(startTime)-lastTime ;
-                disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
-                lastTime = toc(startTime) ;
+                if ~isempty(hd.Macros)
+                    disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    hd = runMacros(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      ------ ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+                end
             % Save Acquired Data
                 hd = saveCurrentFrame(hd) ;
                 t = toc(startTime)-lastTime ;

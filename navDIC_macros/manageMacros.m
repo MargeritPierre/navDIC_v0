@@ -86,12 +86,12 @@ function [Macros,macroListChanged] = manageMacros(Macros)
         % Display a warning dialog
             answer = questdlg(['ARE YOU SURE YOU WANT TO REMOVE MACRO ' macroToRemove.Name '?']) ;
             if ~strcmpi(answer,'YES') ; return ; end
+        % Display a message
+            disp(newline) ;
+            disp(['(' macroToRemove.Name ') MACRO HAS BEEN REMOVED']) ;
         % Remove the macro
             newMacros = newMacros(setdiff(1:length(newMacros),id)) ;
             delete(macroToRemove) ;
-        % Display a message
-            disp(newline) ;
-            disp(['(' macroToRemove.DataName ') MACRO HAS BEEN REMOVED']) ;
         % Update Lists
             updateLists() ;
             macroListChanged = true ;
