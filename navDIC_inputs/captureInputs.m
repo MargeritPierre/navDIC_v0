@@ -3,6 +3,7 @@ function hd = captureInputs(hd)
     % Is there Inputs defined
         if isempty(hd.DAQInputs) ; return ; end
         if isempty(hd.DAQInputs.Inputs) ; return ; end
+        if hd.DAQInputs.Session.IsRunning ; return ; end
         
     % Acquire a single scan
         newData = inputSingleScan(hd.DAQInputs.Session).*[hd.DAQInputs.Inputs.Sensitivity] ;

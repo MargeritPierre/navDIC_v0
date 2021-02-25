@@ -2,6 +2,7 @@ function hd = runMacros(hd)
 
     % Is there Macros defined ?
         if isempty(hd.Macros) ; return ; end
+        if ~isa(hd.Macros,'navDIC_AbstractMacro') ; return ; end
         
     % Run the macro
         for m = 1:numel(hd.Macros)

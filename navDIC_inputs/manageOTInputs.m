@@ -1,22 +1,34 @@
-function [OTModel, OTinputsListChanged] = manageOTInputs()
+function [OT, nMarkers] = manageOTInputs()
 
 % ===================================================================================================================    
 % MAIN FUNCTION
 % ===================================================================================================================
-
+      
     % Create an instance of the natnet client class
         OT = natnet;
 
     % Init the figure
         fig = [] ;
-        initFigure() ;
+        answer = questdlg('Do you want to connect to Motive ?', 'Connexion','Yes','No','Yes') ;
+        if ~ismember(answer,'Yes') ; return ; end
+        ConnectOT()
+        
+        nMarkers = 0 ; 
+        if ~isempty(OT)
+            for i = 1:1000
+                if ~isempty(OT.getFrame.LabeledMarker(i))
+                    nMarkers = nMarkers + 1 ;
+                end
+            end
+        end
+        %hd.AcquiredOTPositions.MarkersCount = nMarkers;
         
         % Wait for the figure to be closed 
-        OTinputsListChanged = false ;      
-        uiwait(fig) ;
+        %OTinputsListChanged = false ;      
+       %uiwait(fig) ;
 
     % Set Motive in Live Mode for record
-    if (OT.Mode == 'Edit')
+    if ~strcmp(OT.Mode,'Live')
         OT.liveMode;
     end
     
@@ -47,44 +59,6 @@ function [OTModel, OTinputsListChanged] = manageOTInputs()
         end
         % Close the figure
         close(fig); 
-    end
-
-% Cancel Button
-    function clickCancel()
-        close(fig) ;
-    end
-    
-% Init the figure
-
-    function initFigure()
-        % Parameters (all sizes are normalized)
-            figWidth = 0.25 ;
-            figHeigth = .15 ;
-            margin = .05 ;
-            btnHeight = .15 ;
-            btnWidth = .2 ;
-            ttlHeight = .2 ;
-            ttlWidth = .6 ;
-        % Figure centered on the screen
-            fig = figure('tag','manageOTInputs',...
-                            'NumberTitle','off',...
-                            'Name','MANAGE OPTITRACKS INPUTS',...
-                            'windowstyle','modal',...
-                            'toolbar','none',...
-                            'menubar','none') ;
-            fig.Units = 'normalized' ;
-            fig.Position = [.5-figWidth/2 .5-figHeigth/2 figWidth figHeigth] ;
-        % Text
-            ttl1 = uicontrol('style','text','string','Do you want to connect to Motive ?','BackgroundColor','w','fontweight','bold','FontSize',10,'units','normalized') ;
-            ttl1.Position = [.5-figWidth-margin .5+figHeigth ttlWidth ttlHeight] ;            
-        % AddConnectOT Button
-            btnOK = uicontrol('style','pushbutton','units','normalized','string','YES','fontweight','bold') ;
-            btnOK.Position = [.5-1.2*btnWidth .5-figHeigth btnWidth btnHeight] ;
-            btnOK.Callback = @(src,evt)ConnectOT() ;
-        % CANCEL Button
-            btnOK = uicontrol('style','pushbutton','units','normalized','string','NO','fontweight','bold') ;
-            btnOK.Position = [.5+0.1*btnWidth .5-figHeigth btnWidth btnHeight] ;
-            btnOK.Callback = @(src,evt)clickCancel() ;
     end
 
 end

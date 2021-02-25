@@ -16,8 +16,9 @@ function navDIC(varargin)
             infosTxtHeight = 16 ; % Pixels
             frameSliderWidth = .4 ; % relative to toolbar size
         % Handles Saving Parameters
-            canBeSaved = {'WorkDir','Cameras','DAQInputs','Macros'...
-                            ,'TimeLine','Images','InputData','Seeds'} ;
+            canBeSaved = {'WorkDir','Cameras','DAQInputs','AcquiredData',...
+                            'AcquiredOTPositions','Macros','TimeLine',...
+                            'Images','InputData','Seeds'} ;
         
     % Process the varargin
         COMMAND = '' ;
@@ -95,8 +96,13 @@ function navDIC(varargin)
                 hd.Cameras = [] ;
             % DAQInputs
                 hd.DAQInputs = [] ;
+            % AcquiredData
+                hd.AcquiredData = [] ;
             % OTInputs
-                hd.OTModel = [] ;
+                hd.OT = [] ;
+            % AcquiredOTPositions
+                hd.AcquiredOTPositions = [] ;
+                hd.OTMarkersCount = [];
         % DATA
             initHandleData(false)
         % MACROS
@@ -110,7 +116,10 @@ function navDIC(varargin)
             hd.TIMER = timer('ExecutionMode','FixedRate'...
                             ,'Period',1/defaultFrameRate ...
                             ,'TimerFcn',@(src,evt)timerFunction()...
-                            ) ;
+                            );
+            hd.TIMER.StartFcn = @startInputAcquisitionFunction;
+            hd.TIMER.StopFcn = @stopInputAcquisitionFunction;
+            
         % Initialization completed
             hd.initCompleted = true ;
         
@@ -149,6 +158,10 @@ function navDIC(varargin)
                 hd.Images = {} ;
             % Inputs
                 hd.InputData = [] ;
+            % AcquiredData
+                hd.AcquiredData = [] ;
+            % AcquiredOTPositions
+                hd.AcquiredOTPositions = [] ;
         % Update Infos
             if hd.initCompleted 
                 updateToolbar() ; 
@@ -701,10 +714,12 @@ function navDIC(varargin)
     function updateToolbar()
         % Is There any inputs ?
             nIn = 0 ; if ~isempty(hd.DAQInputs) ; nIn = length(hd.DAQInputs.Inputs) ; end
+            
         % Infos String
             strInfos = [] ;
             strInfos = [strInfos,' ',num2str(length(hd.Cameras)),' Cameras'] ;
             strInfos = [strInfos,' | ',num2str(nIn),' DAQ.Inputs'] ;
+            strInfos = [strInfos,' | ',num2str(hd.OTMarkersCount),' OT Markers'] ;
             strInfos = [strInfos,' | ',num2str(numel(hd.Macros)),' Macros'] ;
             strInfos = [strInfos,' | ',num2str(length(hd.Seeds)),' DIC.Seeds'] ;
             strInfos = [strInfos,' | ',num2str(length(hd.Previews)),' Previews'] ;
@@ -861,7 +876,6 @@ function navDIC(varargin)
             hd.ToolBar.infosTxt.BackgroundColor = hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor ;
     end
 
-
 % SET THE CAMERAS
     function manageCameras
         % Stop all cameras
@@ -892,8 +906,8 @@ function navDIC(varargin)
 % SET THE OPTITRACKS INPUTS
     function manageOT
         % Open the manageOTInputs Tool
-            [hd.OTModel, inputsOTHasChanged] = manageOTInputs() ;
-            if ~inputsOTHasChanged ; return ; end
+            [hd.OT, hd.OTMarkersCount] = manageOTInputs() ;
+        % if ~inputsOTHasChanged ; return ; end
         % Ask to clear the data
             initHandleData(true) ;
         % Update Infos
@@ -902,7 +916,7 @@ function navDIC(varargin)
 
 % SET THE EXTERNAL MACROS
     function manageSetupMacros
-        % Open the manageDAQInputs Tool
+        % Open the manageMacros Tool
             [hd.Macros,macrosHasChanged] = manageMacros(hd.Macros) ;
             if ~macrosHasChanged ; return ; end
         % Ask to clear the data

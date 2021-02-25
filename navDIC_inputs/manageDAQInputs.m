@@ -63,7 +63,7 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             dMType(devices(input.DeviceID)));
             %'Voltage') ;
             input.HardwareInput.Range = input.Ranges(input.RangeID) ;
-            if devices(input.DeviceID).Model == 'NI 9235'
+            if strcmp(devices(input.DeviceID).Model,'NI 9235')
                 input.HardwareInput.BridgeMode = 'Quarter';
                 input.HardwareInput.NominalBridgeResistance = 120;
             end
@@ -71,7 +71,7 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
 
 % SET MEASUREMENT TYPE
     function deviceMeasurementType = dMType(device)
-        if device.Model == 'NI 9235'
+        if strcmp(device.Model,'NI 9235')
             deviceMeasurementType = 'Bridge';
         else
             deviceMeasurementType = 'Voltage';
