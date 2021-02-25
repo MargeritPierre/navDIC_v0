@@ -1,6 +1,7 @@
 %% Preview of a camera with custom functionalities
-
+clc
 global hd
+clearvars -except hd
 %% INITIALIZE THE FIGURES
 fig= figure('Name','Preview custom'); 
 fig.Position = [fig.Position(1:2)+fig.Position(3:4)/2.*[0 .5] fig.Position(3:4)/2] ;
