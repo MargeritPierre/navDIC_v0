@@ -26,23 +26,35 @@ end
 %% MEASURE DISPLACEMENT OVER TIME
 
 d = [];
-for i = 1:size(OTPos,3)
+for i = 2:size(OTPos,3)
 tempD = [];
     for j = 1:size(OTPos,1)
-        tempD = [tempD pdist([OTPos(j,:,i) ; OTPos(j,:,1)],'euclidean')];
+        %testMat = [OTPos(j,3,i) OTPos(j,2,i); OTPos(j,3,1) OTPos(j,2,1)]
+        dist2D = pdist([OTPos(j,3,i) OTPos(j,2,i); OTPos(j,3,1) OTPos(j,2,1)]);
+        %tempD = [tempD pdist([OTPos(j,:,i) ; OTPos(j,:,1)])];
+        tempD = [tempD dist2D];
     end
     d = [d; tempD];
 end
-d = d - min(d);
-d = d./max(d);
+dNorm = d - min(d);
+dNorm = dNorm./max(dNorm);
 
 %% GENERATE PLOT
 
 f1 = figure;
-%set(gca, 'DataAspectRatio', [1,1,1]);
+set(gca, 'DataAspectRatio', [1,1,1]);
 xlabel('x(m)')
 ylabel('z(m)')
+title('Optitrack Marker Positions \& 2D Displacement');
+subtitle('! Only 2D displacement are computed and plotted on this graph','FontSize',14,'Color',[0.87 0.34 0.28]);
+lightBlue = [104 188 227]/255;
+darkBlue = [11 82 115]/255;
 for i = 1:size(OTPos,1)
-    c = [zeros(size(d,1),1) zeros(size(d,1),1) d(:,i)];
-    scatter(OTPos(i,3,:),OTPos(i,2,:),50,c,'.')
+    scatter(OTPos(i,3,1),OTPos(i,2,1),50,'red','*')
+    c = [lightBlue(1) + (darkBlue(1) - lightBlue(1))* dNorm(:,i)...
+        lightBlue(2) + (darkBlue(2) - lightBlue(2))* dNorm(:,i)...
+        lightBlue(3) + (darkBlue(3) - lightBlue(3))* dNorm(:,i)];
+    scatter(OTPos(i,3,2:size(OTPos,3)),OTPos(i,2,2:size(OTPos,3)),50,c,'.')
+    [M, I] = max(d(:,i));
+    text(double(OTPos(i,3,I+1)),double(OTPos(i,2,I+1)),strcat(num2str(d(I,i)*1000,'%.1f'),' mm $\rightarrow$'), 'HorizontalAlignment', 'right');
 end
