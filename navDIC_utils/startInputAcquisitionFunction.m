@@ -50,7 +50,7 @@ function startInputAcquisitionFunction()
     function onDataAvailable(src,evt)
         hd.AcquiredData.Data = [hd.AcquiredData.Data ; evt.Data] ;
         hd.AcquiredData.Time = [hd.AcquiredData.Time ; evt.TimeStamps] ;
-        disp(['Number of sample acquired: ', num2str(size(hd.AcquiredData.Data,1))])
+        %disp(['Number of sample acquired: ', num2str(size(hd.AcquiredData.Data,1))])
     end
 
     % DISPLAY MARKERS POSITIONS

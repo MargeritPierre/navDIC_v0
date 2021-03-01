@@ -117,8 +117,8 @@ function navDIC(varargin)
                             ,'Period',1/defaultFrameRate ...
                             ,'TimerFcn',@(src,evt)timerFunction()...
                             );
-            hd.TIMER.StartFcn = @startInputAcquisitionFunction;
-            hd.TIMER.StopFcn = @stopInputAcquisitionFunction;
+            %hd.TIMER.StartFcn = @startInputAcquisitionFunction;
+            %hd.TIMER.StopFcn = @stopInputAcquisitionFunction;
             
         % Initialization completed
             hd.initCompleted = true ;

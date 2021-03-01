@@ -14,7 +14,8 @@ function hd = captureCameras(hd)
                 return ;
             end
         end
-        
+     
+            
     % Get all cams data
         images = cell(1,nCams) ;
         for c = 1:nCams
@@ -26,7 +27,8 @@ function hd = captureCameras(hd)
 %                 continue ; 
 %             end
             images{c} = peekdata(cam,1) ;
-            if hd.Cameras.VidObj.VideoFormat == 'Mono12'
+                
+            if cam.VideoFormat == 'Mono12'
                 images{c} = (2^16/2^12)*images{c};
             end
             %images{c} = im2single(images{c}) ;
