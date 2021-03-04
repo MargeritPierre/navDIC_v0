@@ -449,7 +449,7 @@ function cam = setCameraSettings(cam)
         stoppreview(cam.VidObj) ;
         fig.CloseRequestFcn = @(src,evt)closereq ;
         close(fig) ;
-        cam.CurrentState = 'free' ;
+        cam.CurrentState = 'connected' ;
     end
 
 
