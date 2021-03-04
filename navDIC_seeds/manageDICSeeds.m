@@ -15,7 +15,7 @@ function hd = manageDICSeeds(hd)
     % Init Seed Classes List
         availableSeedClasses = [] ;
         getAvailableSeedClasses() ;
-        if isempty(availableSeedClasses) ;
+        if isempty(availableSeedClasses) 
             disp('NO SEED CLASSES AVAILABLE !') ;
             return ; 
         end
@@ -143,7 +143,7 @@ function hd = manageDICSeeds(hd)
             newSeedName = inputdlg('NAME OF THE SEED COPY ?','Input a Name',1,{['Copy_of_',SEEDS(id).Name]}) ;
             if isempty(newSeedName) ; return ; end
         % Add the seed copy
-            SEEDS(end+1) = SEEDS(id) ;
+            SEEDS(end+1) = copy(SEEDS(id)) ;
             SEEDS(end).Name = newSeedName{1} ;
         % Update infos
             updateSeedList() ;

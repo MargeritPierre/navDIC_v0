@@ -45,25 +45,32 @@ function H = drawingTool(varargin)
 % ADD A SHAPE
     function newShape(shape,msg,varargin)
         numShape = length(H.Shapes)+1 ;
+        if regexp(msg,'impolyline','once') ; shape = 'impolyline' ; end
+        %msg = [msg , ' [',shape,']'] ;
         % Shape-depending properties
             switch shape
                 case 'imrect'
-                    H.Shapes{numShape} = imrect(H.Axes,varargin{:}) ; 
+                    SHAPE = imrect(H.Axes,varargin{:}) ; 
                 case 'imellipse'
-                    H.Shapes{numShape} = imellipse(H.Axes,varargin{:}) ;
+                    SHAPE = imellipse(H.Axes,varargin{:}) ;
                 case 'impoly'
-                    H.Shapes{numShape} = impoly(H.Axes,varargin{:}) ;
-                    p = wait(H.Shapes{numShape}); 
+                    SHAPE = impoly(H.Axes,varargin{:}) ;
                 case 'impoint'
-                    H.Shapes{numShape} = impoint(H.Axes,varargin{:}) ;
+                    SHAPE = impoint(H.Axes,varargin{:}) ;
                 case 'imline'
-                    H.Shapes{numShape} = imline(H.Axes,varargin{:}) ;
+                    SHAPE = imline(H.Axes,varargin{:}) ;
+                case 'impolyline'
+                    SHAPE = impoly(H.Axes,varargin{:},'Closed',false) ;
+                    shape = 'impoly' ;
+                    msg = 'impolyline' ;
                 otherwise
                     return ;
             end
+            if isempty(SHAPE) ; return ; end
+            H.Shapes{numShape} = SHAPE ;
             fcn = makeConstrainToRectFcn(shape,H.Axes.XLim, H.Axes.YLim) ;
         % Type-depending properties
-            switch msg
+            switch msg(1)
                 case '+'
                     setColor(H.Shapes{numShape},'b') ;
                 case '-'
@@ -105,6 +112,14 @@ function H = drawingTool(varargin)
             if H.initFinished
                 updateDrawing(0) ;
             end
+        % Depending on the shape, loop
+            if isempty(varargin)
+                switch shape
+                    case 'impoint'
+                        newShape(shape,msg) ;
+                    otherwise
+                end
+            end
     end
 
 
@@ -118,7 +133,7 @@ function H = drawingTool(varargin)
         % Update ROI if needed
             if H.drawROI
                 computeROI() ;
-                H.SrfROI.AlphaData = (1-H.ROI)*.5 ;
+                H.SrfROI.AlphaData = (1-H.ROI)*0.1 ;
             end
         % Backup Geometries
             H.Geometries = [] ;
@@ -321,7 +336,7 @@ function H = drawingTool(varargin)
                             theBtn.ClickedCallback = @(src,evt)newShape('imline','+',[]) ;
                         case 'polyline'
                             theBtn.TooltipString = 'Draw a Polyline' ;
-                            theBtn.ClickedCallback = @(src,evt)newShape('Polyline','+',[]) ;
+                            theBtn.ClickedCallback = @(src,evt)newShape('impolyline','+',[]) ;
                         case 'spline'
                             theBtn.TooltipString = 'Draw a Spline' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('Spline','+',[]) ;
@@ -330,7 +345,7 @@ function H = drawingTool(varargin)
                                 delete(theBtn) ;
                                 theBtn = uitoggletool(H.ToolBar) ;
                                 H.btnCallback = theBtn ;
-                                theBtn.State = 'on' ;
+                                theBtn.State = 'off' ;
                             theBtn.TooltipString = 'Auto Update' ;
                             theBtn.ClickedCallback = @(src,evt)updateDrawing(0) ;
                             icon = 'help_fx.png' ;

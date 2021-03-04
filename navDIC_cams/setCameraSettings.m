@@ -2,7 +2,6 @@ function cam = setCameraSettings(cam)
 %%% [cam,valid] = setCameraSettings(cam)
 % 
 
-
     % Figure tag (used to prompt figure in first plane)
         figTag = ['setCameraSettings(',cam.Name,')'] ;
         % Is the camera already in setting mode ?
@@ -11,6 +10,8 @@ function cam = setCameraSettings(cam)
                 figure(prevFig) ;
                 return ;
             end
+       
+        
         
     % Init INFOS Structure
         INFOS = [] ;
@@ -66,6 +67,8 @@ function cam = setCameraSettings(cam)
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
             frame0 = double(event.Data) ;
+            frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
+            %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
@@ -109,8 +112,8 @@ function cam = setCameraSettings(cam)
                 end
             end
         % Axes formatting
-            maxFrame = max(frame(:)) ;
-            PREVIEW.AxHistObj.XLim = [1 2^nextpow2(maxFrame-1)]+0.5 ;
+            %maxFrame = max(frame(:)) ;
+            PREVIEW.AxHistObj.XLim = [0 1] ; % [1 2^nextpow2(maxFrame-1)]+0.5 ;
     end
 
 
@@ -121,13 +124,12 @@ function cam = setCameraSettings(cam)
             UI = findobj(fig,'Tag',uiTag) ;
         % Is the source a IMAQ parameter ?
             if isfield(INFOS.IMAQ,uiTag)
-                % Apply changes
-                    uiInfo = getfield(INFOS.IMAQ,uiTag) ;
+                % Retrieve value
                     switch UI.Style
                         case 'slider'
-                            %setfield(cam.VidObj.Source,uiTag,UI.Value) ;
-                            setfield(cam.VidObj.Source,uiTag,UI.Value) ;
+                            value = UI.Value ;
                         case 'edit'
+                            uiInfo = INFOS.IMAQ(uiTag) ;
                             switch uiInfo.Type
                                 case 'string'
                                     value = UI.String ;
@@ -136,12 +138,13 @@ function cam = setCameraSettings(cam)
                                 case 'integer'
                                     value = round(str2double(UI.String)) ;
                             end
-                            %setfield(cam.VidObj.Source,uiTag,value) ;
-                            setfield(cam.VidObj.Source,uiTag,value) ;
                         case 'popupmenu'
-                            %setfield(cam.VidObj.Source,uiTag,UI.String{UI.Value}) ;
-                            setfield(cam.VidObj.Source,uiTag,UI.String{UI.Value}) ;
+                            value = UI.String{UI.Value} ;
                     end
+                % Apply
+                    %setfield(cam.VidObj.Source,uiTag,value) ;
+                    set(cam.VidObj.Source,uiTag,value) ;
+                % Terminate
                     return ;
             end
         % ELSE It is a custom parameter
@@ -184,6 +187,15 @@ function cam = setCameraSettings(cam)
                     % Individual infos
                         switch uiInfos.Type
                             case 'integer'
+                                switch uiInfos.Constraint
+                                    case 'bounded'
+                                        theUI.Style = 'slider' ;
+                                        theUI.Min = uiInfos.ConstraintValue(1) ;
+                                        theUI.Max = uiInfos.ConstraintValue(2) ;
+                                    case 'none'
+                                        theUI.Style = 'edit' ;
+                                end
+                            case 'double'
                                 switch uiInfos.Constraint
                                     case 'bounded'
                                         theUI.Style = 'slider' ;
@@ -437,7 +449,7 @@ function cam = setCameraSettings(cam)
         stoppreview(cam.VidObj) ;
         fig.CloseRequestFcn = @(src,evt)closereq ;
         close(fig) ;
-        cam.CurrentState = 'free' ;
+        cam.CurrentState = 'connected' ;
     end
 
 

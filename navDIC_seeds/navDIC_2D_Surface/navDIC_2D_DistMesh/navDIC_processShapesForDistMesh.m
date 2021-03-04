@@ -1,22 +1,24 @@
 function H = navDIC_processShapesForDistMesh(H)
 
     % Parameters
-        nPtsInt = 300 ; % num of pts for the intersection computation
+        nPtsInt = 10000 ; % num of pts for the intersection computation
         minH0 = 1 ; % default mean bar length
         maxH0 = 200 ;
+        minFixCornerAngle = 45*pi/180 ; % minimum angle between two polygon edges to fix a point
 
     % Is there geometries to process ?
         mesh = [] ;
-        if isempty(H.Geometries) || ~any([H.Geometries.isValid]) 
+        if isempty(H.Geometries) ...
+                || ~any([H.Geometries.isValid]) ...
             triMesh = findobj(H.Axes,'tag','DistMeshPreview') ;
             delete(triMesh) ;
             return ; 
         end
         
     % Retrieve custom Data
-        customData = H.uiContextMenuData ;
+        customData = H.uiContextMenuData(1:length(H.Geometries)) ;
         % Convert to double
-            for s = 1:length(customData) 
+            for s = 1:length(customData)
                 customData(s).h0 = str2num(customData(s).h0) ;
                 customData(s).h = str2num(customData(s).h) ;
                 customData(s).l = str2num(customData(s).l) ;
@@ -27,7 +29,7 @@ function H = navDIC_processShapesForDistMesh(H)
             else
                 h0 = customData(H.numShape).h0 ;
             end
-            for s = 1:length(customData) ;
+            for s = 1:length(customData)
                 H.uiContextMenuData(s) = setfield(H.uiContextMenuData(s),'h0',num2str(h0)) ;
             end
         % Set variable bar length
@@ -75,37 +77,58 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Parametrization
                             edgPt = @(t)[cx+a*cos(2*pi*t'),cy+b*sin(2*pi*t')] ;
                     case 'impoly'
+                        if ~strcmp(H.Geometries(s).Bool,'impolyline')
+                            % It is a closed polygon
+                            polyPos = pos([1:end,1],:) ;
+                        else 
+                            polyPos = pos ;
+                        end
                         % Distance Function
-                            dF{geo} = @(p)dpoly(p,pos([1:end,1],:)) ;
+                            dF{geo} = @(p)dpoly(p,polyPos) ;
                         % Fixed Points
-                            pFix = [pFix ; pos] ;
+                            % Edges vectors
+                                edges = diff(polyPos,1) ;
+                                vecs = edges./sqrt(sum(edges.^2,2)) ;
+                            % Angles at corners
+                                angles = acos(abs(sum(vecs.*circshift(vecs,1,1),2))) ;
+                            % Fixed Points
+                                if ~strcmp(H.Geometries(s).Bool,'impolyline')
+                                    % It is a closed polygon
+                                    isFixed = angles>minFixCornerAngle ;
+                                else 
+                                    isFixed = [true ; angles(2:end)>minFixCornerAngle ; true] ;
+                                end
+                                pFix = [pFix ; pos(isFixed,:)] ;
                         % Parametrization
-                            l = sqrt(sum(diff(pos([1:end,1],:),1,1).^2,2)) ;
+                            l = sqrt(sum(diff(polyPos,1,1).^2,2)) ;
                             L = cumsum(l) ;
-                            edgPt = @(t)interp1([0;L]/L(end),pos([1:end,1],:),t) ;
- 
+                            edgPt = @(t)interp1([0;L]/L(end),polyPos,t) ;
+                    case 'impoint'
+                            pFix = [pFix ; pos] ;
+                            dF{geo} = @(p)sqrt((p(:,1)-pos(1)).^2+(p(:,2)-pos(2)).^2) ;
+                    otherwise
+                        disp(H.Geometries(s).Class)
                 end
             % Add or Remove Domain
-            
                 switch H.Geometries(s).Bool
-                    case '+'
-                        if geo==1 
-                            dFrecurs{geo} = @(p)dF{geo}(p) ;
-                        else
-                            dFrecurs{geo} = @(p)dunion(dFrecurs{geo-1}(p),dF{geo}(p)) ;
-                        end
                     case '-'
                         if geo==1 
                             dFrecurs{geo} = @(p)dF{geo}(p) ;
                         else
                             dFrecurs{geo} = @(p)ddiff(dFrecurs{geo-1}(p),dF{geo}(p)) ;
                         end
+                    otherwise %case '+'
+                        if geo==1 
+                            dFrecurs{geo} = @(p)dF{geo}(p) ;
+                        else
+                            dFrecurs{geo} = @(p)dunion(dFrecurs{geo-1}(p),dF{geo}(p)) ;
+                        end
                 end
             % Density function
                 hF{geo} = @(p)max(0,1-abs(dF{geo}(p)/d(s))) ;
                 hFrecurs{geo+1} = @(p)hFrecurs{geo}(p).*(1-hF{geo}(p))+h(s).*hF{geo}(p) ;
             % Add Fixed Points at Intersections of edges
-                if geo>1
+                if geo>1 && ismember(H.Geometries(s).Class,{'imrect','impoly','imellipse'})
                     t0 = (0:nPtsInt-1)/nPtsInt ;
                     p0 = edgPt(t0) ;
                     d0 = dFrecurs{geo-1}(p0) ;
@@ -117,32 +140,30 @@ function H = navDIC_processShapesForDistMesh(H)
                     end
                 end
         end
-    % Final dist. Function
-
+    % Final distance Function
         fd = dFrecurs{end} ;
-    % Final dist. Function
+    % Final bar length Function
         FH = @(p)hFrecurs{end}(p) ;
         fh = @(p)FH(p) ; %min(max(FH(p),huniform(p)*minH0),maxH0*huniform(p)) ;
     % Add intersection points to fixed ppoints
-        pFix = [pFix ; pInt] ;
-        
+        pFix = [pFix ; pInt] ; [] ;
         
     % Remove fixed points that are not on the boundary
         if ~isempty(pFix)
             pFix = pFix(abs(fd(pFix))<=eps,:) ;
         end
-
+        
     % BoundingBox
         [j,i] = find(H.ROI) ;
         margin = 1 ;
         bboxROI = [min(i)-margin min(j)-margin ; max(i)+margin max(j)+margin] ;
         
     % Bar Length Distribution
-        [jj,ii] = meshgrid(1:size(H.ROI,2),1:size(H.ROI,1)) ;
-        pij = [jj(:),ii(:)] ;
-        hh = fh(pij) ;
-        hh(fd(pij)>0) = NaN ;
         if 0 % Density map for debug
+            [jj,ii] = meshgrid(1:size(H.ROI,2),1:size(H.ROI,1)) ;
+            pij = [jj(:),ii(:)] ;
+            hh = fh(pij) ;
+            hh(fd(pij)>0) = NaN ;
             hh = reshape(hh,size(ii)) ;
             img = imagesc(repmat(hh,[1 1 1]),'tag','DistMeshPreview') ;
             img.AlphaData = double(~isnan(hh)) ;
@@ -151,8 +172,9 @@ function H = navDIC_processShapesForDistMesh(H)
             delete(findobj(H.Figure,'tag','DistMeshPreview'))
             return ;
         end
-    % Initial density of points 
-        D0 = min(min(hh(~isnan(hh)))) ;
+        
+    % Initial density of points
+        D0 = min([h(:);h0]) ;
         
     % Compute the mesh
         mesh = navDIC_computeDistMesh2D(fd,fh,D0,bboxROI,pFix,H.Axes) ;

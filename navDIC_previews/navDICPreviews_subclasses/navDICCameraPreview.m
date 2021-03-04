@@ -1,6 +1,15 @@
 classdef navDICCameraPreview < navDICPreview
     
     properties
+        % Camera Infos
+            CameraName = [] ;
+            CameraID = [] ;
+        % Axes where the camera image is displayed
+            AxesImg = [] ;
+        % Handles to the Image Display
+            Img = [] ;
+        % Options
+            BlackAndWhiteImage = true ;
     end
     
     methods
@@ -23,28 +32,40 @@ classdef navDICCameraPreview < navDICPreview
                         return ;
                     end
                 % Retrieve Camera Infos
-                    prev.handles.CameraName = hd.Cameras(ID).Name ;
-                    prev.handles.CameraID = ID ;
-                    prev.fig.Name = [prev.fig.Name,' : ',prev.handles.CameraName] ;
+                    prev.CameraName = hd.Cameras(ID).Name ;
+                    prev.CameraID = ID ;
+                    prev.fig.Name = [prev.fig.Name,' : ',prev.CameraName] ;
                 % Set the axes
-                    prev.handles.AxesImg = axes('position',[0 0 1 1]) ;
+                    prev.AxesImg = axes('outerposition',[0 0 1 1]) ;
+                        prev.AxesImg.YDir = 'reverse' ;
+                        prev.AxesImg.XTick = [] ;
+                        prev.AxesImg.YTick = [] ;
+                        prev.AxesImg.LooseInset = [1 1 1 1]*0 ;
                         axis tight
                         axis off
                         axis equal
-                        prev.handles.AxesImg.YDir = 'reverse' ;
                 % Set the figure at the right size
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
-                    roiCam = hd.Cameras(ID).VidObj.ROIPosition ;
-                    resCam = roiCam(3:4) ;
+                    if ~isempty(hd.Images) && ~isempty(hd.Images{ID})
+                        sz = size(hd.Images{ID}{end}) ; 
+                        resCam = sz([2,1]) ;
+                    else
+                        roiCam = hd.Cameras(ID).VidObj.ROIPosition ; 
+                        resCam = roiCam(3:4) ;
+                    end
                     ratios = resCam./posFig ;
                     ratios = ratios./max(ratios) ;
                     newSizeFig = posFig.*ratios ;
                     prev.fig.Position = [prev.fig.Position(1:2)+(posFig-newSizeFig)/2 newSizeFig] ;
-                % Create an empty image
-                    prev.handles.Img = image(ones([fliplr(resCam) 3])*.5) ;
+                % Create an empty image as surface (for caxis scaling)
+                    img = ones([fliplr(resCam) 3])*.5 ;
+                    prev.Img = imagesc(img) ;
+                    %prev.Img = surf(JJ-0.5,II-0.5,JJ*0,img,'facecolor','flat','edgecolor','none') ;
                 % Contrain the aspect ratio
-                    prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
+                    %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
+                % Update the preview
+                    %prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE
@@ -55,19 +76,20 @@ classdef navDICCameraPreview < navDICPreview
                 % Try to get the last acquired image on camera
                     img = [] ;
                     try
-                        img = hd.Images{hd.CurrentFrame} ;
-                        img = img{prev.handles.CameraID} ;
+                        img = hd.Images{prev.CameraID}{hd.CurrentFrame} ;
                     end
                     if isempty(img) 
-                        prev.handles.Img.CData = 0.5 + 0*prev.handles.Img.CData ;
+                        %prev.Img.CData = 0.5 + 0*prev.Img.CData ;
                         return ;
                     end
                 % Actualize preview image
-                    nBands = size(img,3) ;
-                    if nBands == 1
-                        prev.handles.Img.CData = repmat(img,[1 1 3]) ;
+                    % Process
+                        %img = single(img) ;
+                        %img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
+                    if prev.BlackAndWhiteImage && size(img,3) == 1 && isinteger(img) 
+                        prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
-                        prev.handles.img.CData = img ;
+                        prev.Img.CData = img ;
                     end
             end
         

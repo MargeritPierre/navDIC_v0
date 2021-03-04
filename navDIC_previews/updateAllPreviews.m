@@ -6,15 +6,15 @@ function hd = updateAllPreviews(hd)
     % Update previews
         validPrev = [] ;
         for p = 1:length(hd.Previews)
-            hd.Previews{p} = hd.Previews{p}.updatePreview(hd) ;
-            validPrev(p) = hd.Previews{p}.isValid ;
+            hd.Previews(p) = hd.Previews(p).updatePreview(hd) ;
+            validPrev(p) = hd.Previews(p).isValid ;
         end
         validPrev = logical(validPrev) ;
         
     % Clear all invalid previews
         %if all(validPrev) ; return ; end
         if ~any(validPrev) 
-            hd.Previews = {} ;
+            hd.Previews = navDICPlotPreview.empty ;
             return ; 
         end
         hd.Previews = hd.Previews(validPrev) ;

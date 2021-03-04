@@ -1,8 +1,7 @@
-classdef navDICPreview
+classdef navDICPreview < handle & matlab.mixin.Heterogeneous
     
     properties
         fig = [] ; % the main figure
-        handles = [] ; % handles linked to the preview
         isValid = true ; 
     end
     
@@ -11,16 +10,17 @@ classdef navDICPreview
         % CONSTRUCTOR
             function prev = navDICPreview(hd,varargin)
                 % Parameters
-                    figRelSize = 0.5 ;
+                    figRelSize = 0.7 ; % relative size to screen
                 % Figure Creation
                     prev.fig = figure('tag',hd.navDICTag) ;
-                    prev.fig.ToolBar = 'none' ;
-                    prev.fig.MenuBar = 'none' ;
+                    prev.fig.MenuBar = 'none' ; % 'figure' ;
+                    prev.fig.ToolBar = 'figure' ; % 'none' ;
                     prev.fig.NumberTitle = 'off' ;
                     prev.fig.Name = 'navDIC Default Preview' ;
                 % Positionning
-                    prev.fig.Units = 'normalized' ;
-                    prev.fig.Position = [.5-figRelSize/2 .5-figRelSize/2 figRelSize figRelSize] ;
+                    %prev.fig.Units = 'normalized' ;
+                    L = prev.fig.Position(3:4) ;
+                    prev.fig.Position = prev.fig.Position + (1-figRelSize)/2*[L 0 0] - (1-figRelSize)*[0 0 L] ;
             end
         
         % UPDATE
