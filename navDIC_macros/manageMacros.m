@@ -91,7 +91,8 @@ function [Macros,macroListChanged] = manageMacros(Macros)
             delete(macroToRemove) ;
         % Display a message
             disp(newline) ;
-            disp(['(' macroToRemove.DataName ') MACRO HAS BEEN REMOVED']) ;
+            %disp(['(' macroToRemove.DataName ') MACRO HAS BEEN REMOVED']) ;
+            disp(['(' macroToRemove.Name ') MACRO HAS BEEN REMOVED']) ;
         % Update Lists
             updateLists() ;
             macroListChanged = true ;
