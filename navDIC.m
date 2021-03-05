@@ -478,7 +478,8 @@ function navDIC(varargin)
     function setPath(src,varargin)
         % Open a dialog box if needed
             if strcmp(src,'menu')
-                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT','img.png') ;
+                nameImg = [hd.WorkDir.CommonName,  hd.WorkDir.ImagesExtension];
+                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT',nameImg) ;
                 if file ==0 ; return ; end
                 [~,file,ext] = fileparts(file) ;
                 varargin = {path,file,ext} ;
