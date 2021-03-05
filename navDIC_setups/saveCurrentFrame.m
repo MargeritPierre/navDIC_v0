@@ -30,6 +30,24 @@ function hd = saveCurrentFrame(hd,varargin)
         end
     end
 
+    
+    % Save Images in binary files
+    if ~isempty(hd.Cameras) && strcmp(hd.ToolBar.MainMenu.saveImagesBin.Checked,'on')
+        for camID = 1:length(hd.Cameras)
+            % A folder by camera
+                folderName = [wd.Path,filesep,camsFolderName,filesep,hd.Cameras(camID).Name] ;
+            % Is the folder exists ?
+                if ~exist(folderName,'dir') ; mkdir(folderName) ; end
+            % Save the image
+            nameImg = sprintf([wd.CommonName,'.bin'],frameToSave) ;
+            nameImg = [folderName,filesep,nameImg] ;
+            fileID = fopen(nameImg,'w');
+            fwrite(fileID,hd.Images{camID}{frameToSave},'uint16');
+            fclose(fileID);               
+        end
+    end
+
+    
 % Save Inputs Data
     if ~isempty(hd.DAQInputs) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         % Folder of inputs data
