@@ -57,7 +57,6 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             if ~valid ; return ; end
         % Declare the videoinput
             cam.VidObj = videoinput(cam.Adaptor, cam.Infos.DeviceID,DeviceInfos.SupportedFormats{id}) ;
-        
         % Reglage du trigger
             listTriggerType = [{'manual'}, {'hardware'}, {'infinite'}] ;
             [id,valid] = listdlg('PromptString','Select a trigger type :',...
@@ -69,8 +68,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                 stop(cam) ;   
             end
             triggerconfig(cam.VidObj,listTriggerType{id}) 
-            
-            % Retrieve infos
+        % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
         % Add custom informations
             cam.Name = cam.Infos.DeviceName ;
