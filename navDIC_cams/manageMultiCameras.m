@@ -5,7 +5,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
 % ===================================================================================================================
     
     clc
-    display([char(10),'CAMERAS MANAGEMENT UTIL :']) ;
+    disp([newline,'CAMERAS MANAGEMENT UTIL :']) ;
     
     % Init IMAQ Session
         if isempty(CAMERAS) 
@@ -70,10 +70,18 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             triggerconfig(cam.VidObj,listTriggerType{id}) 
         % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
-        % Add custom informations
-            cam.Name = cam.Infos.DeviceName ;
+            % Add custom informations
+            
+            if isprop(cam.VidObj.Source,'DeviceUserID')
+                cam.Name = get(cam.VidObj.Source,'DeviceUserID');
+            else
+                warning(['DeviceUserID is not defined for the source of cam ', num2str(cam.Infos.DeviceID)]);
+                disp('Assigning camera name to the DeviceName.');
+                cam.Name = cam.Infos.DeviceName ;
+            end
+            
             cam.CurrentState = 'connected' ;
-        % Create the output Source
+            % Create the output Source
 %             cam.Output = navDIC_CameraSource ;
 %             cam.Output.Name = regexprep(cam.Name,' ','_') ;
     end
@@ -140,8 +148,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Set Input Infos
             %camToAdd = setCameraSettings(camToAdd) ;
         % Display the input
-            disp(char(10)) ;
-            disp('NEW INPUT ADDED :') ;
+            disp([newline,'NEW INPUT ADDED :']) ;
             disp(camToAdd) ;
         % Add the Input
             if isempty(usedCams) 
@@ -164,15 +171,14 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             camToRemove = usedCams(id) ;
         % Display a warning dialog
             answer = questdlg(['ARE YOU SURE YOU WANT TO REMOVE CAMERA ' camToRemove.Infos.DeviceName '?'],'DELETE CAMERA ?','OK','Cancel','Cancel') ;
-            if ~strcmp(upper(answer),'OK') ; return ; end
+            if ~strcmpi(answer,'OK') ; return ; end
         % Release the camera
             delete(camToRemove.VidObj) ;
             delete(usedCams(id).VidObj) ;
         % Removed the item in the list
             usedCams = usedCams(setdiff(1:length(usedCams),id)) ;
         % Display a message
-            disp(char(10)) ;
-            disp([camToRemove.Infos.DeviceName ' CAMERA HAS BEEN REMOVED']) ;
+            disp([newline, camToRemove.Infos.DeviceName ' CAMERA HAS BEEN REMOVED']) ;
         % Update Lists
             updateLists() ;
             camsHasChanged = true ;
@@ -236,7 +242,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             if ~isempty(usedCams)
                 % Display a warning dialog
                     answer = questdlg(['ARE YOU SURE YOU WANT TO CLEAR ALL CAMERAS ?'],'CLEAR ALL CAMERAS ?','OK','Cancel','Cancel') ;
-                    if ~strcmp(upper(answer),'OK') ; return ; end
+                    if ~strcmpi(answer,'OK') ; return ; end
                 % Reset the session
                     resetSession() ;
                     camsHasChanged = true ;
