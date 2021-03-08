@@ -7,6 +7,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         H = [] ; % Handle structure
         H.Valid = false ;
         switch dataType
+            case 'BinaryImageFolder'
+                initBinaryFilesFolder ;
             case 'ImageFolder'
                 initImageFolder ;
             case 'Video'
@@ -105,6 +107,95 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
 % INITIALIZATION FUNCTIONS
+    function initBinaryFilesFolder
+        H.Valid = false ;
+        % IMAGE SOURCE
+            % Choose the image folder
+                [path] = uigetdir(hd.WorkDir.Path,'SELECT AN IMAGE FOLDER') ;
+                if path==0 ; return ; end
+                disp(newline)
+                disp(['LOADING FRAMES FROM ',path])
+            % Build File List
+                imgExt = 'bin' ;
+                files = dir([path,'/*.',imgExt]) ;
+            % Keep file names only
+                fileNames = {files.name} ;
+                if isempty(fileNames)
+                    warning(['No Valid Image Files Found in',path])
+                    return
+                end
+            % Camera Name
+                camName = strsplit(path,filesep);
+                camName = camName{end} ;
+                disp(['   CameraName: ',camName])
+            % Get the common name and extension
+            commonName = regexprep(fileNames{1},['\d+','\.',imgExt],'');
+            nbBinImages = length(fileNames);
+            % TODO : Vérifier que cela fonctionne !   
+                disp(['   CommonName: ',commonName]);
+                disp(['   Type: ','.', imgExt]);
+                fprintf('   Number of images found: %d \n',nbBinImages);
+            % Get image ids
+                idSTR = cell(1,nbBinImages) ; % idSTR = {} ;
+                idNUM = zeros(1,nbBinImages) ; %[] ;
+                for i = 1:nbBinImages
+                    idSTR{i} =regexprep(fileNames{1},['(\',commonName,'|\.',imgExt,')'],'');
+                    %idSTR{i} = fileNames{i}(length(commonName)+1:end-length(ext)) ;
+                    if ~isempty(str2double(idSTR{i}))
+                        idNUM(i) = str2double(idSTR{i}) ;
+                    else
+                        idNUM(i) = NaN ;
+                    end
+                end
+            % Sort images by name
+                [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
+                fileNames = fileNames(ind) ;
+                idSTR = idSTR(ind(~isnan(idNUM))) ;
+                nFrames = length(idSTR) ;
+                fprintf('   Frames: [%d -> %d] (%d) \n', min(idNUM), max(idNUM), nFrames);
+        % IMAGE LOADING AND PROCESSING
+            % Load function
+                nFrames = numel(fileNames) ;
+                % load info about cameras
+                [infoFile,infoPath] = uigetfile({'*.txt';'*.mat';'*.*'},'SELECT THE ImagesInfo.txt FILE', fullfile(hd.WorkDir.Path,'ImagesInfo.txt')) ;
+                infoCams = readtable(fullfile(infoPath,infoFile));
+                
+               infoThisCam = infoCams(strcmp(infoCams.CamName,camName),:);
+               if ~length(infoThisCam.CamId) == 1
+                    warning(['No valid info found for images from cam ',camName])
+                    return
+               end              
+                frameSize = [infoThisCam.ImageHeight;infoThisCam.ImageWidth];
+                frameDataType =  infoThisCam.FrameDataType{1};
+                frameDataType = [frameDataType, '=>', frameDataType];
+%                 loadFrame = @(id) reshape(fread(fopen(fullfile(path,fileNames{id}),'r'),...
+%                     [frameSize(2) frameSize(1)*3], frameDataType),...
+%                     [frameSize(2) frameSize(1) 3]) ;
+                % ISSUE: Reshape ne fonctionne pas.
+                % Faire deux cas, selon que les images sont en noir et
+                % blanc ou en couleur ?
+                % Autre proposition, pour du noir et blanc :
+                 loadFrame = @(id) fread(fopen(fullfile(path,fileNames{id}),'r'),...
+                    [frameSize(2) frameSize(1)*3], frameDataType);
+                % Résultat Ok ? 
+                imData = loadFrame(1) ;
+            % Get Infos
+                [nI,nJ,nColors] = size(imData) ;
+                dataType = class(imData) ;
+                disp(['   Class: ',dataType]);
+                disp(['   Resolution: ',num2str(nJ),'x',num2str(nI)]);
+                disp(['   Colors: ',num2str(nColors)]);
+        % HANDLE STRUCTURE
+            H.CamName = camName ;
+            H.nFrames = nFrames ;
+            H.loadFrame = loadFrame ;
+            H.vidRes = [nJ nI] ;
+            H.nColors = nColors ;
+            H.FrameRate = 1 ;
+        % Validation
+            H.Valid = true ;
+    end
+
     function initImageFolder
         H.Valid = false ;
         % IMAGE SOURCE
@@ -220,9 +311,6 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         % Validation
             H.Valid = true ;
     end
-    
-        
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 % FIGURE FUNCTIONS
