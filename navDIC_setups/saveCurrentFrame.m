@@ -51,7 +51,7 @@ function hd = saveCurrentFrame(hd,varargin)
 % Save Inputs Data
     if ~isempty(hd.DAQInputs) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         % Folder of inputs data
-            folderName = [wd.Path,inputsFolderName] ;
+            folderName = [wd.Path,filesep,inputsFolderName] ;
         % Is the folder exists ?
             if ~exist(folderName,'dir') ; mkdir(folderName) ; end
         % Saving... 
@@ -63,9 +63,9 @@ function hd = saveCurrentFrame(hd,varargin)
                     save(nameData,inName) ;
             end
         % Saving Timeline
-            nameData = [folderName,'/','Time','.mat'] ;
+            nameData = [folderName,filesep,'Time','.mat'] ;
             time = sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 3600*24 3600 60 1]),2) ;
-            save(nameData,time(:)) ;
+            save(nameData, 'time') ;
             
     end
         
