@@ -157,7 +157,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
             % Load function
                 nFrames = numel(fileNames) ;
                 % load info about cameras
-                [infoFile,infoPath] = uigetfile({'*.txt';'*.mat';'*.*'},'SELECT THE ImagesInfo.txt FILE', fullfile(hd.WorkDir.Path,'ImagesInfo.txt')) ;
+                [infoFile,infoPath] = uigetfile({'*.txt';'*.mat';'*.*'},'SELECT THE ImagesInfo.txt FILE', fullfile(fullfile(path, '..'),'ImagesInfo.txt')) ;
                 infoCams = readtable(fullfile(infoPath,infoFile));
                 
                infoThisCam = infoCams(strcmp(infoCams.CamName,camName),:);
