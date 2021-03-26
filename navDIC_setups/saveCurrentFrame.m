@@ -39,7 +39,7 @@ function hd = saveCurrentFrame(hd,varargin)
             % Save the resolution of the camera in a text file
                 resolutionFileName = [folderName,filesep,'resolution.txt'];    
                 if ~isfile(resolutionFileName)
-                    imageSize = hd.Cameras.VidObj.ROIPosition;
+                    imageSize = hd.Cameras(camID).VidObj.ROIPosition;
                     resolution = [imageSize(3) imageSize(4)];
                     resolutionFileID = fopen(resolutionFileName,'wt');
                     fprintf(resolutionFileID, '%d\n%d', resolution);
@@ -66,22 +66,23 @@ function hd = saveCurrentFrame(hd,varargin)
     if ~isempty(hd.DAQInputs) && strcmp(hd.ToolBar.MainMenu.saveImages.Checked,'on')
         % Folder of inputs data
             folderName = [wd.Path,inputsFolderName] ;
-        % Is the folder exists ?
-            if ~exist(folderName,'dir') ; mkdir(folderName) ; end
-        % Saving... 
-            for inID = 1:length(hd.DAQInputs.Inputs)
-                inName = hd.DAQInputs.Inputs(inID).DataName ;
-                % Save the Data
-                    nameData = [folderName,'/',inName,'.mat'] ;
-                    eval([inName,' = hd.InputData(:,inID) ;']) ;
-                    save(nameData,inName) ;
-            end
+    end
+%         % Is the folder exists ?
+%             if ~exist(folderName,'dir') ; mkdir(folderName) ; end
+%         % Saving... 
+%             for inID = 1:length(hd.DAQInputs.Inputs)
+%                 inName = hd.DAQInputs.Inputs(inID).DataName ;
+%                 % Save the Data
+%                     nameData = [folderName,'/',inName,'.mat'] ;
+%                     eval([inName,' = hd.InputData(:,inID) ;']) ;
+%                     save(nameData,inName) ;
+%             end
             
             
-        % Saving Timeline
-            nameData = [folderName,'/','Time','.mat'] ;
-            time = sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 3600*24 3600 60 1]),2) ;
-            save(nameData,time(:)) ;
+%         % Saving Timeline
+%             nameData = [folderName,'\','Time','.mat'] ;
+%             time = sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 3600*24 3600 60 1]),2) ;
+%             save(nameData,time(:)) ;
             
     end
         

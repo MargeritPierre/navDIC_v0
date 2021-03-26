@@ -60,22 +60,29 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             DAQInputs.Session,...
             devices(input.DeviceID).ID,...
             devices(input.DeviceID).Subsystems(input.SubSystID).ChannelNames{input.ChannelID},...
-            dMType(devices(input.DeviceID)));
+            input.MeasurementType);
             %'Voltage') ;
             input.HardwareInput.Range = input.Ranges(input.RangeID) ;
-            if strcmp(devices(input.DeviceID).Model,'NI 9235')
-                input.HardwareInput.BridgeMode = 'Quarter';
-                input.HardwareInput.NominalBridgeResistance = 120;
+            if isprop(input.HardwareInput, 'BridgeMode')
+            % Get User-Defined Input Infos
+                valid = false ;
+                askFor = {'BRIDGE MODE','NOMINAL BRIDGE RESISTANCE (OHM)'} ;
+                title = 'USER-DEFINED INPUT INFOS';
+                num_lines = 1 ;
+                % Default Values
+                    if isfield(input,'BridgeMode') % Not the first time infos are setted
+                        default = {input.BridgeMode,...
+                                    input.NominalBridgeResistance};
+                    else
+                        default = {'Quarter', '120'};
+                    end
+                    answers = inputdlg(askFor,title,num_lines,default) ;
+                    if isempty(answers) ; return ; end
+                % Set properties
+                    input.HardwareInput.BridgeMode = answers{1};
+                    input.HardwareInput.NominalBridgeResistance = ...
+                                                    str2num(answers{2}); 
             end
-    end
-
-% SET MEASUREMENT TYPE
-    function deviceMeasurementType = dMType(device)
-        if strcmp(device.Model,'NI 9235')
-            deviceMeasurementType = 'Bridge';
-        else
-            deviceMeasurementType = 'Voltage';
-        end
     end
 
 % SET INPUT INFO
@@ -90,9 +97,17 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
                 indexedRangeNames{end+1} = [num2str(r) ' : ',rangeNames{end}] ;
             end
             joinedRangeNames = strjoin(indexedRangeNames,char(10)) ;
+        % Get Available Measurement Types
+            measurementTypes = devices(input.DeviceID).Subsystems(input.SubSystID).MeasurementTypesAvailable ;
+            nM = length(measurementTypes);
+            measurementTypesNames = {};
+            for m = 1:nM
+                measurementTypesNames{end+1} = [num2str(m) ' : ' measurementTypes{m}] ;
+            end
+            joinedMeasurementTypes = strjoin(measurementTypesNames,char(10)) ;
         % Get User-Defined Input Infos
             valid = false ;
-            askFor = {'NAME','UNITS','SENSITIVITY (Units/Volts)',['RANGE (TYPE THE ID)' char(10) joinedRangeNames]} ;
+            askFor = {'NAME','UNITS','SENSITIVITY (Units/Volts)',['RANGE (TYPE THE ID)' char(10) joinedRangeNames], ['MEASUREMENT TYPE (TYPE THE NAME)' char(10) joinedMeasurementTypes]} ;
             title = 'USER-DEFINED INPUT INFOS';
             num_lines = 1 ;
             % Default Values
@@ -100,18 +115,20 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
                     default = {input.DataName,...
                                 input.Units,...
                                 num2str(input.Sensitivity),...
-                                num2str(input.RangeID)};
+                                num2str(input.RangeID), ...
+                                num2str(input.MeasurementType)};
                 else
-                    default = {['in',num2str(length(usedInputs)+1)],'V','1','1'};
+                    default = {['in',num2str(length(usedInputs)+1)],'V','1','1',num2str(measurementTypes{1})};
                 end
-            answers = inputdlg(askFor,title,num_lines,default) ;
-            if isempty(answers) ; return ; end
+                answers = inputdlg(askFor,title,num_lines,default) ;
+                if isempty(answers) ; return ; end
             % Extract answers
                 input.DataName = answers{1} ;
                 input.Units = answers{2} ;
                 input.Sensitivity = str2num(answers{3}) ;
                 input.RangeID = str2num(answers{4}) ;
                 input.Ranges = ranges ;
+                input.MeasurementType = answers{5};
         % Set the FullName
             input.FullName = [...
                                     input.DataName ...
@@ -261,7 +278,7 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
                                 disp(['         ',channelName])
                                 % Is this Channel an input ?
                                     if regexp(channelName,'ai')
-                                        availableInputs(end+1).Name = [devName,', ',channelName] ;
+                                        availableInputs(end+1).Name = [devName,', ',devices(d).ID,', ',channelName] ; %Does it fix figure display bug ?
                                         availableInputs(end).DeviceID = d ;
                                         availableInputs(end).SubSystID = s ;
                                         availableInputs(end).ChannelID = c ;

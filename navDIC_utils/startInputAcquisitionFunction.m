@@ -6,7 +6,7 @@ function startInputAcquisitionFunction()
     global plotVar;
     plotVar = [];
     plotVar.plotTimer = timer('ExecutionMode','FixedRate'...
-                    ,'Period',1 ...
+                    ,'Period',5 ...
                     ,'TimerFcn',@(src,evt)plotTimerFunction());
 
 % SIGNALS ACQUISITION
@@ -21,16 +21,16 @@ function startInputAcquisitionFunction()
     hd.AcquiredData.Time = [];
     hd.AcquiredData.StartTime = [];
 
-    session.Rate = 1000 ;
+    session.Rate = 800 ;
     session.TriggersPerRun = 1 ;
     session.IsContinuous = true ;
-    session.NotifyWhenDataAvailableExceeds = 100 ;
+    session.NotifyWhenDataAvailableExceeds = 8000 ;
     hd.AcquiredData.StartTime = now;
     startBackground(session) ;
     
 % MARKERS POSITION ACQUISITION
 
-    %CreatePlot;  
+    CreatePlot;  
     optTrack = hd.OT;
     
     hd.AcquiredOTPositions = [];
@@ -40,6 +40,7 @@ function startInputAcquisitionFunction()
 
     %if exist ('lst2','var') && isvalid(lst2) ; delete (lst2) ; end
     optTrack.addlistener(1, 'Position');
+    hd.AcquiredOTPositions.StartTime = now;
     optTrack.enable(1);
     
     pos = scatter(0, 0 ,500, [0 0.79 0.61] , '.');
@@ -50,14 +51,14 @@ function startInputAcquisitionFunction()
     function onDataAvailable(src,evt)
         hd.AcquiredData.Data = [hd.AcquiredData.Data ; evt.Data] ;
         hd.AcquiredData.Time = [hd.AcquiredData.Time ; evt.TimeStamps] ;
-        %disp(['Number of sample acquired: ', num2str(size(hd.AcquiredData.Data,1))])
+        disp(['Number of sample acquired: ', num2str(size(hd.AcquiredData.Data,1))])
     end
 
     % DISPLAY MARKERS POSITIONS
     function CreatePlot
         
         % create a figure which will contain two subplots
-        f1 = figure('Name','Position of Optitrack Markers','NumberTitle','off');
+        f3 = figure('Name','Position of Optitrack Markers','NumberTitle','off');
         set(gca,'DataAspectRatio',[1,1,1]);
         %hf1.WindowStyle = 'docked';
 
@@ -70,9 +71,9 @@ function startInputAcquisitionFunction()
     end
 
 % FUNCTION EXECUTED WHEN PLOT TIMER STARTS
-    function plotTimerFunction()
-        X = hd.AcquiredOTPositions.Data(:,1,end);
-        Z = hd.AcquiredOTPositions.Data(:,3,end);
+    function plotTimerFunction( src, evnt)
+        X = hd.AcquiredOTPositions.Data(:,3,end);
+        Z = hd.AcquiredOTPositions.Data(:,2,end);
         set(pos,'XData', X, 'YData', Z)
         drawnow
     end

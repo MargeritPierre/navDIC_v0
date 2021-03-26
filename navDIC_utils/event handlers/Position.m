@@ -1,5 +1,5 @@
 function Position( src , evnt )
- 
+
     % Marker positions acquisition
     global hd;
     tempMatrixOfPositions = [];

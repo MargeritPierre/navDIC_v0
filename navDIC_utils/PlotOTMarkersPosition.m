@@ -3,22 +3,22 @@
 
 %% DATA PARAMETERS
 
-global hd;
+global hd2;
 OTPos = [];
 
 %% CREATE MATRIX TO PLOT
 
-time = floor(hd.AcquiredOTPositions.Time(1));
+time = floor(hd2.AcquiredOTPositions.Time(1));
 nbOfPositionsSelected = 0;
-for i = 1:size(hd.AcquiredOTPositions.Time,1)
-    if not(floor(hd.AcquiredOTPositions.Time(i)) == time)
+for i = 1:size(hd2.AcquiredOTPositions.Time,1)
+    if not(floor(hd2.AcquiredOTPositions.Time(i)) == time)
         nbOfPositionsSelected = 0;
-        time = floor(hd.AcquiredOTPositions.Time(i));
+        time = floor(hd2.AcquiredOTPositions.Time(i));
     end
     if nbOfPositionsSelected == 0
         OTPos = cat(3, OTPos,...
-            hd.AcquiredOTPositions.Data(:,:,i));
-        %ones(size(hd.AcquiredOTPositions.Data,1),1)* hd.AcquiredOTPositions.Time(i)
+            hd2.AcquiredOTPositions.Data(:,:,i));
+        %ones(size(hd2.AcquiredOTPositions.Data,1),1)* hd2.AcquiredOTPositions.Time(i)
         nbOfPositionsSelected = nbOfPositionsSelected + 1;
     end
 end
@@ -56,5 +56,5 @@ for i = 1:size(OTPos,1)
         lightBlue(3) + (darkBlue(3) - lightBlue(3))* dNorm(:,i)];
     scatter(OTPos(i,3,2:size(OTPos,3)),OTPos(i,2,2:size(OTPos,3)),50,c,'.')
     [M, I] = max(d(:,i));
-    text(double(OTPos(i,3,I+1)),double(OTPos(i,2,I+1)),strcat(num2str(d(I,i)*1000,'%.1f'),' mm $\rightarrow$'), 'HorizontalAlignment', 'right');
+    text(double(OTPos(i,3,I+1)),double(OTPos(i,2,I+1)),strcat(num2str(d(I,i)*1000,'%.1f'),' mm $\rightarrow$'), 'HorizontalAlignment', 'right','FontSize',8);
 end

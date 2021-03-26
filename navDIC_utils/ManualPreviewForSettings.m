@@ -18,8 +18,8 @@ set(src)
 
 %% Modification du ExposureTime:
 disp(['ExposureTimeAbs before : ', num2str(get(src,'ExposureTimeAbs'))]);
-
-set(src,'ExposureTimeAbs',200000);
+set(src,'ExposureAuto','Off');
+set(src,'ExposureTimeAbs',4000);
 
 %% Réglage du FrameRate :
 disp(['AcquisitionFrameRateAbs before : ', num2str(get(src,'AcquisitionFrameRateAbs'))]);

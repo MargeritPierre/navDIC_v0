@@ -27,6 +27,7 @@ function hd = captureCameras(hd)
 %                 continue ; 
 %             end
             images{c} = peekdata(cam,1) ;
+            %images{c} = getdata(cam,1) ;
                 
             if cam.VideoFormat == 'Mono12'
                 images{c} = (2^16/2^12)*images{c};
