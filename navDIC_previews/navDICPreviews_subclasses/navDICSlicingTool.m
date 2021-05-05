@@ -122,45 +122,49 @@ classdef navDICSlicingTool < navDICCameraPreview
                     jj = X(1,1).*(1-ee).*(1-nn) + X(2,1).*(ee).*(1-nn) + X(1,2).*(1-ee).*(nn) + X(2,2).*(ee).*(nn) ;
                     ii = Y(1,1).*(1-ee).*(1-nn) + Y(2,1).*(ee).*(1-nn) + Y(1,2).*(1-ee).*(nn) + Y(2,2).*(ee).*(nn) ;
                     %delete(findobj(prev.AxesImg,'tag','markers')) ; %pl = plot(prev.AxesImg,jj(:),ii(:),'.r','tag','markers','hittest','off') ;
-                % Get the Images
-                    IMG = cat(4,hd.Images{prev.CameraID}{:}) ;
-                    [nI,nJ,nColors,nFrames] = size(IMG) ;
-                    nPix = nI*nJ ;
-                    if nColors>1
-                        IMG = sum(IMG/nColors,3,'native') ;
-                    end
-                % Transform to space-time
-                    IMG = reshape(IMG,[],nFrames) ;
-                % Linear Interpolation between the four neightbors
+                % Get the Image Infos
+                    [nI,nJ,nColors] = size(hd.Images{prev.CameraID}{end}) ;
+                    nFrames = numel(hd.Images{prev.CameraID}) ;
+                % Real-valued pixel coord: Linear Interpolation between the four neightbors
                     % Indices corresponding to the neightboring pixels
                     % (frame space)
                         indN1 = floor(ii) + (floor(jj)-1)*nI ;
                         indN2 = indN1+nI ;
                         indN3 = indN2+1 ;
                         indN4 = indN1+1 ;
-                    % Sorresponding Slice image indices 
-%                         qq = repelem(1:Ls,Lr) ;
-                    % Transformation matrix
+                    % Local coordinates
                         di = ii-floor(ii) ; dj = jj-floor(jj) ;
-%                         T = sparse(qq,indN1,(1-dj(:)).*(1-di(:)),Ls,nPix) ;
-%                         T = T + sparse(qq,indN2,(dj(:)).*(1-di(:)),Ls,nPix) ;
-%                         T = T + sparse(qq,indN3,(dj(:)).*(di(:)),Ls,nPix) ;
-%                         T = T + sparse(qq,indN4,(1-dj(:)).*(di(:)),Ls,nPix) ;
-%                         T = T./Lr ; % Mean
-                    % Interpolation
-                        %SLICE = T*double(IMG) ;
-                        fr = reshape((0:nFrames-1)*nI*nJ,[1 1 nFrames]) ;
-                        im1 = IMG(indN1+fr) ;
-                        im2 = IMG(indN2+fr) ;
-                        im3 = IMG(indN3+fr) ;
-                        im4 = IMG(indN4+fr) ;
-                        SLICE = double(im1).*(1-di).*(1-dj) ...
-                                + double(im2).*(dj).*(1-di) ...
-                                + double(im3).*(dj).*(di) ...
-                                + double(im4).*(1-dj).*(di) ...
-                                ;
-                        SLICE = squeeze(mean(SLICE,1)) ;
-                       %cla(prev.SliceAxes) ; plot(prev.SliceAxes,DATA(:,hd.CurrentFrame)) ;
+                % GET THE SLICE
+                    if 0 % Small data version
+                    % Transform to space-time
+                        IMG = cat(4,hd.Images{prev.CameraID}{:}) ;
+                        if nColors>1 ; IMG = sum(IMG/nColors,3,'native') ; end
+                        IMG = reshape(IMG,[],nFrames) ; % critical step (memory needed)
+                        % Interpolation
+                            %SLICE = T*double(IMG) ;
+                            fr = reshape((0:nFrames-1)*nI*nJ,[1 1 nFrames]) ;
+                            im1 = IMG(indN1+fr) ;
+                            im2 = IMG(indN2+fr) ;
+                            im3 = IMG(indN3+fr) ;
+                            im4 = IMG(indN4+fr) ;
+                            SLICE = double(im1).*(1-di).*(1-dj) ...
+                                    + double(im2).*(dj).*(1-di) ...
+                                    + double(im3).*(dj).*(di) ...
+                                    + double(im4).*(1-dj).*(di) ...
+                                    ;
+                            SLICE = squeeze(mean(SLICE,1)) ;
+                    elseif 1 % Large data version
+                    % Build the transfer matrix
+                        iit = repmat(1:numel(indN1),[1 4])' ;
+                        jjt = [indN1(:);indN2(:);indN3(:);indN4(:)] ;
+                        di = di(:) ; dj = dj(:) ;
+                        vvt = [(1-di).*(1-dj);(dj).*(1-di);(dj).*(di);(1-dj).*(di)] ;
+                        T = sparse(iit(:),jjt(:),vvt(:),Lr*Ls,nI*nJ) ;
+                    % Extract the slice
+                        SLICE = cellfun(@(img)T*reshape(double(img),[nI*nJ 1 1 nColors]),hd.Images{prev.CameraID},'UniformOutput',false) ; 
+                        SLICE = reshape(cat(3,SLICE{:}),[Lr Ls nFrames nColors]) ;
+                        SLICE = reshape(mean(SLICE,1),[Ls nFrames nColors]) ;
+                    end
                % Display Slice
                     xdata = 1:nFrames ;
                     ydata = 1:Ls ;

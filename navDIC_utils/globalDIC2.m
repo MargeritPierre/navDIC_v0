@@ -8,9 +8,9 @@
     clearvars -except hd
 
 % INITIALIZATION PARAMETERS
-    camID = 3 ;
-    seedNumber = 2 ;
-    frames = '[14:207]' ; % Frames taken for DIC (allows decimation)
+    camID = 1 ;
+    seedNumber = 1 ;
+    frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
     dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
     refFrame = 'last' ; % Reference image ('first' , 'last' or number)
     refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -82,7 +82,7 @@
     INSIDE = sparse(1:nROI,ie(:)',true,nROI,dicMesh.nElems) ;
     
     
-%% SECOND GRADIENT CRITERION: 
+% SECOND GRADIENT CRITERION: 
 
 % EDGES (all elements)
 
@@ -142,15 +142,15 @@
 % PARAMETERS
     % Displacement guess
         startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
-        addPreviousCorrection = false ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
+        addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0.05 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
-        kernelModel =    'finiteDiff' ... first order finite difference
-                        ... 'gaussian' ... optimized gaussian
+        kernelModel =   ... 'finiteDiff' ... first order finite difference
+                         'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 2 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 1 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
@@ -168,27 +168,27 @@
     % Geometry validation criteria
         cullOutOfFrame = true ; % Cull out of frame points
         WEIGHT = INSIDE ; MAPPING ; % % % For local averaging and difference image moments computations
-        minCorrCoeff = 0.9 ; % Below this, elements are culled
-        maxMeanElemResidue = 0.2 ; % Above this, elements are culled
+        minCorrCoeff = 0 ; % Below this, elements are culled
+        maxMeanElemResidue = Inf ; % Above this, elements are culled
         thresholdValidGeometry = 10 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
     % Regularization
         stepRatio = 1 ; %0.15 ; % Descent step ratio, damping the convergence
         regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e8 ; % Strain gradient penalisation coefficient
+        beta = 1*1e7 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
-        maxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-3 ; % Maximum displacement of a node
-        maxResidueRelativeVariation = -.001 ; % Maximum relative variation of the image residue (RMSE)
+        maxIt = 1000 ; % Maximum number of Newton-Raphson iterations
+        minNorm = 1e-1 ; % Maximum displacement of a node
+        maxResidueRelativeVariation = Inf ; -.001 ; % Maximum relative variation of the image residue (RMSE)
         minCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
-        exportTOnavDIC = false ;
+        exportTOnavDIC = true ;
         reverseReference = true ;
         strainOnNodes = true ;
     % Plotting
-        plotRate = 0 ; % Plot Refresh Frequency 
-        plotEachIteration = true ; % Plot at every iteration (without necessary pausing, bypass plotRate)
-        plotEachFrame = true ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
+        plotRate = 1 ; % Plot Refresh Frequency 
+        plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
+        plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Watch CPU 
         codeProfile = false ;

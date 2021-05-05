@@ -150,7 +150,16 @@ classdef navDICPlotPreview < navDICPreview
                     timeString = '@time' ;
                     switch upper(preset)
                         case 'INPUT VS. TIME'
-                            if isempty(hd.InputData) % Do nothing
+                            if isempty(hd.InputData)
+                                if isempty(hd.DAQInputs) || isempty(hd.DAQInputs.Inputs) % Do nothing
+                                else
+                                    for in = 1:numel(hd.DAQInputs.Inputs)
+                                        prev.addCurve([hd.DAQInputs.Inputs(in).Name ' vs. Time'] ... % Name
+                                                        ,['hd.InputData(:,' num2str(in) ')'''] ... % YData
+                                                        , timeString ... % XData
+                                                        ) ;
+                                    end
+                                end
                             elseif istable(hd.InputData) % Table Data
                                 for in = 1:size(hd.InputData,2)
                                     varName = hd.InputData.Properties.VariableNames{in} ;
@@ -225,6 +234,13 @@ classdef navDICPlotPreview < navDICPreview
                             replace{end+1} = ['hd\.Seeds(' num2str(s) ')\.DataFields\.'] ;
                         end
                     % Input names
+                        if ~isempty(hd.DAQInputs) && ~isempty(hd.DAQInputs.Inputs)
+                            for in = 1:size(hd.DAQInputs.Inputs,2)
+                                varName = hd.DAQInputs.Inputs(in).DataName ;
+                                keywords{end+1} = ['@' varName] ; 
+                                replace{end+1} = ['hd\.InputData(:,' num2str(in) ')'] ;
+                            end
+                        end
                         if istable(hd.InputData)
                             for in = 1:size(hd.InputData,2)
                                 varName = hd.InputData.Properties.VariableNames{in} ;

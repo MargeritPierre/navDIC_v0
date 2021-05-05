@@ -18,6 +18,7 @@ function hd = captureCameras(hd)
     % Get all cams data
         images = cell(1,nCams) ;
         for c = 1:nCams
+            if ~ismember(hd.Cameras(c).CurrentState,{'connected'}) ; continue ; end
             cam = hd.Cameras(c).VidObj ;
             t = tic ;
 %            while cam.FramesAvailable == 0 && toc(t)<timeOut ; end
@@ -30,7 +31,8 @@ function hd = captureCameras(hd)
         end
         
     % Flush cameras buffers
-        flushdata([hd.Cameras.VidObj],'all') ;
+        isConnected = ismember({hd.Cameras.CurrentState},{'connected'}) ;
+        if any(isConnected) ; flushdata([hd.Cameras(isConnected).VidObj],'all') ; end
         
     % Save Images
         for c = 1:nCams

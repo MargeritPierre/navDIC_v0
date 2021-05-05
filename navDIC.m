@@ -88,7 +88,7 @@ function navDIC(varargin)
             % Working Directory
                 hd.WorkDir = [] ;
                     hd.WorkDir.Path = pwd ;
-                    hd.WorkDir.CommonName = 'img' ;
+                    hd.WorkDir.CommonName = 'img_%05i' ;
                     hd.WorkDir.ImagesExtension = '.png' ;
         % DEVICES
             % Cameras
@@ -97,6 +97,8 @@ function navDIC(varargin)
                 hd.DAQInputs = [] ;
         % DATA
             initHandleData(false)
+        % MACROS
+            hd.Macros = [] ;
         % PROCESSING
             % DIC
                 hd.Seeds = [] ;
@@ -130,7 +132,7 @@ function navDIC(varargin)
 % INITIALIZE/CLEAR DATA IN HANDLES
     function initHandleData(confirm)
         % If needed, answer the user to confirm
-            if confirm
+            if confirm && hd.nFrames>0
                 answer = questdlg('DO YOU WANT TO CLEAR THE DATA ACQUIRED PREVIOUSLY ?','Clearing Data','Yes','No','No') ;
                 if isempty(answer) ; return ; end
                 if strcmp(answer,'No') ; return ; end
@@ -361,6 +363,27 @@ function navDIC(varargin)
                     hd.ToolBar.MainMenu.computeAllDIC = uimenu(hd.ToolBar.MainMenu.computeDIC,...
                                                             'Label','All Zones', ...
                                                             'callback',@(src,evt)computeAllDIC) ;
+                                                        
+                                                        
+        % MACROS -------------------------------------------------
+           hd.ToolBar.MainMenu.macros = uimenu(hd.ToolBar.fig,'Label','Macros','Enable','on') ;
+           % Manage Macros
+                hd.ToolBar.MainMenu.manageMacros = uimenu(hd.ToolBar.MainMenu.macros,...
+                                                        'Label','Manage Macros', ...
+                                                        'callback',@(src,evt)manageSetupMacros) ;
+           % Auto-Run Macros
+                hd.ToolBar.MainMenu.autoRunMacros = uimenu(hd.ToolBar.MainMenu.macros,...
+                                                        'Label','Auto Run', ...
+                                                        'Separator','on', ...
+                                                        'Enable','on', ...
+                                                        'Checked','on', ...
+                                                        'callback',@(src,evt)set(src,'checked',~get(src,'checked'))...
+                                                        ) ;
+           % Re-Run Macros
+                hd.ToolBar.MainMenu.reRunMacros = uimenu(hd.ToolBar.MainMenu.macros,...
+                                                        'Label','Re-Run', ...
+                                                        'callback',@(src,evt)reRunMacros...
+                                                        ) ;
                 
         % VIEWS -------------------------------------------------
            hd.ToolBar.MainMenu.views = uimenu(hd.ToolBar.fig,'Label','Views');%,'Enable','off') ;
@@ -369,11 +392,6 @@ function navDIC(varargin)
                                                         'Label','Image Preview', ...
                                                         ...'Enable','off', ...
                                                         'callback',@(src,evt)camPreview) ;
-           % Preview an Input
-                hd.ToolBar.MainMenu.inputPreview = uimenu(hd.ToolBar.MainMenu.views,...
-                                                        'Label','Input Preview', ...
-                                                        ...'Enable','off', ...
-                                                        'callback',@(src,evt)inputPreview) ;
            % Preview a DIC Seed
                 hd.ToolBar.MainMenu.seedPreview = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Seed Preview', ...
@@ -381,11 +399,11 @@ function navDIC(varargin)
            % Plot Preview
                 hd.ToolBar.MainMenu.plotPreview = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Plot', ...
-                                                        'Separator','on', ...
                                                         'callback',@(src,evt)plotPreview) ;
            % Slicing tool
                 hd.ToolBar.MainMenu.sliceTool = uimenu(hd.ToolBar.MainMenu.views,...
                                                         'Label','Images Slicing', ...
+                                                        'Separator','on', ...
                                                         'callback',@(src,evt)sliceTool) ;
            % Auto Layout
                 hd.ToolBar.MainMenu.autoLayout = uimenu(hd.ToolBar.MainMenu.views,...
@@ -680,6 +698,7 @@ function navDIC(varargin)
             strInfos = [] ;
             strInfos = [strInfos,' ',num2str(length(hd.Cameras)),' Cameras'] ;
             strInfos = [strInfos,' | ',num2str(nIn),' DAQ.Inputs'] ;
+            strInfos = [strInfos,' | ',num2str(numel(hd.Macros)),' Macros'] ;
             strInfos = [strInfos,' | ',num2str(length(hd.Seeds)),' DIC.Seeds'] ;
             strInfos = [strInfos,' | ',num2str(length(hd.Previews)),' Previews'] ;
             strInfos = [strInfos,' | Frame ',num2str(hd.CurrentFrame),'/',num2str(hd.nFrames)] ;
@@ -711,31 +730,29 @@ function navDIC(varargin)
         % Debug blocks the mainmenu enable behavior
             if ~hd.debug
                 % Data acquisition
-                    if ~isempty(hd.Cameras) || nIn~=0
+                    if ~isempty(hd.Cameras) || nIn~=0 || ~isempty(hd.Macros)
                         hd.ToolBar.MainMenu.startStop.Enable = 'on' ;
                         hd.ToolBar.MainMenu.singleShot.Enable = 'on' ;
                         hd.ToolBar.MainMenu.frameRate.Enable = 'on' ;
-                        hd.ToolBar.MainMenu.saveImages.Enable = 'on' ;
                     else
                         hd.ToolBar.MainMenu.startStop.Enable = 'off' ;
                         hd.ToolBar.MainMenu.singleShot.Enable = 'off' ;
                         hd.ToolBar.MainMenu.frameRate.Enable = 'off' ;
-                        hd.ToolBar.MainMenu.saveImages.Enable = 'off' ;
                     end
                 % Cameras
                     if ~isempty(hd.Cameras)
                         hd.ToolBar.MainMenu.camPreview.Enable = 'on' ;
+                        hd.ToolBar.MainMenu.saveImages.Enable = 'on' ;
                         hd.ToolBar.MainMenu.DIC.Enable = 'on' ;
                     else
                         hd.ToolBar.MainMenu.camPreview.Enable = 'off' ;
+                        hd.ToolBar.MainMenu.saveImages.Enable = 'off' ;
                         hd.ToolBar.MainMenu.DIC.Enable = 'off' ;
                     end
                 % Inputs
                     if nIn~=0
-                        hd.ToolBar.MainMenu.inputPreview.Enable = 'on' ;
                         hd.ToolBar.MainMenu.saveInputs.Enable = 'on' ;
                     else
-                        hd.ToolBar.MainMenu.inputPreview.Enable = 'off' ;
                         hd.ToolBar.MainMenu.saveInputs.Enable = 'off' ;
                     end
                 % Seeds
@@ -802,6 +819,14 @@ function navDIC(varargin)
                     t = toc(startTime)-lastTime ;
                     disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
                     lastTime = toc(startTime) ;
+            % Execute macros
+                if ~isempty(hd.Macros)
+                    disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    hd = runMacros(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      ------ ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+                end
             % Save Acquired Data
                 hd = saveCurrentFrame(hd) ;
                 t = toc(startTime)-lastTime ;
@@ -858,6 +883,29 @@ function navDIC(varargin)
             initHandleData(true) ;
         % Update Infos
             updateToolbar() ;
+    end
+
+% SET THE EXTERNAL MACROS
+    function manageSetupMacros
+        % Open the manageDAQInputs Tool
+            [hd.Macros,macrosHasChanged] = manageMacros(hd.Macros) ;
+            if ~macrosHasChanged ; return ; end
+        % Ask to clear the data
+            initHandleData(true) ;
+        % Update Infos
+            updateToolbar() ;
+    end
+
+% RE-RUN THE EXTERNAL MACROS
+    function reRunMacros
+        disp('Re-Run Macros')
+        for fr = 1:hd.nFrames
+            hd.CurrentFrame = fr ;
+            hd = runMacros(hd) ;
+            hd = updateAllPreviews(hd) ;
+            updateToolbar() ;
+            drawnow ;
+        end
     end
 
 
@@ -1022,10 +1070,6 @@ function navDIC(varargin)
             hd.Previews(end+1) = prev ;
         end
     end
-
-% PREVIEW A DATA INPUT
-    function inputPreview
-    end 
 
 
 % ADD A PLOT PREVIEW

@@ -5,6 +5,7 @@ function hd = startAllCameras(hd)
         
     % Stop all cams
         for c = 1:length(hd.Cameras)
+            if ~ismember(hd.Cameras(c).CurrentState,{'connected'}) ; continue ; end
             cam = hd.Cameras(c).VidObj ;
             cam.FramesPerTrigger = 1 ;
             cam.TriggerRepeat = Inf ;
