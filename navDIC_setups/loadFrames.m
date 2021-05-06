@@ -47,7 +47,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         
     % Load the images
         % Each frames
-            IMG = zeros([size(H.processImg(:,:,1)) size(H.processImg,3) length(H.loadedFrames)],class(H.processImg)) ;
+            IMG = cell(length(H.loadedFrames),1) ;
             wtbr = waitbar(0,'Loading Frames...') ;
             for fr = 1:length(H.loadedFrames)
                 % Load the frame
@@ -57,15 +57,18 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                         currentImg = H.imgProcesses{p}(currentImg) ;
                     end
                 % Push it on the images
-                    IMG(:,:,:,fr) = currentImg ;
+                    IMG{fr} = currentImg ;
                 % Waitbar
                     wtbr = waitbar(fr/length(H.loadedFrames),wtbr,['Loading Frames... (',num2str(fr),'/',num2str(length(H.loadedFrames)),')']) ;
             end
         % Global Normalization
             if H.normalizeGlobal.Value
                 wtbr = waitbar(1,wtbr,'Normalization...') ; drawnow ;
-                IMG = IMG-min(IMG(:)) ;
-                IMG = IMG*(double(max(getrangefromclass(IMG)))/double(max(IMG(:)))) ;
+                Imin = min(cellfun(@(ii)min(ii(:)),IMG)) ;
+                Ifactor = double(max(getrangefromclass(IMG{end})))/double(max(cellfun(@(ii)max(ii(:)),IMG))) ;
+                for fr = 1:numel(IMG)
+                    IMG{fr} = (IMG{fr}-Imin)*Ifactor ;
+                end
             end
         delete(wtbr)
         
@@ -77,7 +80,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 Camera.Name = H.CamName ;
                 Camera.CurrentState = 'ghost' ;
                 Camera.Adaptator = 'folder' ;
-                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG(:,:,1)))] ;
+                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG{end},[1 2]))] ;
                 if camID==1
                     hd.Cameras = Camera ; % Initialize the camera list
                 else
@@ -86,11 +89,11 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
             % New Default Timeline
                 hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
             % New number of frames
-                hd.nFrames = max(size(IMG,4),hd.nFrames) ;
+                hd.nFrames = max(numel(IMG),hd.nFrames) ;
         end
 
     % Add the images
-        hd.Images{camID} = num2cell(IMG,1:3) ;
+        hd.Images{camID} = IMG ;
             
     % Validate the setup
         valid = true ;

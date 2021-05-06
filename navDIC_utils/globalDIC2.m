@@ -9,8 +9,8 @@
 
 % INITIALIZATION PARAMETERS
     camID = 1 ;
-    seedNumber = 1 ;
-    frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
+    seedNumber = 2 ;
+    frames = '[1:282]' ; % Frames taken for DIC (allows decimation)
     dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
     refFrame = 'last' ; % Reference image ('first' , 'last' or number)
     refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -150,7 +150,7 @@
                          'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 1 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 2 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
@@ -177,8 +177,8 @@
         beta = 1*1e7 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
-        maxIt = 1000 ; % Maximum number of Newton-Raphson iterations
-        minNorm = 1e-1 ; % Maximum displacement of a node
+        maxIt = 100 ; % Maximum number of Newton-Raphson iterations
+        minNorm = 1e-2 ; % Maximum displacement of a node
         maxResidueRelativeVariation = Inf ; -.001 ; % Maximum relative variation of the image residue (RMSE)
         minCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Displacement Processing
@@ -190,6 +190,8 @@
         plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
         plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
+    % Save a video file ?
+        saveToVideo = true ;
     % Watch CPU 
         codeProfile = false ;
     
