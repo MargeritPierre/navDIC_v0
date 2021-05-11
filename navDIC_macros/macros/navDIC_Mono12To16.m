@@ -1,12 +1,12 @@
-classdef navDIC_12To16 < navDIC_AbstractMacro
-%NAVDIC_12To16 Convert 12 bit images to 16 bit images
+classdef navDIC_Mono12To16 < navDIC_AbstractMacro
+%NAVDIC_Mono12To16 Convert 12 bit images to 16 bit images
 
 properties
     camID = []
 end
 
 methods
-    function this = navDIC_12To16()
+    function this = navDIC_Mono12To16()
     % Class constructor
     end
     

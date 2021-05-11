@@ -544,36 +544,47 @@ methods
         obj.computeDataFields ;
     end
 
-    function DATA = computeDataFields(obj,onNodes)
+    function DATA = computeDataFields(obj,onNodes,fr)
     % Compute all (scalar) data fields associated to the object motion
     % Empty fields are here as section headings
-        DATA = struct() ;
         if isempty(obj.MovingPoints) ; return ; end
-        if nargin<2 ; onNodes = obj.DataOnNodes ; end
+        if nargin<2 || isempty(onNodes) ; onNodes = obj.DataOnNodes ; end
         [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
+        if nargin<3 ; fr = 1:nFrames ; end
+        % Init the structure
+            computeAll = isempty(obj.DataFields) || nargin<3 ;
+            DATA = struct() ;
         % REFERENCE CONFIGURATION
-            DATA.Reference = 'Reference' ;
-            X = reshape(permute(obj.MovingPoints,[1 3 2]),[nPoints*nFrames nCoord]) ;
-            % Indice of the first valid frame (for mechanical fields)
-                [~,firstValidFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
-                DATA.FirstValidFrame = firstValidFrame(:) ;
-                indFirstValid = sub2ind([nPoints nFrames],1:nPoints,firstValidFrame(:)') ;
-                DATA.X1first = X(indFirstValid,1) ;
-                DATA.X2first = X(indFirstValid,2) ;
-            % Indice of the reference frame for gradient data computation
-            % taken as the first frame for which all the points are valid
-                dataRef = max(DATA.FirstValidFrame).*ones(nPoints,1) ;
-                DATA.StrainReference = dataRef ;
-                indRef = sub2ind([nPoints nFrames],1:nPoints,dataRef') ;
-                DATA.X1ref = X(indRef,1) ;
-                DATA.X2ref = X(indRef,2) ;
+            if computeAll % re-determine the reference config
+                DATA.Reference = 'Reference' ;
+                X = reshape(permute(obj.MovingPoints,[1 3 2]),[nPoints*nFrames nCoord]) ;
+                % Indice of the first valid frame (for mechanical fields)
+                    [~,firstValidFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
+                    DATA.FirstValidFrame = firstValidFrame(:) ;
+                    indFirstValid = sub2ind([nPoints nFrames],1:nPoints,firstValidFrame(:)') ;
+                    DATA.X1first = X(indFirstValid,1) ;
+                    DATA.X2first = X(indFirstValid,2) ;
+                % Indice of the reference frame for gradient data computation
+                % taken as the first frame for which all the points are valid
+                    dataRef = max(DATA.FirstValidFrame).*ones(nPoints,1) ;
+                    DATA.StrainReference = dataRef ;
+                    indRef = sub2ind([nPoints nFrames],1:nPoints,dataRef') ;
+                    DATA.X1ref = X(indRef,1) ;
+                    DATA.X2ref = X(indRef,2) ;
+            else % copy from the existing data
+                toCopy = fieldnames(obj.DataFields)' ;
+                toCopy = toCopy(1:7) ;
+                for field = string(toCopy)
+                    DATA.(field) = obj.DataFields.(field{1}) ;
+                end
+            end
         % POSITION
             DATA.Position = 'Position' ;
             % NaNs
-                DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
+                DATA.NaN = obj.MovingPoints(:,1,fr)*NaN ;
             % Current Coordinates
-                DATA.x1 = obj.MovingPoints(:,1,:) ;
-                DATA.x2 = obj.MovingPoints(:,2,:) ;
+                DATA.x1 = obj.MovingPoints(:,1,fr) ;
+                DATA.x2 = obj.MovingPoints(:,2,fr) ;
         % Displacements
             DATA.Displacement = 'Displacement' ;
             DATA.u1 = DATA.x1 - DATA.X1first ;
@@ -590,14 +601,22 @@ methods
             elseif size(obj.Elems,2)==2
                 DATA = barDataFields(obj,DATA) ;
             end
-        % Save in the object
-            obj.DataFields = DATA ;
+        % SAVE IN THE OBJECT
+            if computeAll
+                obj.DataFields = DATA ;
+            else
+                toCopy = setdiff(fieldnames(obj.DataFields)',toCopy) ;
+                for field = string(toCopy)
+                    if ischar(obj.DataFields.(field)) ; continue ; end
+                    obj.DataFields.(field)(:,:,fr) = DATA.(field) ;
+                end
+            end
     end
     
     function DATA = surfaceDataFields(obj,DATA,onNodes)
     % Compute data fields associated to surfacic elements
     % Derivation matrices
-        [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
+        [nPoints,~,nFrames] = size(DATA.x1) ;
         [D1,D2] = gradMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
     % Transformation Gradient
         DATA.Transformation = 'Transformation' ; 
