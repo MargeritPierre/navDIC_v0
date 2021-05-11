@@ -66,8 +66,9 @@ function cam = setCameraSettings(cam)
 % UPDATE CAMERA PREVIEW
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-            frame0 = double(event.Data) ;
-            frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
+            frame0 = event.Data ;
+            %frame0 = double(frame0) ;
+            %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
@@ -113,7 +114,12 @@ function cam = setCameraSettings(cam)
             end
         % Axes formatting
             %maxFrame = max(frame(:)) ;
-            PREVIEW.AxHistObj.XLim = [0 1] ; % [1 2^nextpow2(maxFrame-1)]+0.5 ;
+            switch class(frame)
+                case 'double'
+                    PREVIEW.AxHistObj.XLim = [0 1] ;
+                otherwise
+                    PREVIEW.AxHistObj.XLim = [0 1].*max(getrangefromclass(frame)) ;
+            end
     end
 
 
