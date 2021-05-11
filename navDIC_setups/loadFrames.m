@@ -1,4 +1,4 @@
-function [valid,hd] = loadFrames(hd,dataType,camID)
+function [valid,hd] = loadFrames(hd,dataSource,camID)
 
     % Initialize the output
         valid = false ;
@@ -6,7 +6,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
     % Initialization
         H = [] ; % Handle structure
         H.Valid = false ;
-        switch dataType
+        switch dataSource
             case 'ImageFolder'
                 initImageFolder ;
             case 'Video'
@@ -73,6 +73,20 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         delete(wtbr)
         
         
+    % FRAME TIME LINE
+        TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+        switch dataSource
+            case 'ImageFolder'
+                for fr = 1:length(H.loadedFrames)
+                    filename = [H.Folder filesep H.FileNames{H.loadedFrames(fr)}] ;
+                    info = imfinfo(filename) ;
+                    if ~isfield(info,'DateTime') ; break ; end
+                    t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd hh:mm:ss') ;
+                    TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
+                end
+            case 'Video'
+        end
+        
     % CHANGE THE HANDLES IF A NEW CAMERA HAS BEEN ASKED FOR
         if camID == length(hd.Cameras)+1
             % New Camera
@@ -86,8 +100,18 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 else
                     hd.Cameras(camID) = Camera ;
                 end
-            % New Default Timeline
-                hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+            % New Timeline ?
+                if isempty(hd.TimeLine)
+                    hd.TimeLine = TimeLine ;
+                else
+                    outputName = 'NewFramesTimeLine' ;
+                    warndlg(['A TimeLine is already defined: sending the frame timeline to base workspace as "' outputName '".'],'WARNING') ;
+                    assignin('base',outputName,TimeLine) ;
+                    if size(hd.TimeLine,1)<size(TimeLine,1) 
+                        %hd.TimeLine = padarray(hd.TimeLine,[size(hd.TimeLine,1)-size(TimeLine,1)  0],'replicate','post') ;
+                        hd.TimeLine(end+1:size(TimeLine,1),:) = hd.TimeLine(end,:)+((1:size(TimeLine,1)-size(hd.TimeLine,1))'.*[0 0 0 0 0 1])*H.FrameRate ;
+                    end
+                end
             % New number of frames
                 hd.nFrames = max(numel(IMG),hd.nFrames) ;
         end
@@ -166,6 +190,9 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 idSTR = idSTR(ind(~isnan(idNUM))) ;
                 nFrames = length(idSTR) ;
                 disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
+        % Backup path information
+            H.Folder = path ;
+            H.FileNames = fileNames ;
         % IMAGE LOADING AND PROCESSING
             % Load function
                 nFrames = numel(fileNames) ;
@@ -214,6 +241,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 disp(['   Resolution: ',num2str(nJ),'x',num2str(nI)])
                 disp(['   Colors: ',num2str(nColors)])
         % HANDLE STRUCTURE
+            H.VideoFile = filename ;
+            H.VideoReader = video ;
             [~,H.CamName,~] = fileparts(filename) ;
             H.nFrames = video.NumberOfFrames ;
             H.loadFrame = loadFrame ;

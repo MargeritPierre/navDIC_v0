@@ -25,7 +25,7 @@ properties
         EpsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         MaxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        MaxDisp = 1e-2 ; % Maximum displacement of a node
+        MaxDisp = 1e-4 ; % Maximum displacement of a node
         MaxResidueRelativeVariation = Inf ; % Maximum relative variation of the image residue (RMSE)
         MinCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
     % Plotting
@@ -134,7 +134,7 @@ methods
         % Jacobians
             j = this.dr_da'*r ;
             switch this.RegCrit
-                case 'abs' ; jr = this.Hr*X(:) ;
+                case 'abs' ; jr = this.Hr*(X(:)+U(:)) ;
                 case 'rel' ; jr = this.Hr*U(:) ;
             end
         % Update
@@ -156,7 +156,7 @@ methods
                 global hd
             % Update seed data
                 this.Seed.MovingPoints(:,:,hd.CurrentFrame) = X ;
-                this.Seed.computeDataFields ;
+                this.Seed.computeDataFields([],hd.CurrentFrame) ;
             % Update navDIC previews
                 hd = updateAllPreviews(hd) ;
             % Draw
