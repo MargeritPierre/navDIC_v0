@@ -80,7 +80,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 Camera.Name = H.CamName ;
                 Camera.CurrentState = 'ghost' ;
                 Camera.Adaptator = 'folder' ;
-                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG{end}(:,:,1)))] ;
+                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG{end},[1 2]))] ;
                 if camID==1
                     hd.Cameras = Camera ; % Initialize the camera list
                 else

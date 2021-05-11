@@ -2,7 +2,7 @@ classdef navDIC_DSLRCamera < navDIC_VirtualCamera
 %NAVDIC_DSLRCamera Virtual camera with DSLR camera
 
 properties
-    SerialPort %internal.Serialport = internal.Serialport.empty
+    SerialPort internal.Serialport = internal.Serialport.empty
     SerialPortName char = 'none'
     BaudRate double = 115200
     Folder char = ''
@@ -16,10 +16,7 @@ methods
     
     function delete(this)
     % Class destructor
-        if ~isempty(this.SerialPort) && isvalid(this.SerialPort)
-            fclose(this.SerialPort) ;
-            delete(this.SerialPort) ;
-        end
+        delete(this.SerialPort);
     end
     
     function hd = setup(this,hd)
@@ -30,7 +27,7 @@ methods
         defInputs = { ...
                         'Name' , this.Name ...
                         ; 'ID' , num2str(this.CameraID) ...
-                        ; strjoin(['Serial Port [none,' strjoin(seriallist("all"),',') ']'],'') , this.SerialPortName ...
+                        ; strjoin(['Serial Port [none,' strjoin(serialportlist("all"),',') ']'],'') , this.SerialPortName ...
                         ; 'Baud Rate' , num2str(this.BaudRate) ...
                         %; 'Image Folder' , this.Folder ...
                         %; 'Time out' , num2str(this.TimeOut) ...
@@ -48,14 +45,10 @@ methods
         %this.Folder = out{5} ;
         %this.TimeOut = str2double(out{6}) ;
     % Try openning the serial port
-        if ~isempty(this.SerialPort) && isvalid(this.SerialPort)
-            fclose(this.SerialPort) ;
-            delete(this.SerialPort) ;
-        end
+        delete(this.SerialPort) ;
         if ~strcmp(this.SerialPortName,'none')
             try
-                this.SerialPort = serial(this.SerialPortName,'BaudRate',this.BaudRate) ;
-                fopen(this.SerialPort) ;
+                this.SerialPort = serialport(this.SerialPortName,this.BaudRate) ;
             catch 
                 errordlg('Serial port failed to connect !','ERROR') ;
                 return ;
@@ -92,7 +85,7 @@ methods
     % Get the folder state
         %files0 = dir(this.Folder) ;
     % Send the shoot flag
-        fprintf(this.SerialPort,"shoot") ;
+        this.SerialPort.write("shoot",'string') ;
     % Wait for the folder to change
         %t = tic ;
         %while toc(t)<this.TimeOut

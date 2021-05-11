@@ -90,7 +90,7 @@ methods
     function setupDIC(this,hd)
     % Prepare the DIC data
         refImg = this.RefImgs{end}(:,:,1) ; % gray-scale reference
-        [nI,nJ] = size(refImg(:,:,1)) ;
+        [nI,nJ] = size(refImg,[1 2]) ;
     % Construct the FEM interpolation mapping
         [this.MAP,this.IN] = this.P1ShapeFunctions(refImg) ;
     % Get the ROI
@@ -183,7 +183,7 @@ methods
     % Infos
         nNodes = size(Nodes,1) ;
         nElems = size(Elems,1) ;
-        [nI,nJ] = size(refImg(:,:,1)) ;
+        [nI,nJ] = size(refImg,[1 2]) ;
 
     % 1) In which element bounding box is which pixel ?
     % Element bounding boxes
