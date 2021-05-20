@@ -9,10 +9,10 @@
 
 % INITIALIZATION PARAMETERS
     camID = 1 ;
-    seedNumber = 2 ;
-    frames = '[1:282]' ; % Frames taken for DIC (allows decimation)
-    dicDir = -1 ; % DIC running direction ('forward=1' or 'backward=-1')
-    refFrame = 'last' ; % Reference image ('first' , 'last' or number)
+    seedNumber = 3 ;
+    frames = '[151:191]' ; % Frames taken for DIC (allows decimation)
+    dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
+    refFrame = 'first' ; % Reference image ('first' , 'last' or number)
     refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
     strainCriterion = 'full' ;
     averagePreviousFrames = true ; % Ref frame is the average of the previous/next ones in forward/backward modes
@@ -144,13 +144,13 @@
         startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = 0.05 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = .75 ; 0.05 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
-        kernelModel =   ... 'finiteDiff' ... first order finite difference
-                         'gaussian' ... optimized gaussian
+        kernelModel =    'finiteDiff' ... first order finite difference
+                        ... 'gaussian' ... optimized gaussian
                         ... 'cos2' ... hamming window
                         ;
-        sizeImageKernel = 2 ; % Size of the derivation kernel if needed (allows smoothing)
+        sizeImageKernel = 0 ; % Size of the derivation kernel if needed (allows smoothing)
     % Image Warping
         imWarpInterpOrder = 'linear' ;
     % Image difference criterion
@@ -174,7 +174,7 @@
     % Regularization
         stepRatio = 1 ; %0.15 ; % Descent step ratio, damping the convergence
         regCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        beta = 1*1e7 ; % Strain gradient penalisation coefficient
+        beta = 1*1e4 ; % Strain gradient penalisation coefficient
         epsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
     % Convergence Criteria
         maxIt = 100 ; % Maximum number of Newton-Raphson iterations
@@ -186,12 +186,12 @@
         reverseReference = true ;
         strainOnNodes = true ;
     % Plotting
-        plotRate = 1 ; % Plot Refresh Frequency 
+        plotRate = Inf ; % Plot Refresh Frequency 
         plotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
         plotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
         pauseAtPlot = false ; % Pause at each iteration for debugging
     % Save a video file ?
-        saveToVideo = true ;
+        saveToVideo = false ;
     % Watch CPU 
         codeProfile = false ;
     

@@ -1082,6 +1082,7 @@ function navDIC(varargin)
 % START THE SLICING TOOL
     function sliceTool()
         hd.Previews(end+1) = navDICSlicingTool(hd) ;
+        hd.Previews(end+1) = hd.Previews(end).SlicePrev ;
     end
 
 % AUTO LAYOUT OF PREVIEWS

@@ -1,7 +1,7 @@
 %% TRANSFORM IMAGES
     global hd
-    cam = 2 ;
-    refFrame = 411 ; hd.nFrames ;
+    cam = 1 ;
+    refFrame = 1 ; hd.nFrames ;
     elmt =  ... pkg.geometry.mesh.elements.base.Quadrangle ...
             pkg.geometry.mesh.elements.Quad8 ...
             ;   

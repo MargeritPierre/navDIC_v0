@@ -41,6 +41,7 @@ classdef navDICCameraPreview < navDICPreview
                         prev.AxesImg.XTick = [] ;
                         prev.AxesImg.YTick = [] ;
                         prev.AxesImg.LooseInset = [1 1 1 1]*0 ;
+                        prev.AxesImg.Clipping = 'off' ;
                         axis tight
                         axis off
                         axis equal
