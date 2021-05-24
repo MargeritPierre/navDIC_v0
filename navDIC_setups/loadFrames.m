@@ -74,7 +74,7 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
         
         
     % FRAME TIME LINE
-        TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+        TimeLine = (0:length(H.loadedFrames)-1)'*[0 0 0 0 0 1/H.FrameRate] ;
         switch dataSource
             case 'ImageFolder'
                 for fr = 1:length(H.loadedFrames)

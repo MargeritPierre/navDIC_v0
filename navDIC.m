@@ -648,6 +648,15 @@ function navDIC(varargin)
                                 IMG = cat(1,FR{:}) ;
                             case 'horizontal'
                                 IMG = cat(2,FR{:}) ;
+                            case 'current'
+                                pixPos = out.figPos./out.pixelRatio ;
+                                pixPos(:,1:2) = pixPos(:,1:2) - min(pixPos(:,1:2),[],1) ;
+                                pixPos = round(pixPos) ;
+                                szImg = flip(max(pixPos(:,1:2)+pixPos(:,3:4)) - min(pixPos(:,1:2))) ;
+                                IMG = repmat(cast(defaultColor,class(FR{end})),[szImg 3]) ;
+                                for ff = 1:length(out.figs)
+                                    IMG(pixPos(ff,2)+(1:pixPos(ff,4)),pixPos(ff,1)+(1:pixPos(ff,3)),:) = FR{ff} ;
+                                end
                         end
                     % Add to the animation
                         writeVideo(out.writerObj,IMG) ;
