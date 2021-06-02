@@ -1,6 +1,5 @@
 %% THRESHOLD IMAGES
     global hd
-    cam = 1 ;
     uiSize = 20 ; 
     margin = 0.001 ; 
     alpha = 0.5 ;
@@ -66,14 +65,18 @@
     prev.updatePreview(hd) ;
     
 %% APPLY TO ALL IMAGES
+    cam = prev.CameraID ;
     IMG = hd.Images{cam} ;
+    wtbr = waitbar(0,'Thresholding...') ;
     for fr = 1:numel(IMG)
         IMG{fr} = getMask(IMG{fr}) ;
+        wtbr = waitbar(fr/numel(IMG),wtbr) ;
     end
+    delete(wtbr) ;
     
     
 %% PUSH TO NAVDIC
-    newCamIdx = 2 ; numel(hd.Cameras)+1 ;
+    newCamIdx = numel(hd.Cameras)+1 ; 2 ;
     newCam = hd.Cameras(cam) ;
     newCam.Name = ['Threshold | ' hd.Cameras(cam).Name] ;
     hd.Images{newCamIdx} = IMG ;

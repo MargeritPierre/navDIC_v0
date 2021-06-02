@@ -9,8 +9,8 @@
 
 % INITIALIZATION PARAMETERS
     camID = 1 ;
-    seedNumber = 3 ;
-    frames = '[151:191]' ; % Frames taken for DIC (allows decimation)
+    seedNumber = 5 ;
+    frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
     dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
     refFrame = 'first' ; % Reference image ('first' , 'last' or number)
     refConfig = 'Nodes' ; % Reference configuration: 'Nodes' (as meshed) or 'Current' (uses preceding computed displacement)
@@ -144,7 +144,7 @@
         startWithNavDICPositions = 'none' ; % Use a preceding computation as guess: 'all', 'none' or a vector of frames
         addPreviousCorrection = true ; % When possible, add the previous correction (velocity or difference with navDIC positions) to the initialization
     % Reference Image 
-        weightCurrentImage = .75 ; 0.05 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
+        weightCurrentImage = 0 ; .75 ; 0.05 ; 0.025 ; % After convergence, add the current image to the reference image ([0->1])
     % Image gradient estimation and smoothing
         kernelModel =    'finiteDiff' ... first order finite difference
                         ... 'gaussian' ... optimized gaussian

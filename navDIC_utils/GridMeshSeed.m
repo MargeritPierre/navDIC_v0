@@ -1,6 +1,6 @@
 %% CREATE A GRID MESH SEED
     global hd
-    cam = 1 ;
+    cam = 3 ;
     refFrame = hd.CurrentFrame ;
     
     refImg = hd.Images{cam}{refFrame} ;
@@ -15,7 +15,7 @@
     
 %% Create the grid
     % Number of nodes
-        nX = 10 ; round(150/25) ; nY = 2 ; NaN ; round(nI/nJ*(nX-1))+1 ;
+        nX = 2 ; round(150/25) ; nY = 2 ; NaN ; round(nI/nJ*(nX-1))+1 ;
     % Initial grid corners position
         pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.02*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
         poly = findobj(gca,'type','images.roi.polygon') ;
@@ -66,10 +66,12 @@
         
 %% Create the seed
     newSeed = copy(hd.Seeds(end)) ;
-    newSeed.Name = 'Slug_Lagrange' ;
+    newSeed.Name = 'FlowRate_cam3' ;
     newSeed.Elems = elems ;
     newSeed.Points = pts.Vertices ;
     newSeed.MovingPoints = repmat(pts.Vertices,[1 1 hd.nFrames])*NaN ;
+    newSeed.CamIDs = cam ;
+    newSeed.refImgs = {refImg} ;
     
 %% Push in navDIC
     hd.Seeds(end) = newSeed ;

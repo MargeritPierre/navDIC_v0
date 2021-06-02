@@ -17,7 +17,7 @@ function navDIC(varargin)
             frameSliderWidth = .4 ; % relative to toolbar size
         % Handles Saving Parameters
             canBeSaved = {'WorkDir','Cameras','DAQInputs'...
-                            ,'TimeLine','Images','InputData','Seeds'} ;
+                            ,'TimeLine','Images','InputData','Seeds','Macros'} ;
         
     % Process the varargin
         COMMAND = '' ;

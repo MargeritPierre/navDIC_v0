@@ -19,7 +19,7 @@
     
     
 %% PERFORM DIC
-    switch 3 % Transfer matrix T: constrain DOFs s.t V = T*v, v constrained
+    switch 2 % Transfer matrix T: constrain DOFs s.t V = T*v, v constrained
         case 1 % All DOFS
             T = speye(2*mesh.nNodes) ;
         case 2 % Uniform X speed by element
@@ -39,13 +39,14 @@
                 T = [T [Mc*0 ; Mc]] ;
             end
     end
-    filtSize = 3*[1 1] ; % image filter size
+    filtSize = 1*[1 1] ; % image filter size
     usePreviousVelocity = true ; % init using previously obtained velocity
     useAcceleration = false ; % init using first order acc. extrapolation
-    tolV = 1e-2 ; % maximum velocity change at convergence
+    tolV = 1e-3 ; % maximum velocity change at convergence
     maxIt = 100 ; % maximum number of iterations
     approxGradients = true ; % approximate dg_dx with dG_dX
-    plotFreq = 0 ; % plot update frequency
+    plotFreq = 1 ; % plot update frequency
+    plotEachFrame = false ; % update at each frame ?
     frames = 2:hd.nFrames ;
     
     clf
@@ -133,7 +134,7 @@
             if max(abs(dv(~isnan(dv))))<tolV ; outFlag = 'tolV' ; end
             if ~any(valid) ; outFlag = 'allNaN' ; end
         % Display
-            if any(outFlag) || toc(lastPlotTime)>1/plotFreq
+            if (any(outFlag) && (plotEachFrame || fr==frames(end)))  || toc(lastPlotTime)>1/plotFreq
                 qui.UData = V(:,1,fr) ;
                 qui.VData = V(:,2,fr) ;
                 drawnow ;

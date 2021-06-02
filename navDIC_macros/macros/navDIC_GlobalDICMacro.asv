@@ -165,14 +165,11 @@ methods
     function [dr_da,H] = GNData(this,img)
     % Return Gauss-Newton residual derivative and Hessian
         dr_da = [(this.Grad{1}*img(:)).*this.MAP (this.Grad{2}*img(:)).*this.MAP] ;
-        [~,W] = this.normalizedImg(img(this.ROI)) ;
-        H = dr_da'*diag(sparse(W(:)))*dr_da ;
-        H = (H+H')/2 ;
+        H = dr_da'*dr_da ;
     end
     
     function [I,W] = normalizedImg(this,I,w)
     % Return the normalized image
-        W = ones(size(I)) ; % weighting
         if ismember(this.DiffCriterion,{'diff'}) ; return ; end
     % Weights
         if nargin<3 ; w = this.IN ; end
@@ -183,13 +180,11 @@ methods
         if ismember(this.DiffCriterion,{'zeromean'}) ; return ; end
     % Normalize
         normI = sqrt( ( w'*(I.^2) )./sumW ) ;
-        W = w*(1./normI) ;
-        I = I.*W ;
+        I = I.*(w*(1./normI)) ;
     end
     
     function I = transformImage(this,X,x,I)
     % Transform the image(s) I from configuration X to x
-        I(this.ROI) = this.bilinearInterp(I,this.MAP*x) ;
     end
 end
 
