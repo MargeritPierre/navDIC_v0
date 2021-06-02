@@ -684,11 +684,13 @@ methods
         [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
         [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
     % True Strains
+        notNaN = double(~isnan(DATA.D11)) ;
+        notNaN(~notNaN) = NaN ;
         DATA.TrueStrain = 'True Strain' ; 
-        DATA.TS11 = cumsum(DATA.D11,3) ;
-        DATA.TS22 = cumsum(DATA.D22,3) ;
-        DATA.TS12 = cumsum(DATA.D12,3) ;
-        DATA.TS33 = cumsum(DATA.D33,3) ;
+        DATA.TS11 = cumsum(DATA.D11,3,'omitnan').*notNaN ;
+        DATA.TS22 = cumsum(DATA.D22,3,'omitnan').*notNaN ;
+        DATA.TS12 = cumsum(DATA.D12,3,'omitnan').*notNaN ;
+        DATA.TS33 = cumsum(DATA.D33,3,'omitnan').*notNaN ;
         [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
         [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
     % Linearized Green-Lagrange Strains
@@ -852,7 +854,9 @@ methods
                                     end
                             end
                         % Check the default choice
-                            submenus(ismember({submenus.Label},'U')).Checked = 'on' ;
+                            defMenu = ismember({submenus.Label},'U') ;
+                            if all(~defMenu) ; defMenu = 1 ; end
+                            submenus(defMenu).Checked = 'on' ;
                     end
             % DISPLAY
                 mDisplay = uimenu(ax.Parent,'Label','Display') ;
@@ -894,7 +898,7 @@ methods
             % Common Properties
                 set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
             % UserData in axes to choose the data to plot
-                ax.UserData.dataLabel = 'U' ;
+                ax.UserData.dataLabel = submenus(defMenu).Label ;
                 ax.UserData.plotType = 'Mesh' ;
                 ax.UserData.dataScale = 'Linear' ;
                 ax.UserData.clrMode = 'Preset' ;
@@ -1002,7 +1006,7 @@ methods
                     ax.ColorScale = 'linear' ;
                 case 'Log10'
                     ax.ColorScale = 'log' ;
-                    %Data = log10(abs(Data)) ;
+                    Data(Data<=0) = NaN ;
                 case 'Cummul'
                     [sortData,sortInd] = sort(Data,1) ;
                     sortInd = sortInd + ((1:size(Data,2))-1)*size(Data,1) ;
