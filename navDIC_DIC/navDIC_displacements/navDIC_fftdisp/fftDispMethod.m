@@ -2,7 +2,7 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
-        CorrSize = 31*[1 1] ; % Rectangular window
+        CorrSize = 101*[1 1] ; % Rectangular window
         m = round(CorrSize/6) ; % Margin to truncate borders
         uMax = CorrSize/2 ; 30*[1 1] ; % Maximum allowed displacement per iteration
         maxImagetShift = CorrSize/2 ; % Maximum allowed imagette shift (close to image borders)
@@ -11,7 +11,7 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
         FIT =   ... 'LS' ...
                  'SVD' ...
                 ; 
-        spatialSmoothing = 1 ; prod(CorrSize)<10000 ;
+        spatialSmoothing = prod(CorrSize)<10000 ;
         spatialSmoothingRatio = 1/2 ;
         windowing = true ; % apply a blackman windowing
         

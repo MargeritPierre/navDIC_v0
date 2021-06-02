@@ -410,7 +410,7 @@ methods
                             % Outside Points
                                 outsidePts = Points(outside,:) ;
                             % Find the closest element
-                                C = circumcenter(tri) ;
+                                C = circumcenter(elems) ;
                                 [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
                                 elmt(outside) = clstElmt ;
                             % Find the (extended) coordinates of the new point in each old closest element frame
