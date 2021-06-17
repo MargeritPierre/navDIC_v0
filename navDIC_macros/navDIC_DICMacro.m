@@ -143,6 +143,7 @@ end
 methods
     function imgs = processImgs(this,imgs)
     % Process images before DIC
+        isCell = iscell(imgs) ;
     % Convert to double and normalize
         for ii = 1:numel(imgs)
             imgs{ii} = double(imgs{ii})*(1/max(getrangefromclass(imgs{ii}(1)))) ;
