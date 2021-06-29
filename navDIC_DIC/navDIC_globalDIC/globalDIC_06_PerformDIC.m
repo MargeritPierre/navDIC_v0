@@ -1,4 +1,17 @@
 %% RUN GLOBAL DIC !
+        
+% Save images to video
+saveToVideo = exist('saveToVideo','var') && saveToVideo ; % backward compatibility
+if saveToVideo
+    defaultName = [hd.WorkDir.Path,'\','globalDIC','_',char(regexprep(string(datetime),{' ','-',':'},'_')),'.mp4'];%,'.avi'] ;
+    [file,path] = uiputfile('.mp4','WHERE TO SAVE THE VIDEO ?',defaultName) ;
+    if file==0 ; warning('THE VIDEO WILL NOT BE SAVED !') ; saveToVideo = false ; end
+    if saveToVideo
+        VideoFile = [path file] ;
+        writerObj = VideoWriter(VideoFile,'MPEG-4') ;
+        open(writerObj);
+    end
+end
 
 lastPlotTime = tic ;
 for ii = dicFrames
@@ -289,6 +302,8 @@ for ii = dicFrames
                         caxis(imRes.Parent,'auto')
                     % Draw
                         drawnow ; 
+                    % Capture for video 
+                        if saveToVideo ; writeVideo(writerObj,getframe(figDIC)) ; end
                         lastPlotTime = tic ;
                     end
             % Pause execution ?
@@ -314,3 +329,6 @@ for ii = dicFrames
             if stopBtn.Value; break ; end
             if nVALID==0; break ; end
 end
+
+% Close the video
+if saveToVideo ; close(writerObj) ; end

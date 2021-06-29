@@ -89,7 +89,7 @@ function navDIC(varargin)
             % Working Directory
                 hd.WorkDir = [] ;
                     hd.WorkDir.Path = pwd ;
-                    hd.WorkDir.CommonName = 'img' ;
+                    hd.WorkDir.CommonName = 'img_%05i' ;
                     hd.WorkDir.ImagesExtension = '.png' ;
         % DEVICES
             % Cameras
@@ -681,6 +681,15 @@ function navDIC(varargin)
                                 IMG = cat(1,FR{:}) ;
                             case 'horizontal'
                                 IMG = cat(2,FR{:}) ;
+                            case 'current'
+                                pixPos = out.figPos./out.pixelRatio ;
+                                pixPos(:,1:2) = pixPos(:,1:2) - min(pixPos(:,1:2),[],1) ;
+                                pixPos = round(pixPos) ;
+                                szImg = flip(max(pixPos(:,1:2)+pixPos(:,3:4)) - min(pixPos(:,1:2))) ;
+                                IMG = repmat(cast(defaultColor,class(FR{end})),[szImg 3]) ;
+                                for ff = 1:length(out.figs)
+                                    IMG(pixPos(ff,2)+(1:pixPos(ff,4)),pixPos(ff,1)+(1:pixPos(ff,3)),:) = FR{ff} ;
+                                end
                         end
                     % Add to the animation
                         writeVideo(out.writerObj,IMG) ;
@@ -855,10 +864,13 @@ function navDIC(varargin)
                     disp(['      Inputs : ' num2str(t*1000,'%.1f'),' ms']) ;
                     lastTime = toc(startTime) ;
             % Execute macros
-                hd = runMacros(hd) ;
-                t = toc(startTime)-lastTime ;
-                disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
-                lastTime = toc(startTime) ;
+                if ~isempty(hd.Macros)
+                    disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
+                    hd = runMacros(hd) ;
+                    t = toc(startTime)-lastTime ;
+                    disp(['      ------ ' num2str(t*1000,'%.1f'),' ms']) ;
+                    lastTime = toc(startTime) ;
+                end
             % Save Acquired Data
                 hd = saveCurrentFrame(hd) ;
                 t = toc(startTime)-lastTime ;
@@ -999,30 +1011,31 @@ function navDIC(varargin)
     function avisedFR = evalMaxFrameRate()
         % Evaluate the maximumFrameRate by iterating the global timerFunction
             evalTime = 3 ; % seconds
+            maxIt = 100 ; % maximum number of iterations
         % Backup the config
             hd_Bkp = hd ;
         % Stop the timer
             stopContinuous() ;
         % Execute it while it last less than evalTime
-            startTime = tic ;
-            maxItTime = 0 ;
+            itTimes = NaN(1,maxIt) ;
             it = 0 ;
-            while toc(startTime)<evalTime
+            startTime = tic ;
+            while it<maxIt && toc(startTime)<evalTime
                 t = tic ;
                 timerFunction() ;
                 it = it+1 ;
-                maxItTime = max(maxItTime,toc(t)) ;
+                itTimes(it) = toc(t) ;
             end
         % Evaluate the maxFrameRate
-            maxFR = 1/maxItTime ; % maxFR = it/toc(startTime) ;
-            avisedFR = min(0.8*maxFR,maximumFrameRate) ;
+            medFR = 1/median(itTimes(1:it)) ;
+            avisedFR = min(0.8*medFR,maximumFrameRate) ;
         % Reset all data OK
             hd = hd_Bkp ;
         % Update toolbar and previews ;
             updateToolbar() ;
             hd = updateAllPreviews(hd) ;
         % Prompt the maxFrameRate
-            answer = questdlg({['The Maximum Frame Rate is ',num2str(maxFR,'%.2f'),' Hz'],...
+            answer = questdlg({['The Median Frame Rate is ',num2str(medFR,'%.2f'),' Hz'],...
                                 ['Set the Frame Rate to ',num2str(avisedFR,'%.2f'),' Hz ?']},'Evaluated Frame rate','Yes','No','No') ;
             if strcmp(answer,'No')
                 avisedFR = [] ;
@@ -1123,6 +1136,7 @@ function navDIC(varargin)
 % START THE SLICING TOOL
     function sliceTool()
         hd.Previews(end+1) = navDICSlicingTool(hd) ;
+        hd.Previews(end+1) = hd.Previews(end).SlicePrev ;
     end
 
 % AUTO LAYOUT OF PREVIEWS

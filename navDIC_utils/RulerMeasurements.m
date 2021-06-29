@@ -1,6 +1,27 @@
+%% IMAGE MEASUREMENT USING RULER
+global hd
+
+% Create the preview
+prev = navDICCameraPreview(hd) ;
+if ~prev.isValid ; return ; end
+hd.Previews(end+1) = prev ;
+
+% Initialize the ruler
+ruler = images.roi.Line ;
+ruler.Parent = prev.AxesImg ;
+ruler.Color = 'r' ;
+ruler.Position = [ruler.Parent.XLim(:) ruler.Parent.YLim(:)] ; %[1/20 0.095 ; 1/20 0.865].*[nJ nI] ;
+rulerLength = @(ruler)sqrt(sum(diff(ruler.Position,1,1).^2,2)) ;
+addlistener(ruler,'MovingROI',@(src,evt)disp(['length: ',num2str(rulerLength(src))])) ;
+        
+
+
+
+
 
 %% INITIALIZE THE FIGURES
-    seed = hd.Seeds(1) ;
+    global hd
+    seed = hd.Seeds(end) ;
     contourTag = 'J-integral Contours' ;
     valuesTag = 'J-integral Values' ;
     % Init the contour figure

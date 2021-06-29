@@ -1,7 +1,7 @@
 %% TRANSFORM IMAGES
     global hd
-    cam = 2 ;
-    refFrame = 1179 ; hd.nFrames ;
+    cam = 1 ;
+    refFrame = 1 ; hd.nFrames ;
     elmt =  ... pkg.geometry.mesh.elements.base.Quadrangle ...
             pkg.geometry.mesh.elements.Quad8 ...
             ;   
@@ -111,7 +111,7 @@ mp = num2cell(mp,2) ;
     [~,imax] = min((vE1(:)-1).^2+(vE2(:)-1).^2) ;
     [ii,jj] = ind2sub(size(vE1),[imin imax]) ;
     di = diff(ii) ; dj = diff(jj) ;
-    xx = xx.*[100 42.2]
+    xx = xx.*[100 50]%42.2]
     
 %%
 
@@ -125,6 +125,38 @@ mp = num2cell(mp,2) ;
 ;   209.21       236.47 ...
 ;   41.426       155.49 ...
 ]
+    
+
+%% SET IMAGE PROPERTIES
+    
+    ax = gca ;
+    im = findobj(ax,'type','image') ;
+    XX = reshape(xx,[size(vE1) 2]) ;
+    im.XData = XX(1,:,1) ;
+    im.YData = XX(:,1,2) ;
+    axis on
+    axis tight
+    set(ax,'xtickmode','auto','ytickmode','auto')
+    set(ax,'xlimmode','auto','ylimmode','auto')
+    set(ax,'xlim',[-5 103],'ylim',[-15 63])
+    set(ax,'looseinset',[1 1 1 2]*0.02)
+    im.CDataMapping = 'scaled' ;
+    xlabel 'X (mm)'
+    ylabel 'Y (mm)'
+    
+    crange = [0 10]*10 ;
+    colorbar(ax)
+    colormap(jet(1000)) ;
+    caxis(ax,crange)
+    
+    txt = findobj(ax,'type','text') ;
+    delete(txt) ;
+    txt = text(ax,0,0,'t = ','verticalalignment','middle','horizontalalignment','left') ;
+    
+    
+    
+    
+    
     
     
     

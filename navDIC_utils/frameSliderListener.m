@@ -14,7 +14,9 @@ frlst = addlistener(slider ...
         
 %% Text string update
 % first create a text 'txt'
-frlst.Callback = @()set(txt,'String',['t = ' num2str(t(round(slider.Value)),'%.1f') ' sec']) ;
+t = sum(hd.TimeLine(:,4:6).*[3600 60 1],2) ; 
+t = t-t(2) ;
+frlst.Callback = @(src,evt)set(txt,'String',['t = ' num2str(t(round(slider.Value)),'%.1f') ' sec']) ;
 
 %% Frame update
 ax = hd.Previews(end).AxesImg ;

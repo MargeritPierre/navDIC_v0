@@ -24,7 +24,8 @@ function hd = saveCurrentFrame(hd,varargin)
             % Is the folder exists ?
                 if ~exist(folderName,'dir') ; mkdir(folderName) ; end
             % Save the image
-                nameImg = [folderName,filesep,wd.CommonName,'_',num2str(frameToSave),wd.ImagesExtension] ;
+                nameImg = sprintf([wd.CommonName,wd.ImagesExtension],frameToSave) ;
+                nameImg = [folderName,filesep,nameImg] ;
                 imwrite(hd.Images{camID}{frameToSave},nameImg) ;
         end
     end
