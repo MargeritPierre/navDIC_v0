@@ -3,34 +3,44 @@ function startInputAcquisitionFunction()
     answer = questdlg('Are you sure you want to take new datas ?', 'Connexion','Yes','No','Yes') ;
     if ~ismember(answer,'Yes') ; return ; end
 % TIMER FOR PLOTTING
-    global plotVar;
-    plotVar = [];
-    plotVar.plotTimer = timer('ExecutionMode','FixedRate'...
-                    ,'Period',5 ...
-                    ,'TimerFcn',@(src,evt)plotTimerFunction());
+%     global plotVar;
+%     plotVar = [];
+%     plotVar.plotTimer = timer('ExecutionMode','FixedRate'...
+%                     ,'Period',5 ...
+%                     ,'TimerFcn',@(src,evt)plotTimerFunction());
 
 % SIGNALS ACQUISITION
     global hd
-    session = hd.DAQInputs.Session;
+%     
+%     if exist('session','var') && isvalid(session)
+%         session.NotifyWhenDataAvailableExceeds = 1 ; %to flush all undelivered datas
+%         stop(session);
+%     else
+%         hd.DAQInputs.Session;
+%     end
 
-    if exist('lst','var') && isvalid(lst) ; delete(lst) ; end
-    lst = addlistener(session,'DataAvailable',@onDataAvailable); 
+%     if exist('lst','var') && isvalid(lst) ; delete(lst) ; end
+%     lst = addlistener(hd.DAQInputs.Session,'DataAvailable',@onDataAvailable);
+    
+    hd.DAQInputs.DataAcquisition.ScansAvailableFcn = @onDataAvailable ;
  
     hd.AcquiredData = [] ;
     hd.AcquiredData.Data = [] ;
     hd.AcquiredData.Time = [];
     hd.AcquiredData.StartTime = [];
 
-    session.Rate = 800 ;
-    session.TriggersPerRun = 1 ;
-    session.IsContinuous = true ;
-    session.NotifyWhenDataAvailableExceeds = 8000 ;
+    hd.DAQInputs.DataAcquisition.Rate = 800 ;
+    %hd.DAQInputs.Session.TriggersPerRun = 1 ;
+    %hd.DAQInputs.Session.IsContinuous = true ;
+    hd.DAQInputs.DataAcquisition.ScansAvailableFcnCount = 8000 ;
     hd.AcquiredData.StartTime = now;
-    startBackground(session) ;
+    
+    start(hd.DAQInputs.DataAcquisition, 'Continuous');
+    %startBackground(hd.DAQInputs.Session) ;
     
 % MARKERS POSITION ACQUISITION
 
-    CreatePlot;  
+%     CreatePlot;  
     optTrack = hd.OT;
     
     hd.AcquiredOTPositions = [];
@@ -42,16 +52,19 @@ function startInputAcquisitionFunction()
     optTrack.addlistener(1, 'Position');
     hd.AcquiredOTPositions.StartTime = now;
     optTrack.enable(1);
+%     
+%     pos (= scatter(0, 0 ,500, [0 0.79 0.61] , '.');
     
-    pos = scatter(0, 0 ,500, [0 0.79 0.61] , '.');
-    
-    start(plotVar.plotTimer);
+%     start(plotVar.plotTimer);
     
     % CALLED FUNCTIONS
     function onDataAvailable(src,evt)
-        hd.AcquiredData.Data = [hd.AcquiredData.Data ; evt.Data] ;
-        hd.AcquiredData.Time = [hd.AcquiredData.Time ; evt.TimeStamps] ;
+        [eventData, eventTimestamps, triggerTime] = read(src, src.ScansAvailableFcnCount, ...
+            'OutputFormat', 'Matrix');
+        hd.AcquiredData.Data = [hd.AcquiredData.Data ; eventData];
         disp(['Number of sample acquired: ', num2str(size(hd.AcquiredData.Data,1))])
+        hd.AcquiredData.Time = [hd.AcquiredData.Time ; eventTimestamps] ;
+        %evt.Source.read.Timestamps
     end
 
     % DISPLAY MARKERS POSITIONS

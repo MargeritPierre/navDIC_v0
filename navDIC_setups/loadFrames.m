@@ -170,9 +170,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 frameDataTypeFileID = fopen([path,filesep,'frameDataType.txt'],'r');
                 frameDataType = fscanf(frameDataTypeFileID,'%s');
                 frameDataType = [frameDataType, '=>', frameDataType];
-                loadFrame = @(id) reshape(fread(fopen([path,filesep,fileNames{id}],'r'),...
-                    [frameSize(2) frameSize(1)*3], frameDataType),...
-                    [frameSize(2) frameSize(1) 3]) ;
+                loadFrame = @(id) fread(fopen([path,filesep,fileNames{id}],'r'),...
+                    [frameSize(2) frameSize(1)], frameDataType);
                 imData = loadFrame(1) ;
             % Get Infos
                 [nI,nJ,nColors] = size(imData) ;

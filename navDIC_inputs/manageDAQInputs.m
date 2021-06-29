@@ -8,9 +8,9 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
     display([char(10),'INPUT MANAGEMENT :']) ;
     
     % Init DAQ Session
-        if ~isfield(DAQInputs,'Session') 
+        if ~isfield(DAQInputs,'DataAcquisition') 
             daqreset ;
-            DAQInputs.Session = daq.createSession('ni') ;
+            DAQInputs.DataAcquisition = daq('ni') ;
             DAQInputs.Inputs = {} ;
         end
     
@@ -56,10 +56,10 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
 % SET HARDWARE INPUT
     function input = setHardInput(input)
         input.HardwareInput = ...
-            addAnalogInputChannel(...
-            DAQInputs.Session,...
-            devices(input.DeviceID).ID,...
-            devices(input.DeviceID).Subsystems(input.SubSystID).ChannelNames{input.ChannelID},...
+            addinput(...
+            DAQInputs.DataAcquisition,...
+            devices.DeviceInfo(input.DeviceID).ID,...
+            devices.DeviceInfo(input.DeviceID).Subsystems(input.SubSystID).ChannelNames{input.ChannelID},...
             input.MeasurementType);
             %'Voltage') ;
             input.HardwareInput.Range = input.Ranges(input.RangeID) ;
@@ -88,7 +88,7 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
 % SET INPUT INFO
     function [input,valid] = setInputInfos(input)
         % Get AvailableRanges
-            ranges = devices(input.DeviceID).Subsystems(input.SubSystID).RangesAvailable ;
+            ranges = devices.DeviceInfo(input.DeviceID).Subsystems(input.SubSystID).RangesAvailable ;
             nR = length(ranges) ;
             rangeNames = {} ;
             indexedRangeNames = {} ;
@@ -98,7 +98,7 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             end
             joinedRangeNames = strjoin(indexedRangeNames,char(10)) ;
         % Get Available Measurement Types
-            measurementTypes = devices(input.DeviceID).Subsystems(input.SubSystID).MeasurementTypesAvailable ;
+            measurementTypes = devices.DeviceInfo(input.DeviceID).Subsystems(input.SubSystID).MeasurementTypesAvailable ;
             nM = length(measurementTypes);
             measurementTypesNames = {};
             for m = 1:nM
@@ -167,7 +167,9 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             if isempty(usedInputs) 
                 freeInputs  = availableInputs ;
             else
-                [~,freeInputsIndices] = setdiff({availableInputs.Name},{usedInputs.Name}) ;
+                [~,freeInputsIndices] = ...
+                    setdiff({availableInputs.Name}, ...
+                            {usedInputs.Name}) ;
                 freeInputs = availableInputs(freeInputsIndices) ;
             end
         % ListBoxes on Figure
@@ -222,10 +224,10 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             answer = questdlg(['ARE YOU SURE YOU WANT TO REMOVE INPUT ' inputToRemove.DataName '?']) ;
             if ~strcmp(upper(answer),'YES') ; return ; end
         % One cannot release a single input... 
-        % Removed the input
+        % Remove the channel
+            removechannel(DAQInputs.DataAcquisition,id);
+        % Remove the input
             usedInputs = usedInputs(setdiff(1:length(usedInputs),id)) ;
-        % Release the ENTIRE Session
-            usedInputs = resetSession(usedInputs) ;
         % Display a message
             disp(char(10)) ;
             disp(['(' inputToRemove.DataName ') INPUT HAS BEEN REMOVED']) ;
@@ -256,29 +258,29 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
             devices = [] ;
             availableInputs = [] ;
         % Get available devices
-            devices = daq.getDevices() ;
+            devices = daqlist() ;
         % Available devices
-            nD = length(devices);
+            nD = height(devices);
             if ~nD ; disp('NO AVAILABLE DEVICES') ; return ; end
             for d = 1:nD
                 %devName = [dev(d).Vendor.FullName,', ',dev(d).Model] ;
-                devName = devices(d).Model ;
+                devName = devices(d,4).Model ;
                 disp(['   ',devName]) ;
                 % Subsystems of the device
-                    nS = length(devices(d).Subsystems) ;
+                    nS = length(devices.DeviceInfo(d).Subsystems) ;
                     if ~nS ; disp('      NO AVAILABLE SUBSYSTEMS') ; return ; end
                     for s = 1:nS
-                        subSystName = devices(d).Subsystems(s).SubsystemType ;
+                        subSystName = devices.DeviceInfo(d).Subsystems(s).SubsystemType ;
                         disp(['      ',subSystName])
                         % Inputs Available
-                            nC = length(devices(d).Subsystems(s).ChannelNames) ;
+                            nC = length(devices.DeviceInfo(d).Subsystems(s).ChannelNames) ;
                             if ~nC ; disp('         NO AVAILABLE INPUTS') ; return ; end
                             for c = 1:nC
-                                channelName = devices(d).Subsystems(s).ChannelNames{c} ;
+                                channelName = devices.DeviceInfo(d).Subsystems(s).ChannelNames{c} ;
                                 disp(['         ',channelName])
                                 % Is this Channel an input ?
                                     if regexp(channelName,'ai')
-                                        availableInputs(end+1).Name = [devName,', ',devices(d).ID,', ',channelName] ; %Does it fix figure display bug ?
+                                        availableInputs(end+1).Name = char(strcat(devName," - ",devices.DeviceInfo(d).ID," : " ,channelName)) ; %Does it fix figure display bug ?
                                         availableInputs(end).DeviceID = d ;
                                         availableInputs(end).SubSystID = s ;
                                         availableInputs(end).ChannelID = c ;
@@ -320,8 +322,15 @@ function [DAQInputs,inputListChanged] = manageDAQInputs(DAQInputs)
         % Display a warning dialog
             answer = questdlg(['ARE YOU SURE YOU WANT TO CLEAR THE SESSION ?']) ;
             if ~strcmp(upper(answer),'YES') ; return ; end
-        % Reset the session with no keptInputs
-            usedInputs = resetSession([]) ;
+        % Remove all channels
+            if isfield(DAQInputs,'DataAcquisition') ...
+                    & ~isempty(DAQInputs.DataAcquisition.Channels)
+                nC = length(DAQInputs.DataAcquisition.Channels);
+                for c = 1:nC
+                    removechannel(DAQInputs.DataAcquisition, 1);
+                end
+            end
+            usedInputs = [] ;
         % Update Lists
             updateLists() ;
             inputListChanged = true ;
