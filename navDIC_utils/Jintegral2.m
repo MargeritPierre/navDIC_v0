@@ -97,7 +97,7 @@
                                 ee = sum(De(:,1:ii)-kron([1;0;0;1;1],De(end-nElems+1:end,1:ii)),2) ;
                         end
                     % Gradient matrices
-                        [D1,D2] = seed.gradMat(seed.MovingPoints(:,:,ii)) ;
+                        [D1,D2] = seed.diffMat(seed.MovingPoints(:,:,ii)) ;
                         D1(:,bndPts) = [] ; D2(:,bndPts) = [] ;
                         O = D1*0 ;
                     % Differential operators
@@ -157,7 +157,7 @@
                 
                 
 %% CHECK DIVERGENCE OF STRESSES
-    [D1,D2] = seed.gradMat(seed.MovingPoints(:,:,1)) ;
+    [D1,D2] = seed.diffMat(seed.MovingPoints(:,:,1)) ;
     seed.DataFields.Divergence = 'Stress Divergence' ;
         pixelsByMeters = 135000 ; % see below
         seed.DataFields.f1 = -reshape(D1*S11(:,:) + D2*S12(:,:),[],1,hd.nFrames)*pixelsByMeters ;
