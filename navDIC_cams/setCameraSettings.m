@@ -49,6 +49,7 @@ function cam = setCameraSettings(cam)
                 drawnow ; 
             end
         end
+%         preview(cam.VidObj) ; uiwait(gcf) ;
         
     % Set the correct ROI
         cam.VidObj.ROIPosition = INFOS.Custom.ROI.Value ;
