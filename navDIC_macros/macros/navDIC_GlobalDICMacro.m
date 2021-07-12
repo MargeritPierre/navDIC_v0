@@ -264,7 +264,7 @@ methods
         Elems = this.Seed.Elems ; nElems = size(Elems,1) ;
         Nodes = this.Seed.Points ; nNodes = size(Nodes,1) ;
     % Gradient matrices D1 & D2
-        [D1,D2] = this.Seed.gradMat(Nodes,false) ;
+        [D1,D2] = this.Seed.diffMat(Nodes,false) ;
     % Strain matrix B so that [E11(:) ; E22(:) ; 2*E12(:)] = B*[U]
         O = sparse(nElems,nNodes) ; % matrix full of zeros
         B = [D1 O ; O D2 ; D2 D1] ;

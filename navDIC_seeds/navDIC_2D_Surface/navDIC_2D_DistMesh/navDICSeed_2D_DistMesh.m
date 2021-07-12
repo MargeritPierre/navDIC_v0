@@ -441,7 +441,7 @@ methods
 
 % ------- DATA DIFFERENTIATION AND INTEGRATION --------------------------
 
-    function [D1,D2] = gradMat(obj,refPoints,onNodes)
+    function [D1,D2] = diffMat(obj,refPoints,onNodes)
     % Return the differentiation matrices so that df_dxi = Di*f(:)
     % size(Di) = [nElems nNodes] : f is defined on nodes, the gradient
     % is constant over elements
@@ -617,7 +617,7 @@ methods
     % Compute data fields associated to surfacic elements
     % Derivation matrices
         [nPoints,~,nFrames] = size(DATA.x1) ;
-        [D1,D2] = gradMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
+        [D1,D2] = diffMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
     % Transformation Gradient
         DATA.Transformation = 'Transformation' ; 
         x1 = DATA.x1 ;
