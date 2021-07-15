@@ -957,7 +957,7 @@ function navDIC(varargin)
     function setFrameRate(frameRate)
     % Evaluate the frame rate ?
         if nargin==0 ; frameRate = evalMaxFrameRate() ; end
-    % Ask the user to set the frame rate if needed
+    % Ask t
         if isempty(frameRate)
             frameRate = inputdlg('Set the Frame Rate (Hz)','navDIC Frame Rate',1,{num2str(hd.FrameRate)}) ;
             if isempty(frameRate) ; return ; end
@@ -967,13 +967,8 @@ function navDIC(varargin)
                 return ;
             end
         end
-    % Change the timer period
-        running = strcmp(hd.TIMER.Running,'on') ;
-        if running ; stop(hd.TIMER) ; end
-        while strcmp(hd.TIMER.Running,'on') ; end % wait for the trigger to stop
         hd.TIMER.Period = round(1/frameRate*1000)/1000 ; % millisecond precision
-        if running ; start(hd.TIMER) ; end
-    % Set the framerate
+        
         hd.FrameRate = 1/hd.TIMER.Period ;
     end
 
