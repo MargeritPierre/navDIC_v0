@@ -410,7 +410,7 @@ methods
                             % Outside Points
                                 outsidePts = Points(outside,:) ;
                             % Find the closest element
-                                C = circumcenter(tri) ;
+                                C = circumcenter(elems) ;
                                 [~,clstElmt] = min(sum((reshape(outsidePts,[],1,2)-reshape(C,1,[],2)).^2,3),[],2) ;
                                 elmt(outside) = clstElmt ;
                             % Find the (extended) coordinates of the new point in each old closest element frame
@@ -441,7 +441,7 @@ methods
 
 % ------- DATA DIFFERENTIATION AND INTEGRATION --------------------------
 
-    function [D1,D2] = gradMat(obj,refPoints,onNodes)
+    function [D1,D2] = diffMat(obj,refPoints,onNodes)
     % Return the differentiation matrices so that df_dxi = Di*f(:)
     % size(Di) = [nElems nNodes] : f is defined on nodes, the gradient
     % is constant over elements
@@ -544,36 +544,47 @@ methods
         obj.computeDataFields ;
     end
 
-    function DATA = computeDataFields(obj,onNodes)
+    function DATA = computeDataFields(obj,onNodes,fr)
     % Compute all (scalar) data fields associated to the object motion
     % Empty fields are here as section headings
-        DATA = struct() ;
         if isempty(obj.MovingPoints) ; return ; end
-        if nargin<2 ; onNodes = obj.DataOnNodes ; end
+        if nargin<2 || isempty(onNodes) ; onNodes = obj.DataOnNodes ; end
         [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
+        if nargin<3 ; fr = 1:nFrames ; end
+        % Init the structure
+            computeAll = isempty(obj.DataFields) || nargin<3 ;
+            DATA = struct() ;
         % REFERENCE CONFIGURATION
-            DATA.Reference = 'Reference' ;
-            X = reshape(permute(obj.MovingPoints,[1 3 2]),[nPoints*nFrames nCoord]) ;
-            % Indice of the first valid frame (for mechanical fields)
-                [~,firstValidFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
-                DATA.FirstValidFrame = firstValidFrame(:) ;
-                indFirstValid = sub2ind([nPoints nFrames],1:nPoints,firstValidFrame(:)') ;
-                DATA.X1first = X(indFirstValid,1) ;
-                DATA.X2first = X(indFirstValid,2) ;
-            % Indice of the reference frame for gradient data computation
-            % taken as the first frame for which all the points are valid
-                dataRef = max(DATA.FirstValidFrame).*ones(nPoints,1) ;
-                DATA.StrainReference = dataRef ;
-                indRef = sub2ind([nPoints nFrames],1:nPoints,dataRef') ;
-                DATA.X1ref = X(indRef,1) ;
-                DATA.X2ref = X(indRef,2) ;
+            if computeAll % re-determine the reference config
+                DATA.Reference = 'Reference' ;
+                X = reshape(permute(obj.MovingPoints,[1 3 2]),[nPoints*nFrames nCoord]) ;
+                % Indice of the first valid frame (for mechanical fields)
+                    [~,firstValidFrame] = max(all(~isnan(obj.MovingPoints),2),[],3) ;
+                    DATA.FirstValidFrame = firstValidFrame(:) ;
+                    indFirstValid = sub2ind([nPoints nFrames],1:nPoints,firstValidFrame(:)') ;
+                    DATA.X1first = X(indFirstValid,1) ;
+                    DATA.X2first = X(indFirstValid,2) ;
+                % Indice of the reference frame for gradient data computation
+                % taken as the first frame for which all the points are valid
+                    dataRef = max(DATA.FirstValidFrame).*ones(nPoints,1) ;
+                    DATA.StrainReference = dataRef ;
+                    indRef = sub2ind([nPoints nFrames],1:nPoints,dataRef') ;
+                    DATA.X1ref = X(indRef,1) ;
+                    DATA.X2ref = X(indRef,2) ;
+            else % copy from the existing data
+                toCopy = fieldnames(obj.DataFields)' ;
+                toCopy = toCopy(1:7) ;
+                for field = string(toCopy)
+                    DATA.(field) = obj.DataFields.(field{1}) ;
+                end
+            end
         % POSITION
             DATA.Position = 'Position' ;
             % NaNs
-                DATA.NaN = obj.MovingPoints(:,1,:)*NaN ;
+                DATA.NaN = obj.MovingPoints(:,1,fr)*NaN ;
             % Current Coordinates
-                DATA.x1 = obj.MovingPoints(:,1,:) ;
-                DATA.x2 = obj.MovingPoints(:,2,:) ;
+                DATA.x1 = obj.MovingPoints(:,1,fr) ;
+                DATA.x2 = obj.MovingPoints(:,2,fr) ;
         % Displacements
             DATA.Displacement = 'Displacement' ;
             DATA.u1 = DATA.x1 - DATA.X1first ;
@@ -590,15 +601,23 @@ methods
             elseif size(obj.Elems,2)==2
                 DATA = barDataFields(obj,DATA) ;
             end
-        % Save in the object
-            obj.DataFields = DATA ;
+        % SAVE IN THE OBJECT
+            if computeAll
+                obj.DataFields = DATA ;
+            else
+                toCopy = setdiff(fieldnames(obj.DataFields)',toCopy) ;
+                for field = string(toCopy)
+                    if ischar(obj.DataFields.(field)) ; continue ; end
+                    obj.DataFields.(field)(:,:,fr) = DATA.(field) ;
+                end
+            end
     end
     
     function DATA = surfaceDataFields(obj,DATA,onNodes)
     % Compute data fields associated to surfacic elements
     % Derivation matrices
-        [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
-        [D1,D2] = gradMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
+        [nPoints,~,nFrames] = size(DATA.x1) ;
+        [D1,D2] = diffMat(obj,[DATA.X1ref DATA.X2ref],onNodes) ;
     % Transformation Gradient
         DATA.Transformation = 'Transformation' ; 
         x1 = DATA.x1 ;
@@ -665,11 +684,13 @@ methods
         [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
         [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
     % True Strains
+        notNaN = double(~isnan(DATA.D11)) ;
+        notNaN(~notNaN) = NaN ;
         DATA.TrueStrain = 'True Strain' ; 
-        DATA.TS11 = cumsum(DATA.D11,3) ;
-        DATA.TS22 = cumsum(DATA.D22,3) ;
-        DATA.TS12 = cumsum(DATA.D12,3) ;
-        DATA.TS33 = cumsum(DATA.D33,3) ;
+        DATA.TS11 = cumsum(DATA.D11,3,'omitnan').*notNaN ;
+        DATA.TS22 = cumsum(DATA.D22,3,'omitnan').*notNaN ;
+        DATA.TS12 = cumsum(DATA.D12,3,'omitnan').*notNaN ;
+        DATA.TS33 = cumsum(DATA.D33,3,'omitnan').*notNaN ;
         [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
         [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
     % Linearized Green-Lagrange Strains
@@ -833,7 +854,9 @@ methods
                                     end
                             end
                         % Check the default choice
-                            submenus(ismember({submenus.Label},'U')).Checked = 'on' ;
+                            defMenu = ismember({submenus.Label},'U') ;
+                            if all(~defMenu) ; defMenu = 1 ; end
+                            submenus(defMenu).Checked = 'on' ;
                     end
             % DISPLAY
                 mDisplay = uimenu(ax.Parent,'Label','Display') ;
@@ -875,7 +898,7 @@ methods
             % Common Properties
                 set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
             % UserData in axes to choose the data to plot
-                ax.UserData.dataLabel = 'U' ;
+                ax.UserData.dataLabel = submenus(defMenu).Label ;
                 ax.UserData.plotType = 'Mesh' ;
                 ax.UserData.dataScale = 'Linear' ;
                 ax.UserData.clrMode = 'Preset' ;
@@ -983,7 +1006,7 @@ methods
                     ax.ColorScale = 'linear' ;
                 case 'Log10'
                     ax.ColorScale = 'log' ;
-                    %Data = log10(abs(Data)) ;
+                    Data(Data<=0) = NaN ;
                 case 'Cummul'
                     [sortData,sortInd] = sort(Data,1) ;
                     sortInd = sortInd + ((1:size(Data,2))-1)*size(Data,1) ;

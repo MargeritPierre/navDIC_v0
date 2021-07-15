@@ -58,7 +58,8 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Declare the videoinput
             cam.VidObj = videoinput(cam.Adaptor, cam.Infos.DeviceID,DeviceInfos.SupportedFormats{id}) ;
         % Reglage du trigger
-            listTriggerType = [{'manual'}, {'hardware'}, {'infinite'}] ;
+            listTriggerType = {triggerinfo(cam.VidObj).TriggerType} ;
+            %listTriggerType = [{'manual'}, {'hardware'}, {'infinite'}] ;
             [id,valid] = listdlg('PromptString','Select a trigger type :',...
                 'SelectionMode','single',...
                 'initialValue',1,...
@@ -68,14 +69,14 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                 stop(cam) ;   
             end
             triggerconfig(cam.VidObj,listTriggerType{id}) 
+        % Set RBG ColorSpace
+            if ~strcmpi(cam.VidObj.ReturnedColorSpace,'grayscale')
+                cam.VidObj.ReturnedColorSpace = 'RGB' ;
+            end
         % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
         % Add custom informations
-            cam.Name = cam.Infos.DeviceName ;
             cam.CurrentState = 'connected' ;
-        % Create the output Source
-%             cam.Output = navDIC_CameraSource ;
-%             cam.Output.Name = regexprep(cam.Name,' ','_') ;
     end
 
 % RESET ALL HARDWARE INPUTS
@@ -92,36 +93,21 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
 
 % UPDATE INPUT LISTS
     function updateLists()
-        % Free Inputs
+        % Free Cameras
             if isempty(usedCams) 
                 freeCams  = availableCams ;
             else
-                % List of deviceNames
-                    availableStr = {} ;
-                    usedStr = {} ;
-                    for c = 1:length(availableCams)
-                        availableStr{end+1} = availableCams(c).Infos.DeviceName ;
-                    end
-                    for c = 1:length(usedCams)
-                        usedStr{end+1} = usedCams(c).Infos.DeviceName ;
-                    end
-                % Make the Comparison ;
-                    [~,freeInputsIndices] = setdiff(availableStr,usedStr) ;
-                % Set FreeCams
-                    freeCams = availableCams(freeInputsIndices) ;
+                isUsed = ismember({availableCams.Name},{usedCams.Name}) ;
+                freeCams = availableCams(~isUsed) ;
             end
         % ListBoxes on Figure
             if ~isempty(freeCams)
-                freeStr = {} ;
-                for c = 1:length(freeCams)
-                    freeStr{end+1} = freeCams(c).Infos.DeviceName ;
-                end
-                listBoxFree.String = freeStr ;
+                listBoxFree.String = {freeCams.Name} ;
             else
                 listBoxFree.String = {} ; 
             end
             if ~isempty(usedCams) 
-                listBoxUsed.String = usedStr ; 
+                listBoxUsed.String = {usedCams.Name} ; 
             else
                 listBoxUsed.String = {} ; 
             end
@@ -136,7 +122,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             camToAdd = freeCams(id) ;
         % Launch the Hardware Connection
             camToAdd = connectCamera(camToAdd) ;
-            if ~isfield(camToAdd,'VidObj') ; return ; end ;
+            if ~isfield(camToAdd,'VidObj') ; return ; end
         % Set Input Infos
             %camToAdd = setCameraSettings(camToAdd) ;
         % Display the input
@@ -214,6 +200,7 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                         for c = 1:nC
                             availableCams(end+1).Infos = adaptCams.DeviceInfo(c) ;
                             availableCams(end).Adaptor = adaptName ;
+                            availableCams(end).Name = [availableCams(end).Infos.DeviceName ' ' num2str(availableCams(end).Infos.DeviceID)] ;
                         end
             end
     end

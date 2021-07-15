@@ -163,7 +163,11 @@ classdef navDICPlotPreview < navDICPreview
                             elseif istable(hd.InputData) % Table Data
                                 for in = 1:size(hd.InputData,2)
                                     varName = hd.InputData.Properties.VariableNames{in} ;
-                                    prev.addCurve([varName ' (' hd.InputData.Properties.VariableUnits{in} ')'] ... % Name
+                                    varUnit = '' ;
+                                    if ~isempty(hd.InputData.Properties.VariableUnits)
+                                        varUnit = [' (' hd.InputData.Properties.VariableUnits{in} ')'] ;
+                                    end
+                                    prev.addCurve([varName varUnit] ... % Name
                                                     ,['@' varName] ... % YData
                                                     , timeString ... % XData
                                                     ) ;

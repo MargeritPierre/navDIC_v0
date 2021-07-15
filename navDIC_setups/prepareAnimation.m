@@ -47,7 +47,7 @@ function out = prepareAnimation(hd)
             %prompt{end+1} = 'Quality (%):' ;  definput{end+1} = '75';
             prompt{end+1} = 'Frames Recorded:' ;  definput{end+1} = ['[1:1:',num2str(hd.nFrames),']'];
             if numel(figs)>1
-                prompt{end+1} = 'Stacking (''horizontal'' or ''vertical'')' ;
+                prompt{end+1} = 'Tiling (''horizontal'', ''vertical'' or ''current'')' ;
                 definput{end+1} = stack ;
             end
         % Ask
@@ -75,6 +75,8 @@ function out = prepareAnimation(hd)
                 [~,stackOrder] = sort(figPositions(:,1),'ascend') ;
             case 'vertical'
                 [~,stackOrder] = sort(figPositions(:,2),'descend') ;
+            case 'current'
+                stackOrder = 1:numel(figs) ;
         end
         IDs = IDs(stackOrder) ;
         figs = figs(stackOrder) ;
@@ -89,5 +91,7 @@ function out = prepareAnimation(hd)
         out.FramesRecorded = FramesRecorded ;
         out.sizes = sizes ;
         out.stack = stack ;
+        out.figPos = figPositions ;
+        out.pixelRatio = mean(figPositions(:,3:4)./flip(sizes,2),'all') ;
             
 end

@@ -249,6 +249,7 @@ function H = drawingTool(varargin)
                 H.Axes.Position = H.Axes.Position + [marg marg -2*marg -2*marg] ;
                 H.Axes.Units = 'normalized' ;
                 H.Axes.YDir = 'reverse' ;
+                H.Axes.Clipping = false ;
                 H.Img = imagesc(refImg) ;
                 H.Img.CData = repmat(refImg,[1 1 3]) ;
                 axis equal

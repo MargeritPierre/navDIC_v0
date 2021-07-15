@@ -36,15 +36,28 @@ global hd
 cam = 1 ;
 medFiltSize = 5 ;
 
+
 disp('')
 disp('------ Median Filtering -------')
 
-% Retrieving the images
-disp('   Retrieve images..')
-IMG = hd.Images{cam} ;
+% Initialize
+disp('   Init..')
+IMG = cell(size(hd.Images{cam})) ;
+
+% Filter
+disp('   Filter..')
+wtbr = waitbar(0,'Filtering...') ;
+for fr = 1:hd.nFrames
+    ff = fr + (0:medFiltSize-1)-floor(medFiltSize/2) ;
+    ff = max(1,min(ff,hd.nFrames)) ;
+    img = cat(4,hd.Images{cam}{ff}) ;
+    IMG{fr} = median(img,4,'omitnan') ;
+    wtbr = waitbar(fr/hd.nFrames,wtbr) ;
+end
+delete(wtbr) ;
 
 %% PUSH TO navDIC
-newCam = 3 ;
+newCam = 5 ;
 namePrefix = ['Median ' num2str(medFiltSize)] ;
 
 disp('   Pushing to navDIC..')

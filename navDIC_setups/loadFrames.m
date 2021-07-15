@@ -1,4 +1,4 @@
-function [valid,hd] = loadFrames(hd,dataType,camID)
+function [valid,hd] = loadFrames(hd,dataSource,camID)
 
     % Initialize the output
         valid = false ;
@@ -6,7 +6,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
     % Initialization
         H = [] ; % Handle structure
         H.Valid = false ;
-        switch dataType
+        switch dataSource
             case 'ImageFolder'
                 initImageFolder ;
             case 'Video'
@@ -47,7 +47,7 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
         
     % Load the images
         % Each frames
-            IMG = zeros([size(H.processImg(:,:,1)) size(H.processImg,3) length(H.loadedFrames)],class(H.processImg)) ;
+            IMG = cell(length(H.loadedFrames),1) ;
             wtbr = waitbar(0,'Loading Frames...') ;
             for fr = 1:length(H.loadedFrames)
                 % Load the frame
@@ -57,18 +57,35 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                         currentImg = H.imgProcesses{p}(currentImg) ;
                     end
                 % Push it on the images
-                    IMG(:,:,:,fr) = currentImg ;
+                    IMG{fr} = currentImg ;
                 % Waitbar
                     wtbr = waitbar(fr/length(H.loadedFrames),wtbr,['Loading Frames... (',num2str(fr),'/',num2str(length(H.loadedFrames)),')']) ;
             end
         % Global Normalization
             if H.normalizeGlobal.Value
                 wtbr = waitbar(1,wtbr,'Normalization...') ; drawnow ;
-                IMG = IMG-min(IMG(:)) ;
-                IMG = IMG*(double(max(getrangefromclass(IMG)))/double(max(IMG(:)))) ;
+                Imin = min(cellfun(@(ii)min(ii(:)),IMG)) ;
+                Ifactor = double(max(getrangefromclass(IMG{end})))/double(max(cellfun(@(ii)max(ii(:)),IMG))) ;
+                for fr = 1:numel(IMG)
+                    IMG{fr} = (IMG{fr}-Imin)*Ifactor ;
+                end
             end
         delete(wtbr)
         
+        
+    % FRAME TIME LINE
+        TimeLine = (0:length(H.loadedFrames)-1)'*[0 0 0 0 0 1/H.FrameRate] ;
+        switch dataSource
+            case 'ImageFolder'
+                for fr = 1:length(H.loadedFrames)
+                    filename = [H.Folder filesep H.FileNames{H.loadedFrames(fr)}] ;
+                    info = imfinfo(filename) ;
+                    if ~isfield(info,'DateTime') ; break ; end
+                    t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd hh:mm:ss') ;
+                    TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
+                end
+            case 'Video'
+        end
         
     % CHANGE THE HANDLES IF A NEW CAMERA HAS BEEN ASKED FOR
         if camID == length(hd.Cameras)+1
@@ -77,20 +94,30 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 Camera.Name = H.CamName ;
                 Camera.CurrentState = 'ghost' ;
                 Camera.Adaptator = 'folder' ;
-                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG(:,:,1)))] ;
+                Camera.VidObj.ROIPosition = [0 0 flip(size(IMG{end},[1 2]))] ;
                 if camID==1
                     hd.Cameras = Camera ; % Initialize the camera list
                 else
                     hd.Cameras(camID) = Camera ;
                 end
-            % New Default Timeline
-                hd.TimeLine = H.FrameRate*(0:hd.nFrames-1)'*[0 0 0 0 0 1] ;
+            % New Timeline ?
+                if isempty(hd.TimeLine)
+                    hd.TimeLine = TimeLine ;
+                else
+                    outputName = 'NewFramesTimeLine' ;
+                    warndlg(['A TimeLine is already defined: sending the frame timeline to base workspace as "' outputName '".'],'WARNING') ;
+                    assignin('base',outputName,TimeLine) ;
+                    if size(hd.TimeLine,1)<size(TimeLine,1) 
+                        %hd.TimeLine = padarray(hd.TimeLine,[size(hd.TimeLine,1)-size(TimeLine,1)  0],'replicate','post') ;
+                        hd.TimeLine(end+1:size(TimeLine,1),:) = hd.TimeLine(end,:)+((1:size(TimeLine,1)-size(hd.TimeLine,1))'.*[0 0 0 0 0 1])*H.FrameRate ;
+                    end
+                end
             % New number of frames
-                hd.nFrames = max(size(IMG,4),hd.nFrames) ;
+                hd.nFrames = max(numel(IMG),hd.nFrames) ;
         end
 
     % Add the images
-        hd.Images{camID} = num2cell(IMG,1:3) ;
+        hd.Images{camID} = IMG ;
             
     % Validate the setup
         valid = true ;
@@ -163,6 +190,9 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 idSTR = idSTR(ind(~isnan(idNUM))) ;
                 nFrames = length(idSTR) ;
                 disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
+        % Backup path information
+            H.Folder = path ;
+            H.FileNames = fileNames ;
         % IMAGE LOADING AND PROCESSING
             % Load function
                 nFrames = numel(fileNames) ;
@@ -211,6 +241,8 @@ function [valid,hd] = loadFrames(hd,dataType,camID)
                 disp(['   Resolution: ',num2str(nJ),'x',num2str(nI)])
                 disp(['   Colors: ',num2str(nColors)])
         % HANDLE STRUCTURE
+            H.VideoFile = filename ;
+            H.VideoReader = video ;
             [~,H.CamName,~] = fileparts(filename) ;
             H.nFrames = video.NumberOfFrames ;
             H.loadFrame = loadFrame ;

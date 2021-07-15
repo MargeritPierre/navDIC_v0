@@ -49,6 +49,7 @@ function cam = setCameraSettings(cam)
                 drawnow ; 
             end
         end
+%         preview(cam.VidObj) ; uiwait(gcf) ;
         
     % Set the correct ROI
         cam.VidObj.ROIPosition = INFOS.Custom.ROI.Value ;
@@ -66,15 +67,16 @@ function cam = setCameraSettings(cam)
 % UPDATE CAMERA PREVIEW
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-            frame0 = double(event.Data) ;
-            frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
+            frame0 = event.Data ;
+            %frame0 = double(frame0) ;
+            %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
-                    frame = abs(diff(frame0([1:end,end],:),1,1)+1i*diff(frame0(:,[1:end,end]),1,2)) ;
+                    frame = abs(diff(frame0([1:end,end],:),1,1))+abs(diff(frame0(:,[1:end,end]),1,2)) ;
                 case 'laplacian'
-                    frame = abs(diff(frame0([1,1:end,end],:),2,1)+1i*diff(frame0(:,[1,1:end,end]),2,2)) ;
+                    frame = abs(diff(frame0([1,1:end,end],:),2,1))+abs(diff(frame0(:,[1,1:end,end]),2,2)) ;
                 case 'noise level'
                     frame = abs(frame0-PREVIEW.LastFrame) ;
                 otherwise
@@ -93,11 +95,19 @@ function cam = setCameraSettings(cam)
     function updateHisto(frame)
         % Try to fing an Histogram
             histObj = findobj(fig,'type','Histogram') ;
+        % Image data range
+            switch class(frame)
+                case 'double'
+                    range = [0 1] ;
+                otherwise
+                    range = getrangefromclass(frame) ;
+            end
         % Update (or create) It
             nBands = size(frame,3) ;
             if nBands==1 % Grayscale
                 if isempty(histObj)
-                    histogram(PREVIEW.AxHistObj,frame(:,:,1),nBinsHistogram,'facecolor','k') ;
+                    edges = linspace(range(1),range(2),nBinsHistogram+1) ;
+                    histogram(PREVIEW.AxHistObj,frame(:,:,1),edges,'facecolor','k') ;
                 else
                     histObj.Data = frame(:,:,1) ;
                 end
@@ -105,15 +115,15 @@ function cam = setCameraSettings(cam)
                 colors = ['r';'g';'b'] ;
                 for b = 1:nBands
                     if isempty(histObj)
-                        histoPreview(b) = histogram(frame(:,:,b),nBinsHistogram,'facecolor',colors(b),'facealpha',.3) ;
+                        edges = linspace(range(1),range(2),nBinsHistogram+1) ;
+                        histoPreview(b) = histogram(frame(:,:,b),edges,'facecolor',colors(b),'facealpha',.3) ;
                     else
                         histObj(b).Data = frame(:,:,b) ;
                     end
                 end
             end
         % Axes formatting
-            %maxFrame = max(frame(:)) ;
-            PREVIEW.AxHistObj.XLim = [0 1] ; % [1 2^nextpow2(maxFrame-1)]+0.5 ;
+            PREVIEW.AxHistObj.XLim = range ;
     end
 
 
