@@ -7,7 +7,7 @@ if 1 % USE THIS TO GO DIRECTLY TO DIC
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 5 ;
+        seedNumber = 1 ;
         frames = '[1:end]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
