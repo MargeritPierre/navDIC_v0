@@ -13,14 +13,14 @@ OTPos = [];
 tmax = 50000;
 time = hd.AcquiredOTPositions.Time(1); %floor(hd.AcquiredOTPositions.Time(1));
 nbOfPositionsSelected = 0;
-for i = 50:tmax %size(hd.AcquiredOTPositions.Time,1)
+for i = 1:size(hd.AcquiredOTPositions.Time,1)
     if not(hd.AcquiredOTPositions.Time(i) == time) %not(floor(hd.AcquiredOTPositions.Time(i)) == time)
         nbOfPositionsSelected = 0;
         time = hd.AcquiredOTPositions.Time(i); %floor(hd.AcquiredOTPositions.Time(i));
     end
     if nbOfPositionsSelected == 0
         OTPos = cat(3, OTPos,...
-            hd.AcquiredOTPositions.FilteredData(:,:,i));
+            hd.AcquiredOTPositions.Data(:,:,i));
         %ones(size(hd.AcquiredOTPositions.InterpFilteredData,1),1)* hd.AcquiredOTPositions.Time(i)
         nbOfPositionsSelected = nbOfPositionsSelected + 1;
     end

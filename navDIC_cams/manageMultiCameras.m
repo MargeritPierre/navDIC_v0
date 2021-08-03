@@ -69,11 +69,6 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
                 stop(cam) ;   
             end
             triggerconfig(cam.VidObj,listTriggerType{id}) 
-<<<<<<< HEAD
-=======
-        % Set RBG ColorSpace
-            cam.VidObj.ReturnedColorSpace = 'RGB' ;
->>>>>>> PierreBranch
         % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
         % Add custom informations

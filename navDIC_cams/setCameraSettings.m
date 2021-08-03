@@ -66,10 +66,7 @@ function cam = setCameraSettings(cam)
 % UPDATE CAMERA PREVIEW
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-<<<<<<< HEAD
             frame0 = double(event.Data) ;
-=======
-            frame0 = event.Data ;
             %frame0 = double(frame0) ;
             %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
 >>>>>>> PierreBranch
