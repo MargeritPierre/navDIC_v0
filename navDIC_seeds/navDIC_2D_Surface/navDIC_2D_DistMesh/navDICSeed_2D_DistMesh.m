@@ -592,8 +592,13 @@ methods
             DATA.U = sqrt(DATA.u1.^2 + DATA.u2.^2) ;
         % Velocity (pixels/image)
             DATA.Velocity = 'Velocity' ; 
-            DATA.v1 = cat(3,zeros(nPoints,1),diff(DATA.u1,1,3)) ;
-            DATA.v2 = cat(3,zeros(nPoints,1),diff(DATA.u2,1,3)) ;
+            if obj.EulerianReference
+                DATA.v1 = DATA.u1 ;
+                DATA.v2 = DATA.u2 ;
+            else
+                DATA.v1 = cat(3,zeros(nPoints,1),diff(DATA.u1,1,3)) ;
+                DATA.v2 = cat(3,zeros(nPoints,1),diff(DATA.u2,1,3)) ;
+            end
             DATA.V = sqrt(DATA.v1.^2 + DATA.v2.^2) ;
         % DATA FIELDS WITH GRADIENT
             if ~isempty(obj.Triangles) || ~isempty(obj.Quadrangles)
@@ -652,6 +657,12 @@ methods
         DATA.J2D = DATA.F11.*DATA.F22 - DATA.F12.*DATA.F21 ; % 2D Jacobian
         DATA.J = DATA.J2D*0+1 ; % 3D Jacobian=1 (incompressible)
         DATA.F33 = 1./(DATA.J2D) ; %J = det(F_3D) = det(F_2D)*F33 = 1
+    % Linearized Green-Lagrange Strains
+        DATA.LinearizedStrains = 'Linearized Strains' ; 
+        DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
+        DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
+        DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
+        [DATA.Ee1,DATA.Ee2,DATA.Etau,DATA.Etheta] = eigenValues(obj,DATA.E11,DATA.E22,DATA.E12) ;
     % Cauchy Strains
         DATA.CauchyStrains = 'Cauchy Strains' ; 
         DATA.C11 = DATA.F11.^2 + DATA.F21.^2 ;
@@ -677,9 +688,15 @@ methods
         Ldot12 = cat(3,0*DATA.L12(:,:,1),diff(DATA.L12,1,3)) ;
         idet2 = (DATA.F11.*DATA.F22 - DATA.F21.*DATA.F12).^-2 ;
         DATA.StrainRate = 'Strain Rate' ; 
-        DATA.D11 = idet2.*(Ldot11.*DATA.F22.^2 + Ldot22.*DATA.F21.^2 - 2*Ldot12.*DATA.F21.*DATA.F22) ;
-        DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
-        DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
+        if obj.EulerianReference
+            DATA.D11 = DATA.E11 ;
+            DATA.D22 = DATA.E22 ;
+            DATA.D12 = DATA.E12 ;
+        else
+            DATA.D11 = idet2.*(Ldot11.*DATA.F22.^2 + Ldot22.*DATA.F21.^2 - 2*Ldot12.*DATA.F21.*DATA.F22) ;
+            DATA.D22 = idet2.*(Ldot11.*DATA.F12.^2 + Ldot22.*DATA.F11.^2 - 2*Ldot12.*DATA.F12.*DATA.F11) ;
+            DATA.D12 = idet2.*(Ldot12.*(DATA.F11.*DATA.F22 + DATA.F21.*DATA.F12) - Ldot11.*DATA.F22.*DATA.F12 - Ldot22.*DATA.F11.*DATA.F21) ;
+        end
         DATA.D33 = -DATA.D11-DATA.D22 ;
         [DATA.Ddev11,DATA.Ddev22,DATA.Ddev33,DATA.Ddev12,DATA.Dmean,DATA.Deq] = deviatoric(obj,DATA.D11,DATA.D22,DATA.D33,DATA.D12) ;
         [DATA.De1,DATA.De2,DATA.Dtau,DATA.Dtheta] = eigenValues(obj,DATA.D11,DATA.D22,DATA.D12) ;
@@ -693,12 +710,6 @@ methods
         DATA.TS33 = cumsum(DATA.D33,3,'omitnan').*notNaN ;
         [DATA.TSdev11,DATA.TSdev22,DATA.TSdev33,DATA.TSdev12,DATA.TSmean,DATA.TSeq] = deviatoric(obj,DATA.TS11,DATA.TS22,DATA.TS33,DATA.TS12) ;
         [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
-    % Linearized Green-Lagrange Strains
-        DATA.LinearizedStrains = 'Linearized Strains' ; 
-        DATA.E11 = reshape(D1*squeeze(DATA.u1),[],1,nFrames) ;
-        DATA.E22 = reshape(D2*squeeze(DATA.u2),[],1,nFrames) ;
-        DATA.E12 = 0.5*(reshape(D2*squeeze(DATA.u1),[],1,nFrames) + reshape(D1*squeeze(DATA.u2),[],1,nFrames)) ;
-        [DATA.Ee1,DATA.Ee2,DATA.Etau,DATA.Etheta] = eigenValues(obj,DATA.E11,DATA.E22,DATA.E12) ;
     end
     
     function DATA = barDataFields(obj,DATA)

@@ -49,7 +49,7 @@ classdef navDICCameraPreview < navDICPreview
                     prev.fig.Units = 'pixels' ;
                     posFig = prev.fig.Position(3:4) ;
                     if ~isempty(hd.Images) && ~isempty(hd.Images{ID})
-                        sz = size(hd.Images{ID}{end}) ; 
+                        sz = size(hd.Images{ID}{hd.CurrentFrame}) ; 
                         resCam = sz([2,1]) ;
                     else
                         roiCam = hd.Cameras(ID).VidObj.ROIPosition ; 

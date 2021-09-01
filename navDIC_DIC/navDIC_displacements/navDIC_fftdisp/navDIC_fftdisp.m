@@ -10,31 +10,25 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
     camID = obj.CamIDs ;
     %refFrame = obj.RefFrame ; % needed to know which picture is the actual start of the test
 
-% Blah blah
-    if frame<=obj.RefFrame
-%         obj.MovingPoints = repmat(obj.Points,[1 1 frame]) ;
-%         obj.Displacements = zeros([size(obj.Points) frame]) ;
+% Depending on the frame...
+    if frame<=obj.RefFrame || frame < min(obj.FrameRange)
         obj.MovingPoints(:,:,frame) = obj.Points ;
-%         obj.Displacements(:,:,frame) = 0*obj.Points ;
-        obj.MovingPoints_bkp = obj.MovingPoints ;
-    end
-    
-    if 0 && hd.CurrentFrame>1
-        obj.RefFrame = frame;
-        obj.MovingPoints = repmat(obj.Points,[1 1 frame]) ;
-%         obj.Displacements = zeros([size(obj.Points) frame]) ;
-    end
-    
-% ELSE, Compute DIC
-    if frame-obj.RefFrame >= 1
+    elseif frame > max(obj.FrameRange)
+        obj.MovingPoints(:,:,frame) = obj.MovingPoints(:,:,max(obj.FrameRange)) ;
+    elseif frame-obj.RefFrame >= 1 % Compute DIC
         % Reference frame and points
-            switch obj.displMode
-                case 'abs'
-                    PtsRef = obj.Points ;
-                    imgRef = hd.Images{camID}{obj.RefFrame} ;
-                case 'rel'
-                    PtsRef = obj.MovingPoints(:,:,frame-1) ;
-                    imgRef = hd.Images{camID}{frame-1} ;
+            if obj.EulerianReference
+                PtsRef = obj.Points ;
+                imgRef = hd.Images{camID}{frame-1} ;
+            else
+                switch obj.displMode
+                    case 'abs'
+                        PtsRef = obj.Points ;
+                        imgRef = obj.refImgs{1} ; hd.Images{camID}{obj.RefFrame} ;
+                    case 'rel'
+                        PtsRef = obj.MovingPoints(:,:,frame-1) ;
+                        imgRef = hd.Images{camID}{frame-1} ;
+                end
             end
         % Current Frame and points
             PtsMov = obj.MovingPoints(:,:,frame-1) ;
@@ -49,9 +43,6 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
             obj.MovingPoints(:,:,frame) = obj.Points*NaN ;
             obj.MovingPoints(valid,:,frame) = fftDispMethod(PtsMov(valid,:),PtsRef(valid,:),imgMov,imgRef,CorrSize) ;
     end
-    
-% Compute Displacements
-%     obj.Displacements(:,:,frame) = obj.MovingPoints(:,:,frame)-obj.Points ;
     
 % Compute DataFields
     obj.computeDataFields ;

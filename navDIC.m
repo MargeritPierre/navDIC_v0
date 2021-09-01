@@ -15,6 +15,8 @@ function navDIC(varargin)
         % Graphical parameters
             infosTxtHeight = 16 ; % Pixels
             frameSliderWidth = .4 ; % relative to toolbar size
+            frameEditWidth = .03 ; % relative to toolbar size
+            frameBtnWidth = .01 ; % relative to toolbar size
         % Handles Saving Parameters
             canBeSaved = {'WorkDir','Cameras','DAQInputs'...
                             ,'TimeLine','Images','InputData','Seeds','Macros'} ;
@@ -89,7 +91,7 @@ function navDIC(varargin)
                 hd.WorkDir = [] ;
                     hd.WorkDir.Path = pwd ;
                     hd.WorkDir.CommonName = 'img_%05i' ;
-                    hd.WorkDir.ImagesExtension = '.png' ;
+                    hd.WorkDir.ImagesExtension = '.tiff' ;
         % DEVICES
             % Cameras
                 hd.Cameras = [] ;
@@ -190,14 +192,27 @@ function navDIC(varargin)
                                             ,'horizontalalignment','left'...
                                             ) ;
            hd.ToolBar.infosTxt.UserData.DefaultBackgroundColor = hd.ToolBar.infosTxt.BackgroundColor ;
-       % Init the step Slider
+       % Init the frame controls
+           hd.ToolBar.stopBtn = uicontrol('style','pushbutton'...
+                                            ,'units','normalized'...
+                                            ,'visible','off'...
+                                            ,'position',[1-frameSliderWidth-frameEditWidth-frameBtnWidth 0 frameBtnWidth 1] + 0.000*[1 1 -2 -2] ...
+                                            ,'cdata',double(max(1:10,(1:10)')<10).*reshape([1 0 0],[1 1 3]) ...
+                                            ,'callback',@(src,evt)set(src,'Visible','off') ...
+                                            ) ;
            hd.ToolBar.frameSlider = uicontrol('style','slider'...
                                             ,'units','normalized'...
                                             ,'enable','off'...
-                                            ,'position',[1-frameSliderWidth 0 frameSliderWidth 1]...
+                                            ,'position',[1-frameSliderWidth-frameEditWidth 0 frameSliderWidth 1]...
+                                            ) ;
+           hd.ToolBar.currentFrameEdit = uicontrol('style','edit'...
+                                            ,'units','normalized'...
+                                            ,'enable','on'...
+                                            ,'position',[1-frameEditWidth 0 frameEditWidth 1]...
+                                            ,'callback',@(src,evt)frameChangedFunction(src)...
                                             ) ;
            % Listener for continuous slider
-                addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)sliderFunction());
+                addlistener(hd.ToolBar.frameSlider, 'Value', 'PostSet',@(src,evt)frameChangedFunction(hd.ToolBar.frameSlider));
         % MAKE THE FIGURE VISIBLE
             drawnow ;
        % Add shortcuts buttons
@@ -486,7 +501,7 @@ function navDIC(varargin)
     function setPath(src,varargin)
         % Open a dialog box if needed
             if strcmp(src,'menu')
-                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT','img.png') ;
+                [file,path] = uiputfile('*','SELECT THE WORKING DIRECTORY, COMMON NAME AND IMAGE FORMAT','img_%05i.tiff') ;
                 if file ==0 ; return ; end
                 [~,file,ext] = fileparts(file) ;
                 varargin = {path,file,ext} ;
@@ -635,6 +650,7 @@ function navDIC(varargin)
                     % Update navDIC
                         hd.CurrentFrame = fr ;
                         updateToolbar() ;
+                        hd = runMacros(hd,'onFrameChange') ;
                         hd = updateAllPreviews(hd) ;
                         drawnow ; 
                     % Get the individual frames
@@ -729,12 +745,16 @@ function navDIC(varargin)
             minSliderStep = 1/max(2,hd.nFrames) ;
             maxSliderStep = max(minSliderStep,1/10) ;
             hd.ToolBar.frameSlider.SliderStep = [minSliderStep maxSliderStep] ;
-            % Enable or not
-                if hd.nFrames>1 %&& strcmp(hd.TIMER.Running,'off') 
-                    hd.ToolBar.frameSlider.Enable = 'on' ;
-                else
-                    hd.ToolBar.frameSlider.Enable = 'off' ;
-                end
+        % Frame Edit
+            hd.ToolBar.currentFrameEdit.String = num2str(hd.ToolBar.frameSlider.Value) ;
+        % Enable or not
+            if hd.nFrames>1 %&& strcmp(hd.TIMER.Running,'off') 
+                hd.ToolBar.frameSlider.Enable = 'on' ;
+                hd.ToolBar.currentFrameEdit.Enable = 'on' ;
+            else
+                hd.ToolBar.frameSlider.Enable = 'off' ;
+                hd.ToolBar.currentFrameEdit.Enable = 'off' ;
+            end
         % Menus
             updateMainMenu()
     end
@@ -791,10 +811,23 @@ function navDIC(varargin)
     end
 
 % CHANGE THE FRAME FOR PREVIEW
-    function sliderFunction()
-        hd.ToolBar.frameSlider.Value = round(hd.ToolBar.frameSlider.Value) ;
-        if hd.CurrentFrame==hd.ToolBar.frameSlider.Value ; return ; end
-        hd.CurrentFrame = hd.ToolBar.frameSlider.Value ;
+    function frameChangedFunction(src)
+    % Format to a valid frame id
+        switch src.Style
+            case 'slider'
+                currentFrame = src.Value ;
+            case 'edit'
+                currentFrame = str2double(src.String) ;
+        end
+        currentFrame = round(currentFrame) ;
+    % Set the UIs
+        hd.ToolBar.frameSlider.Value = currentFrame ;
+        hd.ToolBar.currentFrameEdit.String = num2str(currentFrame) ;
+    % Set navDIC state
+        if hd.CurrentFrame==currentFrame ; return ; end
+        hd.CurrentFrame = currentFrame ;
+    % Update the navDIC state
+        hd = runMacros(hd,'onFrameChange') ;
         hd = updateAllPreviews(hd) ;
         updateToolbar() ;
     end
@@ -839,7 +872,7 @@ function navDIC(varargin)
             % Execute macros
                 if ~isempty(hd.Macros)
                     disp(['      Macros : ' num2str(t*1000,'%.1f'),' ms']) ;
-                    hd = runMacros(hd) ;
+                    hd = runMacros(hd,'onNewFrame') ;
                     t = toc(startTime)-lastTime ;
                     disp(['      ------ ' num2str(t*1000,'%.1f'),' ms']) ;
                     lastTime = toc(startTime) ;
@@ -882,7 +915,7 @@ function navDIC(varargin)
         % Open the manageMultiCameras Tool
             [hd.Cameras,camsHasChanged] = manageMultiCameras(hd.Cameras) ;
         % Re-start all cameras
-            hd = startAllCameras(hd) ;
+            %hd = startAllCameras(hd) ;
         % If nothing changed...
             if ~camsHasChanged ; return ; end
         % Ask to clear the data
@@ -916,21 +949,30 @@ function navDIC(varargin)
 % RE-RUN THE EXTERNAL MACROS
     function reRunMacros
         disp('Re-Run Macros')
-        for fr = 1:hd.nFrames
+        startFr = hd.CurrentFrame ; 1 ;
+        endFr = hd.nFrames ; 1 ;
+        hd.ToolBar.stopBtn.Visible = 'on' ;
+        for fr = startFr:endFr
+            if strcmp(hd.ToolBar.stopBtn.Visible,'off') ; break ; end
             hd.CurrentFrame = fr ;
-            hd = runMacros(hd) ;
+            hd = runMacros(hd,'onFrameChange') ;
+            hd = runMacros(hd,'run') ;
             hd = updateAllPreviews(hd) ;
             updateToolbar() ;
             drawnow ;
         end
+        hd.ToolBar.stopBtn.Visible = 'off' ;
     end
 
 
 % START CONTINUOUS SETUP
     function startContinuous()
         hd.ToolBar.frameSlider.Enable = 'off' ;
+        hd.ToolBar.currentFrameEdit.Enable = 'off' ;
         hd.ToolBar.MainMenu.startStop.Label = 'STOP' ;
         hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)stopContinuous ;
+        hd.ToolBar.stopBtn.Visible = 'on' ;
+        hd.ToolBar.stopBtn.Callback = @(src,evt)stopContinuous ;
         start(hd.TIMER) ;
     end
 
@@ -943,6 +985,8 @@ function navDIC(varargin)
         end  
         hd.ToolBar.MainMenu.startStop.Label = 'START' ;
         hd.ToolBar.MainMenu.startStop.Callback = @(src,evt)startContinuous ;
+        hd.ToolBar.stopBtn.Visible = 'off' ;
+        hd.ToolBar.stopBtn.Callback = @(src,evt)set(src,'Visible','off') ;
     end
 
 
@@ -1071,13 +1115,24 @@ function navDIC(varargin)
 % COMPUTE ALL DIC ZONES
     function computeAllDIC
         disp('computeAllDIC')
-        for fr = 1:hd.nFrames
+    % Backup DIC data
+        for seed = hd.Seeds(:)'
+            seed.MovingPoints_bkp = seed.MovingPoints ;
+        end
+    % Run DIC
+        startFr = max(min([hd.Seeds.RefFrame]),1) ;
+        endFr = min(max([hd.Seeds.FrameRange]),hd.nFrames) ;
+        hd.ToolBar.stopBtn.Visible = 'on' ;
+        for fr = startFr:endFr
+            if strcmp(hd.ToolBar.stopBtn.Visible,'off') ; break ; end
             hd.CurrentFrame = fr ;
+            hd = runMacros(hd,'onFrameChange') ;
             hd = updateDIC(hd) ;
             hd = updateAllPreviews(hd) ;
             updateToolbar() ;
             drawnow ;
         end
+        hd.ToolBar.stopBtn.Visible = 'off' ;
     end
 
 

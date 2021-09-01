@@ -80,8 +80,11 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
                 for fr = 1:length(H.loadedFrames)
                     filename = [H.Folder filesep H.FileNames{H.loadedFrames(fr)}] ;
                     info = imfinfo(filename) ;
-                    if ~isfield(info,'DateTime') ; break ; end
-                    t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd hh:mm:ss') ;
+                    if isfield(info,'DateTime')
+                        t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd HH:mm:ss') ;
+                    elseif isfield(info,'FileModDate')
+                        t = datetime(info.FileModDate,'InputFormat','dd-MMM-yyyy HH:mm:ss') ;
+                    end
                     TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
                 end
             case 'Video'
@@ -91,9 +94,10 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
         if camID == length(hd.Cameras)+1
             % New Camera
                 Camera = [] ;
+                Camera.Infos = [] ;
                 Camera.Name = H.CamName ;
                 Camera.CurrentState = 'ghost' ;
-                Camera.Adaptator = 'folder' ;
+                Camera.Adaptor = 'folder' ;
                 Camera.VidObj.ROIPosition = [0 0 flip(size(IMG{end},[1 2]))] ;
                 if camID==1
                     hd.Cameras = Camera ; % Initialize the camera list
@@ -185,18 +189,23 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
                     end
                 end
             % Sort images by name
-                [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
-                fileNames = fileNames(ind) ;
-                idSTR = idSTR(ind(~isnan(idNUM))) ;
-                nFrames = length(idSTR) ;
-                disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
+                if ~all(isnan(idNUM))
+                    [idNUM,ind] = sort(idNUM(~isnan(idNUM))) ;
+                    fileNames = fileNames(ind) ;
+                    idSTR = idSTR(ind(~isnan(idNUM))) ;
+                    nFrames = length(idSTR) ;
+                else
+                    fileNames = sort(fileNames) ;
+                end
+            nFrames = numel(fileNames) ;
+            disp(['   Frames: [',num2str(min(idNUM)),'->',num2str(max(idNUM)),'] (',num2str(nFrames),')'])
         % Backup path information
             H.Folder = path ;
             H.FileNames = fileNames ;
         % IMAGE LOADING AND PROCESSING
             % Load function
                 nFrames = numel(fileNames) ;
-                loadFrame = @(id) imread([path,filesep,fileNames{id}]) ;
+                loadFrame = @(id)imread([path,filesep,fileNames{id}]) ;
                 %loadFrame = @(id) imread([path,filesep,commonName,idSTR{id},ext]) ;
                 imData = loadFrame(1) ;
             % Get Infos

@@ -237,8 +237,8 @@ function H = drawingTool(varargin)
             H.Figure.CloseRequestFcn = @(src,evt)closeFigure() ;
             % Fix the aspect ratio to image
                 maxSize = get(0,'defaultfigureposition') ; maxSize = maxSize(3:4)*figRelSize  ;
-                Ratio = max((size(refImg')+2*marg)./(maxSize-[0 55]));
-                H.Figure.Position([4,3]) = round(size(refImg)/Ratio)+2*marg ;
+                Ratio = max((size(refImg,[2 1])+2*marg)./(maxSize-[0 55]));
+                H.Figure.Position([4,3]) = round(size(refImg,[1 2])/Ratio)+2*marg ;
             % Center the figure on screen
                 H.Figure.Units = 'normalized' ;
                 H.Figure.Position(1:2) = [.5-H.Figure.Position(3:4)/2] ;
@@ -251,7 +251,12 @@ function H = drawingTool(varargin)
                 H.Axes.YDir = 'reverse' ;
                 H.Axes.Clipping = false ;
                 H.Img = imagesc(refImg) ;
-                H.Img.CData = repmat(refImg,[1 1 3]) ;
+                switch size(refImg,3)
+                    case 3
+                        H.Img.CData = refImg ;
+                    otherwise
+                        H.Img.CData = repmat(refImg(:,:,1),[1 1 3]) ;
+                end
                 axis equal
                 axis tight
                 axis off

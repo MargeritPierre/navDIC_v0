@@ -74,9 +74,9 @@ function cam = setCameraSettings(cam)
         % Processing on the frame
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
-                    frame = abs(diff(frame0([1:end,end],:),1,1))+abs(diff(frame0(:,[1:end,end]),1,2)) ;
+                    frame = abs(diff(frame0([1:end,end],:,:),1,1))+abs(diff(frame0(:,[1:end,end],:),1,2)) ;
                 case 'laplacian'
-                    frame = abs(diff(frame0([1,1:end,end],:),2,1))+abs(diff(frame0(:,[1,1:end,end]),2,2)) ;
+                    frame = abs(diff(frame0([1,1:end,end],:,:),2,1))+abs(diff(frame0(:,[1,1:end,end],:),2,2)) ;
                 case 'noise level'
                     frame = abs(frame0-PREVIEW.LastFrame) ;
                 otherwise

@@ -11,11 +11,13 @@ classdef navDICSeed < handle & matlab.mixin.Copyable & matlab.mixin.Heterogeneou
         % Seed elements
             Points = [] ;
             MovingPoints = [] ;
+            EulerianReference = false ;
         % Displ. Computation Method
             compDisp = true ;
             displMode = 'abs' ;
             useExistingDisp = true ;
             RefFrame = 1 ;
+            FrameRange = [-Inf Inf] ;
             displMethod = ... 'cpcorr' ...
                            'fftdisp' ...
                           ;

@@ -7,7 +7,7 @@ if nargin<2 ; callback = 'run' ; end
         if isempty(hd.Macros) ; return ; end
         
     % Run the macro's corresponding callback
-        for m = 1:numel(hd.Macros)
+        for m = find([hd.Macros.Enable])
             hd = hd.Macros(m).(callback)(hd) ;
         end
 

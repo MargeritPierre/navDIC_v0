@@ -22,6 +22,15 @@ methods
     % Function executed when a new frame is added to navDIC
         disp(['Running the CustomMacro renamed ''' this.Name '''']) ;
     end
+
+    function hd = onNewFrame(this,hd)
+    % Executed when a new frame is added to navDIC
+        hd = run(this,hd) ; % by default, run (for backward compatibility)
+    end
+
+    function hd = onFrameChange(this,hd)
+    % Executed when the navDIC current frame changes (slider motion)
+    end
 end
 
 end

@@ -44,8 +44,9 @@ function out = prepareAnimation(hd)
     % Ask for other parameters
         % Parameters
             prompt = {} ; definput = {} ;
-            %prompt{end+1} = 'Quality (%):' ;  definput{end+1} = '75';
+            prompt{end+1} = 'Quality (%):' ;  definput{end+1} = '100';
             prompt{end+1} = 'Frames Recorded:' ;  definput{end+1} = ['[1:1:',num2str(hd.nFrames),']'];
+            prompt{end+1} = 'Frame Rate (fps):' ;  definput{end+1} = ['30'];
             if numel(figs)>1
                 prompt{end+1} = 'Tiling (''horizontal'', ''vertical'' or ''current'')' ;
                 definput{end+1} = stack ;
@@ -55,10 +56,11 @@ function out = prepareAnimation(hd)
             answer = inputdlg(prompt,'Animation Parameters',dims,definput) ;
             if isempty(answer) ; return ; end
         % Fill Values
-            params.VideoQuality = str2num(answer{1}) ;
-            FramesRecorded = str2num(answer{1}) ;
+            VideoQuality = str2num(answer{1}) ;
+            FramesRecorded = str2num(answer{2}) ;
+            FrameRate = str2num(answer{3}) ;
             if numel(figs)>1
-                stack = lower(answer{2});
+                stack = lower(answer{4});
             end
         
     % Other parameters (has to be putted in an interface later...)
@@ -66,7 +68,8 @@ function out = prepareAnimation(hd)
     
     % Create the Video Writer
         writerObj = VideoWriter(VideoFile,'MPEG-4') ;
-        %writerObj.Quality = params.VideoQuality ;
+        writerObj.Quality = VideoQuality ;
+        writerObj.FrameRate = FrameRate ;
         
     % Frame taking function
         figPositions = cat(1,figs.Position) ;
@@ -87,7 +90,6 @@ function out = prepareAnimation(hd)
         out.prevID = IDs ;
         out.figs = figs ;
         out.writerObj = writerObj ;
-        out.params = params ;
         out.FramesRecorded = FramesRecorded ;
         out.sizes = sizes ;
         out.stack = stack ;

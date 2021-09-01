@@ -4,7 +4,6 @@ classdef (Abstract) navDIC_DICMacro < navDIC_AbstractMacro
 properties
     % User-settable properties
     Seed navDICSeed = navDICSeed.empty
-    Enable logical = false
     RefFrame = 0
     WeightPreviousImage double = 0
     InitWithExistingData logical = true

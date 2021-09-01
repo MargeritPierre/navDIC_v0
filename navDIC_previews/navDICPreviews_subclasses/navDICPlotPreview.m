@@ -222,16 +222,19 @@ classdef navDICPlotPreview < navDICPreview
                 X = [] ; Y = [] ; Z = [] ;
                 % Process the strings with keywords and replacement
                     keywords = {} ; replace = {} ;
+                    % Frame Rate
+                        keywords{end+1} = '@framerate' ;
+                        replace{end+1} = '[0;1./diff(@time)]' ;
+                    % Frames
+                        keywords{end+1} = '@frame' ;
+                        replace{end+1} = '1:hd.nFrames' ;
                     % Time line
                         keywords{end+1} = '@time' ;
                         if isempty(hd.TimeLine)
                             replace{end+1} = '1:hd.nFrames' ;
                         else
-                            replace{end+1} = 'sum(bsxfun(@times,bsxfun(@minus,hd.TimeLine,hd.TimeLine(1,:)),[0 0 0 3600 60 1]),2)' ;
+                            replace{end+1} = '(hd.TimeLine-hd.TimeLine(1,:))*flip(cumprod([1;60;60;24;1;1]))' ;
                         end
-                    % Frames
-                        keywords{end+1} = '@frame' ;
-                        replace{end+1} = '1:hd.nFrames' ;
                     % Seed names
                         for s = 1:numel(hd.Seeds)
                             keywords{end+1} = ['@' hd.Seeds(s).Name '\.'] ; 
