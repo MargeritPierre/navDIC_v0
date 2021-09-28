@@ -617,12 +617,17 @@ function navDIC(varargin)
                                         ) ;
                         if path==0 ; return ; end
                         template = regexprep([path file],{'\\'},{'\\\\'}) ;
-                        %[path,commonName,ext] = fileparts([path,file]) ;
                     % Save All Images
                         wtbr = waitbar(0,'Writing Images...') ;
-                        nFrames = numel(hd.Images{camID}) ;
+                        nFrames = hd.nFrames ; numel(hd.Images{camID}) ;
                         for fr = 1:nFrames 
-                            %filename = [path,'/',commonName,'_',num2str(fr),ext] ;
+                        % Update navDIC
+                            hd.CurrentFrame = fr ;
+                            updateToolbar() ;
+                            hd = runMacros(hd,'onFrameChange') ;
+                            hd = updateAllPreviews(hd) ;
+                            drawnow ; 
+                        % Write the frame
                             filename = num2str(fr,template) ;
                             imwrite(hd.Images{camID}{fr},filename) ;
                             wtbr = waitbar(fr/nFrames,wtbr,['Writing Images... (',num2str(fr),'/',num2str(hd.nFrames),')']) ;
@@ -679,7 +684,10 @@ function navDIC(varargin)
                                 szImg = flip(max(pixPos(:,1:2)+pixPos(:,3:4)) - min(pixPos(:,1:2))) ;
                                 IMG = repmat(cast(defaultColor,class(FR{end})),[szImg 3]) ;
                                 for ff = 1:length(out.figs)
-                                    IMG(pixPos(ff,2)+(1:pixPos(ff,4)),pixPos(ff,1)+(1:pixPos(ff,3)),:) = FR{ff} ;
+                                    %ii = pixPos(ff,2)+(1:pixPos(ff,4)) ;
+                                    ii = szImg(1)-pixPos(ff,2)-pixPos(ff,4)+(1:pixPos(ff,4)) ;
+                                    jj = pixPos(ff,1)+(1:pixPos(ff,3)) ;
+                                    IMG(ii,jj,:) = FR{ff} ;
                                 end
                         end
                     % Add to the animation
@@ -1115,12 +1123,13 @@ function navDIC(varargin)
 % COMPUTE ALL DIC ZONES
     function computeAllDIC
         disp('computeAllDIC')
+        if ~any([hd.Seeds.compDisp]) ; return ; end
     % Backup DIC data
         for seed = hd.Seeds(:)'
             seed.MovingPoints_bkp = seed.MovingPoints ;
         end
     % Run DIC
-        startFr = max(min([hd.Seeds.RefFrame]),1) ;
+        startFr = max(min([hd.Seeds([hd.Seeds.compDisp]).RefFrame]),1) ;
         endFr = min(max([hd.Seeds.FrameRange]),hd.nFrames) ;
         hd.ToolBar.stopBtn.Visible = 'on' ;
         for fr = startFr:endFr

@@ -26,6 +26,7 @@ function hd = captureCameras(hd)
 %                 images{c} = zeros(cam.VideoResolution) ;
 %                 continue ; 
 %             end
+            %images{c} = getdata(cam,1) ;
             images{c} = peekdata(cam,1) ;
             %images{c} = im2single(images{c}) ;
         end

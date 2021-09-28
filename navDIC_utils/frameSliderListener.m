@@ -21,7 +21,7 @@ frlst.Callback = @(src,evt)set(txt,'String',['t = ' num2str(t(round(slider.Value
         
 %% Duration string update
 % first create a text 'txt'
-t = datetime(hd.Macros(2).TimeLine) ;
+t = datetime(hd.TimeLine) ;
 dt = t-t(1) ;
 frlst.Callback = @(src,evt)set(txt,'String',string(dt(round(slider.Value)))) ;
 

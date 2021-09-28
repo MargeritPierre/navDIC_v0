@@ -237,18 +237,23 @@ methods
         xi = sum(invA(ee,:,:).*reshape(PP,[nPixToTest 1 2]),3) ; % [nPixToTest 2]
     % Shape Functions N = [1-Xi1-Xi2 Xi1 Xi2]
         NN = [1-xi(:,1)-xi(:,2) xi(:,1) xi(:,2)] ;
-
-    % 3) keep only valid tests (so that shape functions are in [0 1])
-        valid = all(NN>=0 & NN<=1,2) ;
-        ii = ii(valid) ;
-        jj = jj(valid) ;
-        NN = NN(valid,:) ;
-        ee = ee(valid) ;
-
-    % 3) Build the sparse matrix
-    % Pixel indices
+        
+    % 3) row-col to pixel indices
         nPix = nI*nJ ;
         pp = ii+(jj-1)*nI ;
+
+    % 4) keep only valid tests (so that shape functions are in [0 1])
+        valid = all(NN>=0 & NN<=1,2) ;
+        pp = pp(valid) ;
+        NN = NN(valid,:) ;
+        ee = ee(valid) ;
+        
+    % 5) attach only one element by pixel (can happen at edges)
+       [pp,iu] = unique(pp) ;
+       NN = NN(iu,:) ;
+       ee = ee(iu) ;
+
+    % 6) Build the sparse matrix
     % Node indices
         nn = Elems(ee,:) ;
     % Sparse

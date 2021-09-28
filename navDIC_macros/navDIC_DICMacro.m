@@ -83,7 +83,7 @@ methods
 end
 
 methods (Abstract)
-% THESE METHODS NEEDS TO BE INSTANCIED BY SUBCLASSES
+% THESE METHODS NEED TO BE INSTANCIED BY SUBCLASSES
     X = updateDIC(this,X,imgs) % Update the configuration X using DIC performed on imgs
     I = transformImage(this,X,x,I) % Transform an image(s) I from configuration X to x
 end
@@ -146,6 +146,10 @@ methods
     % Convert to double and normalize
         for ii = 1:numel(imgs)
             imgs{ii} = double(imgs{ii})*(1/max(getrangefromclass(imgs{ii}(1)))) ;
+        end
+    % Convert to black and white
+        for ii = 1:numel(imgs)
+            imgs{ii} = mean(imgs{ii},3) ;
         end
     % Apply a gaussian filter on images
         if all(this.GaussianFilterSize<=1) ; return ; end

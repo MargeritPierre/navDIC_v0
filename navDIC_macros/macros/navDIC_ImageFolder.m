@@ -90,6 +90,7 @@ methods
             if isempty(t) ; try ; t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd HH:mm:ss') ; end ; end
             if isempty(t) ; try ; t = datetime(info.FileModDate,'InputFormat','dd-MMM-yyyy HH:mm:ss') ; end ; end
             if isempty(t) ; try ; t = datetime(info.FileModDate,'InputFormat','dd-MMMM-yyyy HH:mm:ss','Locale','fr_FR') ; end ; end
+            if isempty(t) ; try ; t = datetime(regexprep(info.FileModDate,'.\.',''),'InputFormat','dd-MMM-yyyy HH:mm:ss') ; end ; end
             if isempty(t) ; continue ; end
             this.TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
         end

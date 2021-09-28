@@ -10,6 +10,8 @@ classdef navDICCameraPreview < navDICPreview
             Img = [] ;
         % Options
             BlackAndWhiteImage = true ;
+            ShowTimeStamp = 'none' ;
+            TimeStampText = gobjects(0) ;
     end
     
     methods
@@ -63,6 +65,18 @@ classdef navDICCameraPreview < navDICPreview
                     img = ones([fliplr(resCam) 3])*.5 ;
                     prev.Img = imagesc(img) ;
                     %prev.Img = surf(JJ-0.5,II-0.5,JJ*0,img,'facecolor','flat','edgecolor','none') ;
+                % Initialize the timestamp text
+                    xPos = prev.AxesImg.XLim(1)+0.01*range(prev.AxesImg.XLim) ;
+                    yPos = prev.AxesImg.YLim(1)+0.01*range(prev.AxesImg.YLim) ;
+                    prev.TimeStampText = text(prev.AxesImg,xPos,yPos ...
+                                                ,'' ...
+                                                ,'horizontalalignment','left' ...
+                                                ,'verticalalignment','top' ...
+                                                ,'color','w' ...
+                                                ,'FontSize',20 ...
+                                                ,'Interpreter','tex' ...
+                                                ,'tag','timestamp' ...
+                                             ) ;
                 % Contrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
                 % Update the preview
@@ -92,6 +106,13 @@ classdef navDICCameraPreview < navDICPreview
                     else
                         prev.Img.CData = img ;
                     end
+                % Actualize timestamp if needed
+                    switch prev.ShowTimeStamp
+                        case 'abs'
+                            prev.TimeStampText.String = string(datetime(hd.TimeLine(hd.CurrentFrame,:))) ;
+                        case 'rel'
+                            prev.TimeStampText.String = string(datetime(hd.TimeLine(hd.CurrentFrame,:))-datetime(hd.TimeLine(1,:))) ;
+                    end
             end
         
         % DESTRUCTOR
@@ -113,6 +134,21 @@ classdef navDICCameraPreview < navDICPreview
                     fig.Position = [posFig(1:2)+(posFig(3:4)-sizeFig)/2 sizeFig] ;
                 end
                 
+        end
+        
+        methods
+            function set.ShowTimeStamp(prev,val)
+                val = lower(val) ;
+                switch val
+                    case 'none'
+                        prev.TimeStampText.String = '' ;
+                    case 'abs'
+                    case 'rel'
+                    otherwise
+                        error('unknown value: must be ''none'', ''abs'' or ''rel''.') ;
+                end
+                prev.ShowTimeStamp = val ;
+            end
         end
     
 end

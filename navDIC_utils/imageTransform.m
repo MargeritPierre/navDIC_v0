@@ -1,9 +1,9 @@
 %% TRANSFORM IMAGES
     global hd
-    cam = 1 ;
-    refFrame = 1 ; hd.nFrames ;
+    cam = 2 ;
+    refFrame = hd.CurrentFrame ; 1 ; hd.nFrames ;
     elmt =  ... pkg.geometry.mesh.elements.base.Quadrangle ...
-            pkg.geometry.mesh.elements.Quad8 ...
+             pkg.geometry.mesh.elements.Quad8 ...
             ;   
     gridDiv = 10 ;
         
@@ -72,8 +72,10 @@ mp = num2cell(mp,2) ;
         [E1,E2] = meshgrid(bbox(1,1):dx(1):bbox(2,1),bbox(1,2):dx(2):bbox(2,2)) ;
         ji = elmt.evalAt([E1(:) E2(:)])*cat(1,pts.Position) ;
 % Interpolate
-    newImg = interp2(imr.CData,ji(:,1),ji(:,2),'linear',0) ;
-    newImg = reshape(newImg,size(E1)) ;
+    img = double(imr.CData) ;
+    newImg = interp2(img(:,:,1),ji(:,1),ji(:,2),'linear',0) ;
+    for cc = 2:nC ; newImg(:,:,cc) = interp2(img(:,:,cc),ji(:,1),ji(:,2),'linear',0) ; end
+    newImg = cast(reshape(newImg,[size(E1) nC]),class(imr.CData)) ;
 % Display
     im.CData = newImg ;
     
@@ -91,8 +93,9 @@ mp = num2cell(mp,2) ;
     IMG = cell(1,nIMG) ;
     wtbr = waitbar(0,'Interpolation...') ;
     for ii = 1:nIMG
-        IMG{ii} = interp2(hd.Images{cam}{ii},ji(:,1),ji(:,2),'linear',0) ;
-        IMG{ii} = reshape(IMG{ii},size(vE1)) ;
+        IMG{ii} = interp2(double(hd.Images{cam}{ii}(:,:,1)),ji(:,1),ji(:,2),'linear',0) ;
+        for cc = 2:nC ; IMG{ii}(:,:,cc) = interp2(double(hd.Images{cam}{ii}(:,:,cc)),ji(:,1),ji(:,2),'linear',0) ; end
+        IMG{ii} = cast(reshape(IMG{ii},[size(vE1) nC]),class(hd.Images{cam}{ii})) ;
         wtbr = waitbar(ii/nIMG,wtbr) ;
     end
     delete(wtbr) ;

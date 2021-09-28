@@ -1,8 +1,8 @@
 global hd
 
-Seed = hd.Seeds(5) ;
+Seed = hd.Seeds(end) ;
 cam = 1 ;
-frame = 1 ;
+frame = hd.CurrentFrame ; 2000 ;
 
 Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
 Elems = Seed.Elems ;
