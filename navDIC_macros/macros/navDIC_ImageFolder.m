@@ -86,6 +86,7 @@ methods
         this.TimeLine = NaN(numel(this.FileList),6) ;
         for fr = 1:numel(this.FileList)
             info = imfinfo(this.FileList{fr}) ;
+            if numel(info)>1  ; info = info(1) ; end
             t = [] ;
             if isempty(t) ; try ; t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd HH:mm:ss') ; end ; end
             if isempty(t) ; try ; t = datetime(info.FileModDate,'InputFormat','dd-MMM-yyyy HH:mm:ss') ; end ; end

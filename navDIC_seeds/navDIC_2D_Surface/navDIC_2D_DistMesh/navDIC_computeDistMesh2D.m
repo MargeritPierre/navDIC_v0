@@ -201,10 +201,13 @@ disp('----------------')
             return ;
         end
         t=delaunay(p);                                  % List of triangles
-        if isempty(varargin)
-            pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;    % Compute centroids
-            t=t(fd(pmid)<-geps,:);                          % Keep interior triangles
+        %if isempty(varargin)
+        pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;    % Compute centroids
+        tin = fd(pmid)<-geps ;
+        if any(tin)
+            t=t(tin,:);                          % Keep interior triangles
         end
+        %end
     end
 
     function updateMeshPlot(p,t)

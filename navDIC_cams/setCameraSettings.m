@@ -68,20 +68,21 @@ function cam = setCameraSettings(cam)
     function updatePreview(obj,event,hImage)
         % Display the current image frame. 
             frame0 = event.Data ;
-            %frame0 = double(frame0) ;
             %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
+            frame = double(frame0) ;
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
-                    frame = abs(diff(frame0([1:end,end],:,:),1,1))+abs(diff(frame0(:,[1:end,end],:),1,2)) ;
+                    frame = abs(diff(frame([1:end,end],:,:),1,1))+abs(diff(frame(:,[1:end,end],:),1,2)) ;
                 case 'laplacian'
-                    frame = abs(diff(frame0([1,1:end,end],:,:),2,1))+abs(diff(frame0(:,[1,1:end,end],:),2,2)) ;
+                    frame = abs(diff(frame([1,1:end,end],:,:),2,1))+abs(diff(frame(:,[1,1:end,end],:),2,2)) ;
                 case 'noise level'
-                    frame = abs(frame0-PREVIEW.LastFrame) ;
+                    frame = abs(frame-PREVIEW.LastFrame) ;
                 otherwise
-                    frame = frame0 ;
+                    %frame = frame0 ;
             end
+            frame = cast(frame,class(frame0)) ;
         % Show the Acquired Frame
             hImage.CData = frame ;
         % If a frame is available, process

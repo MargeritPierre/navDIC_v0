@@ -10,7 +10,7 @@
     IMG = cat(4,hd.Images{camID}{frames}) ; % /!\ STILL NO SUPPORT FOR MULTICOLOR IMAGES YET
  
 % PROCESS IMAGES
-    [nI,nJ,nFrames] = size(IMG) ;
+    [nI,nJ,~,nFrames] = size(IMG) ;
     [JJ,II] = meshgrid(1:nJ,1:nI) ;
     % Img Normalization
         imgClassRange = 1 ;

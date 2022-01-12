@@ -987,8 +987,8 @@ methods
     function updateSeedPreview(obj,~,ax)
         % Has the preview been initialized ?
             % Search for the object
-                %gH = findobj(ax,'tag',obj.Name) ;
-                gH = findobj(0,'tag',obj.Name) ;
+                gH = findobj(ax,'tag',obj.Name) ;
+                %gH = findobj(0,'tag',obj.Name) ;
             % If it is not found, re-init
                 if isempty(gH)
                     initSeedPreview(obj,ax) ;
