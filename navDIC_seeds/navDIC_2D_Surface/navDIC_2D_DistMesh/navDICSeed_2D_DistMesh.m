@@ -714,10 +714,9 @@ methods
     
     function DATA = barDataFields(obj,DATA)
     % Compute data fields associated to rod elements
-        nPoints = size(obj.Points,1) ;
+        [nPoints,~,nFrames] = size(DATA.x1) ;
         bars = obj.Elems(:,1:2) ;
         nBars = size(bars,1) ;
-        nFrames = size(obj.MovingPoints,3) ;
     % Differenciation matrix
         D = sparse((1:nBars)'*[1 1],bars,ones(nBars,1).*[-1 1],nBars,nPoints) ;
     % Differetiation position
@@ -1140,6 +1139,7 @@ methods
                                 PlotStruct.CData = obj.elem2nod*PlotStruct.CData ; 
                             end
                         % Display
+                            gHi.EdgeColor = 'interp' ;
                             gHi.Vertices = PlotStruct.Vertices ;
                             gHi.FaceVertexCData = PlotStruct.CData ;
                 end
