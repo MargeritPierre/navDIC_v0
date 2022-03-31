@@ -79,13 +79,22 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
             case 'ImageFolder'
                 for fr = 1:length(H.loadedFrames)
                     filename = [H.Folder filesep H.FileNames{H.loadedFrames(fr)}] ;
+                % Get date field
                     info = imfinfo(filename) ;
-                    if isfield(info,'DateTime')
-                        t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd HH:mm:ss') ;
-                    elseif isfield(info,'FileModDate')
-                        t = datetime(info.FileModDate,'InputFormat','dd-MMM-yyyy HH:mm:ss') ;
+                    if isfield(info,'DateTime') ; date = info.DateTime ;
+                    elseif isfield(info,'FileModDate') ; date = info.FileModDate ;
                     end
-                    TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
+                % Convert to time
+                    t = [] ;
+                    if isempty(t) ; try ; t = datetime(date,'InputFormat','yyyy:MM:dd HH:mm:ss') ; end ; end
+                    if isempty(t) ; try ; t = datetime(date,'InputFormat','dd-MMM-yyyy HH:mm:ss') ; end ; end
+                    if isempty(t) ; try ; t = datetime(date,'InputFormat','dd-MMMM-yyyy HH:mm:ss','locale','fr_FR') ; end ; end
+                % Set the TimeLine
+                    if ~isempty(t) ; 
+                        TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
+                    else
+                        TimeLine(fr,:) = mod(fr,cumprod([365 30 24 60 60 1],'reverse')) ;
+                    end
                 end
             case 'Video'
         end
