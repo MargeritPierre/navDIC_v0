@@ -138,6 +138,11 @@ methods
 
     function [edges,elem2edg] = getEdges(obj)
     % Get object's edges connectivity
+        if size(obj.Points,1)<2 
+            edges = [] ; 
+            elem2edg = sparse(0,size(obj.Elems,1)) ;
+            return ;
+        end
         % Edge nodes
             e1 = obj.Elems ;
             Nn = sum(~isnan(e1),2) ;
