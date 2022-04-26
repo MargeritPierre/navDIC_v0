@@ -29,6 +29,9 @@ function cam = setCameraSettings(cam)
         cam.CurrentState = 'setting' ;
         PREVIEW = [] ;
         
+    % Backup the current frameavailable callback
+        bkp_FramesAcquiredFcn = cam.VidObj.FramesAcquiredFcn ;
+        
     % Init the Figure
         fig = [] ;
         % FIGURE Parameters
@@ -50,6 +53,9 @@ function cam = setCameraSettings(cam)
             end
         end
 %         preview(cam.VidObj) ; uiwait(gcf) ;
+
+    % Reset the callback
+        cam.VidObj.FramesAcquiredFcn = bkp_FramesAcquiredFcn ;
         
     % Set the correct ROI
         cam.VidObj.ROIPosition = INFOS.Custom.ROI.Value ;
@@ -65,9 +71,10 @@ function cam = setCameraSettings(cam)
 
 
 % UPDATE CAMERA PREVIEW
-    function updatePreview(obj,event,hImage)
+    function updatePreview(source,event,hImage)
+        disp('updating preview') ;
         % Display the current image frame. 
-            frame0 = event.Data ;
+            frame0 = event.Data ; % getdata(source,1) ; flushdata(source) ; %
             %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
@@ -315,6 +322,10 @@ function cam = setCameraSettings(cam)
                                 'ExposureAutoRate';...
                                 'ExposureAutoTarget';...
                                 'ExposureMode';...
+                                'ExposureTime';...
+                                'Exposure';...
+                                'Focus';...
+                                'FocusMode';...
                                 } ;
             % Available Parameters
                 paramsFields = fieldnames(INFOS.IMAQ) ;
@@ -433,6 +444,7 @@ function cam = setCameraSettings(cam)
                 axHisto.Position = [marginMenu marginMenu menuSize/(1+menuSize)-2*marginMenu histoHeight] ;
                 axHisto.XTick = [] ;
                 axHisto.YTick = [] ;
+                axHisto.NextPlot = 'add' ;
                 box on ;
         % Create the menu
             createMenu() ;
@@ -441,8 +453,12 @@ function cam = setCameraSettings(cam)
         % Launch the preview
             PREVIEW.LastFrame = img0 ;
             PREVIEW.AxHistObj = axHisto ;
-            PREVIEW.ImgObj = preview(cam.VidObj,imgPreview) ;
-            setappdata(PREVIEW.ImgObj,'UpdatePreviewWindowFcn',@(obj,event,hImage)updatePreview(obj,event,hImage)) ;
+            if 1
+                PREVIEW.ImgObj = preview(cam.VidObj,imgPreview) ;
+                setappdata(PREVIEW.ImgObj,'UpdatePreviewWindowFcn',@(obj,event,hImage)updatePreview(obj,event,hImage)) ;
+            else
+                cam.VidObj.FramesAcquiredFcn = @(src,evt)updatePreview(src,evt,imgPreview) ;
+            end
     end
 
 % ZOOM ON PREVIEW /!\ rect ROI is not settable if zoom is active

@@ -44,7 +44,7 @@ methods
                                         ,'updateCallback',@(H)navDIC_processShapesForDistMesh(H)...
                                         ) ;
             obj.Points = obj.drawToolH.DistMesh.Points ;
-            obj.Triangles = obj.drawToolH.DistMesh.Triangles ;
+            obj.Elems = obj.drawToolH.DistMesh.Triangles ;
         % INITIALIZE
             obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
     end
@@ -55,7 +55,7 @@ methods
             drawToolH = drawingTool(obj.drawToolH) ;
         % Has the mesh been changed ?
             Points = drawToolH.DistMesh.Points ;
-            Tris = drawToolH.DistMesh.Triangles ;
+            Elems = drawToolH.DistMesh.Triangles ;
             if size(obj.Points,1)==size(Points,1) && sqrt(sum((obj.Points(:)-Points(:)).^2))<1
                 return ; % No need for modifications
             end
@@ -84,7 +84,7 @@ methods
             % Crush the old mesh
                 obj.drawToolH = drawToolH ;
                 obj.Points = Points ;
-                obj.Triangles = Tris ;
+                obj.Elems = Elems ;
                 obj.MovingPoints = MovingPoints ;
                 obj.DataFields = [] ;
     end
@@ -609,7 +609,7 @@ methods
             if ~isempty(obj.Triangles) || ~isempty(obj.Quadrangles)
                 DATA = surfaceDataFields(obj,DATA,onNodes) ;
             elseif size(obj.Elems,2)==2
-                DATA = barDataFields(obj,DATA) ;
+                DATA = barDataFields(obj,DATA,onNodes) ;
             end
         % SAVE IN THE OBJECT
             if computeAll
@@ -717,13 +717,17 @@ methods
         [DATA.TSe1,DATA.TSe2,DATA.TStau,DATA.TStheta] = eigenValues(obj,DATA.TS11,DATA.TS22,DATA.TS12) ;
     end
     
-    function DATA = barDataFields(obj,DATA)
+    function DATA = barDataFields(obj,DATA,onNodes)
     % Compute data fields associated to rod elements
         [nPoints,~,nFrames] = size(DATA.x1) ;
         bars = obj.Elems(:,1:2) ;
         nBars = size(bars,1) ;
     % Differenciation matrix
         D = sparse((1:nBars)'*[1 1],bars,ones(nBars,1).*[-1 1],nBars,nPoints) ;
+    % Node relocalization
+        b2n = sparse(bars,(1:nBars)'*[1 1],1,nPoints,nBars) ;
+        b2n = b2n./sum(b2n,2) ; % mean over adjacent bars
+        if onNodes ; D = b2n*D ; end
     % Differetiation position
         X = reshape(cat(2,DATA.x1,DATA.x2),nPoints,2*nFrames) ;
         DX = reshape(D*X,[],2,nFrames) ;
@@ -745,6 +749,13 @@ methods
         DATA.A = angle(P) ;
         DATA.dA = angle(cat(3,zeros(size(DX,1),1),P(:,:,2:end)./P(:,:,1:end-1))) ;
         DATA.dAtot = cumsum(DATA.dA,3) ;
+    % Curvature
+        iL = diag(sparse(1./DATA.L(:,1))) ;
+        if onNodes ; Dk = D*iL ; else ; Dk = D*b2n*iL ; end
+        DATA.Curvature = 'Curvature' ; 
+        DATA.K = reshape(Dk*DATA.A(:,:),[],1,nFrames) ;
+        DATA.dK = reshape(Dk*DATA.dA(:,:),[],1,nFrames) ;
+        DATA.dKtot = reshape(Dk*DATA.dAtot(:,:),[],1,nFrames) ;
     end
 
     function [e1,e2,tau,theta] = eigenValues(obj,M11,M22,M12)

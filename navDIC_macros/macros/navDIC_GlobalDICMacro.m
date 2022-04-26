@@ -168,7 +168,7 @@ methods
             if this.Debug
                 global hd
             % Update seed data
-                this.Seed.MovingPoints(:,:,hd.CurrentFrame) = X ;
+                this.Seed.MovingPoints(:,:,hd.CurrentFrame) = X+U ;
                 this.Seed.computeDataFields([],hd.CurrentFrame) ;
             % Update navDIC previews
                 hd = updateAllPreviews(hd) ;

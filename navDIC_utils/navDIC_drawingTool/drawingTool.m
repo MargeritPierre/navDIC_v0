@@ -113,7 +113,7 @@ function H = drawingTool(varargin)
                 updateDrawing(0) ;
             end
         % Depending on the shape, loop
-            if isempty(varargin)
+            if isempty(varargin) || isempty(varargin{1})
                 switch shape
                     case 'impoint'
                         newShape(shape,msg) ;
@@ -337,15 +337,19 @@ function H = drawingTool(varargin)
                         case 'point'
                             theBtn.TooltipString = 'Draw a Point' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('impoint','+',[]) ;
+                            icon = 'iconPoint.png' ;
                         case 'line'
                             theBtn.TooltipString = 'Draw a Line' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('imline','+',[]) ;
+                            icon = 'iconLine.png' ;
                         case 'polyline'
                             theBtn.TooltipString = 'Draw a Polyline' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('impolyline','+',[]) ;
+                            icon = 'iconPolyline.png' ;
                         case 'spline'
                             theBtn.TooltipString = 'Draw a Spline' ;
                             theBtn.ClickedCallback = @(src,evt)newShape('Spline','+',[]) ;
+                            icon = 'iconSpline.png' ;
                         case 'update'
                             % ToggleTool
                                 delete(theBtn) ;

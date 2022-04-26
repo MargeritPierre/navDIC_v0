@@ -37,12 +37,14 @@ function H = navDIC_processShapesForDistMesh(H)
             d = [customData.l] ;
             
     % Recursive Distance function
+        is1DMesh = true ; % is the mesh 1D curvilinear ?
         dF = {} ; % Individual shape function
         hF = {} ; % Individual shape function
         dFrecurs = {} ; % Recursive dist function
         hFrecurs = {@(p)huniform(p)*h0} ; % Recursive bar length function
         pFix = [] ; % Fixed points
         pInt = [] ; % Intersection Points
+        edgPt = {} ;
         geo = 0 ;
         for s = 1:length(H.Shapes)
             if ~H.Geometries(s).isValid ; continue ; end
@@ -51,6 +53,7 @@ function H = navDIC_processShapesForDistMesh(H)
             % Geometry-dependent properties
                 switch H.Geometries(s).Class
                     case 'imrect'
+                        is1DMesh = false ;
                         % Local Distance function
                             dF{geo} = @(p)drectangle(p,pos(1),pos(1)+pos(3),pos(2),pos(2)+pos(4)) ;
                         % Trivial Fixed Points
@@ -65,8 +68,9 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Parametrization
                             l = sqrt(sum(diff(pts([1:end,1],:),1,1).^2,2)) ;
                             L = cumsum(l) ;
-                            edgPt = @(t)interp1([0;L]/L(end),pts([1:end,1],:),t) ;
+                            edgPt{s} = @(t)interp1([0;L]/L(end),pts([1:end,1],:),t) ;
                     case 'imellipse'
+                        is1DMesh = false ;
                         % Ellipse properties
                             a = pos(3)/2 ;
                             b = pos(4)/2 ;
@@ -75,9 +79,10 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Distance Function
                             dF{geo} = @(p)(((p(:,1)-cx)./a).^2+((p(:,2)-cy)./b).^2-1)*sqrt(a^2+b^2) ;
                         % Parametrization
-                            edgPt = @(t)[cx+a*cos(2*pi*t'),cy+b*sin(2*pi*t')] ;
+                            edgPt{s} = @(t)[cx+a*cos(2*pi*t'),cy+b*sin(2*pi*t')] ;
                     case 'impoly'
                         if ~strcmp(H.Geometries(s).Bool,'impolyline')
+                            is1DMesh = false ;
                             % It is a closed polygon
                             polyPos = pos([1:end,1],:) ;
                         else 
@@ -90,7 +95,7 @@ function H = navDIC_processShapesForDistMesh(H)
                                 edges = diff(polyPos,1) ;
                                 vecs = edges./sqrt(sum(edges.^2,2)) ;
                             % Angles at corners
-                                angles = acos(abs(sum(vecs.*circshift(vecs,1,1),2))) ;
+                                angles = acos(sum(vecs.*circshift(vecs,1,1),2)) ;
                             % Fixed Points
                                 if ~strcmp(H.Geometries(s).Bool,'impolyline')
                                     % It is a closed polygon
@@ -102,10 +107,11 @@ function H = navDIC_processShapesForDistMesh(H)
                         % Parametrization
                             l = sqrt(sum(diff(polyPos,1,1).^2,2)) ;
                             L = cumsum(l) ;
-                            edgPt = @(t)interp1([0;L]/L(end),polyPos,t) ;
+                            edgPt{s} = @(t)interp1([0;L]/L(end),polyPos,t) ;
                     case 'impoint'
                             pFix = [pFix ; pos] ;
                             dF{geo} = @(p)sqrt((p(:,1)-pos(1)).^2+(p(:,2)-pos(2)).^2) ;
+                            edgPt{s} = @(t)pos+t(:)*0 ;
                     otherwise
                         disp(H.Geometries(s).Class)
                 end
@@ -130,13 +136,13 @@ function H = navDIC_processShapesForDistMesh(H)
             % Add Fixed Points at Intersections of edges
                 if geo>1 && ismember(H.Geometries(s).Class,{'imrect','impoly','imellipse'})
                     t0 = (0:nPtsInt-1)/nPtsInt ;
-                    p0 = edgPt(t0) ;
+                    p0 = edgPt{s}(t0) ;
                     d0 = dFrecurs{geo-1}(p0) ;
                     crossEdg = sign(d0)~=circshift(sign(d0),1,1) ;
                     indPt = find(crossEdg) ;
                     for p = 1:length(indPt)
-                        tInt = fzero(@(t)dFrecurs{geo-1}(edgPt(t)),t0(indPt(p))) ;
-                        pInt(end+1,:) = edgPt(tInt) ;
+                        tInt = fzero(@(t)dFrecurs{geo-1}(edgPt{s}(t)),t0(indPt(p))) ;
+                        pInt(end+1,:) = edgPt{s}(tInt) ;
                     end
                 end
         end
@@ -154,8 +160,9 @@ function H = navDIC_processShapesForDistMesh(H)
         end
         
     % BoundingBox
-        [j,i] = find(H.ROI) ;
         margin = 1 ;
+        [j,i] = find(H.ROI) ;
+        if isempty(j) ; i = pFix(:,1) ; j = pFix(:,2) ; end
         bboxROI = [min(i)-margin min(j)-margin ; max(i)+margin max(j)+margin] ;
         
     % Bar Length Distribution
@@ -177,7 +184,11 @@ function H = navDIC_processShapesForDistMesh(H)
         D0 = min([h(:);h0]) ;
         
     % Compute the mesh
-        mesh = navDIC_computeDistMesh2D(fd,fh,D0,bboxROI,pFix,H.Axes) ;
+        if is1DMesh
+            mesh = navDIC_computeDistMesh1D(edgPt,fh,pFix,H.Axes) ;
+        else
+            mesh = navDIC_computeDistMesh2D(fd,fh,D0,bboxROI,pFix,H.Axes) ;
+        end
         
     % Return the new Handle structure
         H.DistMesh = mesh ;
