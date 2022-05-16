@@ -38,7 +38,7 @@ classdef navDICCameraPreview < navDICPreview
                     prev.CameraID = ID ;
                     prev.fig.Name = [prev.fig.Name,' : ',prev.CameraName] ;
                 % Set the axes
-                    prev.AxesImg = axes('outerposition',[0 0 1 1]) ;
+                    prev.AxesImg = axes('nextplot','add','outerposition',[0 0 1 1]) ;
                         prev.AxesImg.YDir = 'reverse' ;
                         prev.AxesImg.XTick = [] ;
                         prev.AxesImg.YTick = [] ;

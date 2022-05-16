@@ -66,7 +66,7 @@ function [valid,hd] = loadData(hd,dataType)
                                     + [-1/2 0 1 0]*dimFig(1)*1/(1-menuSizeLeft) ...
                                     + [0 -1/2 0 1]*dimFig(2)*1/(1-uiHeight) ;
         % Axes containing the image preview
-            H.axImg = axes('outerposition',[menuSizeLeft 0 1-menuSizeLeft 1-uiHeight]) ;
+            H.axImg = axes('nextplot','add','outerposition',[menuSizeLeft 0 1-menuSizeLeft 1-uiHeight]) ;
                 H.axImg.LooseInset = [1 1 1 1]*0.005 ;
                 H.axImg.YDir = 'reverse' ;
                 H.axImg.XTick = [] ; H.axImg.YTick = [] ;

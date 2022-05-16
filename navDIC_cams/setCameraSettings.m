@@ -402,7 +402,7 @@ function cam = setCameraSettings(cam)
             fig.Units = 'normalized' ;
             fig.CloseRequestFcn = @(src,evt)closeFigure ;
         % Setup the preview axes
-            axPreview = axes() ;
+            axPreview = axes('nextplot','add',) ;
                 axPreview.Units = 'pixels' ;
                 axPreview.Position = [menuSize*vidRes(1) 0 vidRes(1) vidRes(2)]*figRelSize*monit2VidRatio + [1 1 0 0] ;
                 axPreview.Units = 'normalized' ;
@@ -440,7 +440,7 @@ function cam = setCameraSettings(cam)
             addNewPositionCallback(rectROI,@(pos)updateSettings(rectROI,pos)) ;
             rectROI.Deletable = false ;
         % Setup the histogram
-            axHisto = axes() ;
+            axHisto = axes('nextplot','add',) ;
                 axHisto.Position = [marginMenu marginMenu menuSize/(1+menuSize)-2*marginMenu histoHeight] ;
                 axHisto.XTick = [] ;
                 axHisto.YTick = [] ;

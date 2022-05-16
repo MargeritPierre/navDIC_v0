@@ -13,7 +13,7 @@
     [GX,GY] = meshgrid(linspace(0,1,gridDiv),linspace(0,1,gridDiv)) ;
         
     clf ;
-    ax1 = axes('OuterPosition',[0 0 .5 1]) ;
+    ax1 = axes('nextplot','add','OuterPosition',[0 0 .5 1]) ;
         imr = imagesc(refImg) ;
         p1 = (1:gridDiv-1)'+(0:gridDiv-2)*gridDiv ;
         grid = patch('vertices',[GX(:) GY(:)]...
@@ -31,7 +31,7 @@
         axis equal
         axis tight
         colormap gray
-    ax2 = axes('OuterPosition',[.5 0 .5 1]) ;
+    ax2 = axes('nextplot','add','OuterPosition',[.5 0 .5 1]) ;
         srf = surf(JJ,II,JJ*0,refImg,'facecolor','flat','edgecolor','none') ;
         im = imagesc(refImg) ;
         roi = drawrectangle('Position',[1 1 nJ-1 nI-1],'facealpha',0,'linewidth',.5) ;

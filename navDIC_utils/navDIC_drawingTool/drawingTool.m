@@ -244,7 +244,7 @@ function H = drawingTool(varargin)
                 H.Figure.Position(1:2) = [.5-H.Figure.Position(3:4)/2] ;
 
         % Image    
-            H.Axes = axes('position',[0 0 1 1]) ;
+            H.Axes = axes('nextplot','add','position',[0 0 1 1]) ;
                 H.Axes.Units = 'pixels' ;
                 H.Axes.Position = H.Axes.Position + [marg marg -2*marg -2*marg] ;
                 H.Axes.Units = 'normalized' ;

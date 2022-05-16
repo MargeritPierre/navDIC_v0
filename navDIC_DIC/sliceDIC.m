@@ -26,7 +26,7 @@ clc
             fig.Tag = figTag ;
             fig.NumberTitle = 'off' ;
             fig.Name = 'Process Slice Figure' ;
-        axImg = axes() ;
+        axImg = axes('nextplot','add',) ;
             axImg.YDir = 'reverse' ;
             axImg.LooseInset = 0.002*[1 1 1 1] ;
             axImg.XTick = [] ;

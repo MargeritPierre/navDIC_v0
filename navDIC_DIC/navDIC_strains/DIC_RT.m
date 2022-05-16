@@ -110,7 +110,7 @@ clear all
 % Figure
     m = 0.02 ;
     fig = figure('windowstyle','docked') ;
-        axImg = axes('position',[m m 1-2*m 1-2*m]) ;
+        axImg = axes('nextplot','add','position',[m m 1-2*m 1-2*m]) ;
             axImg.YDir = 'reverse' ;
             axis equal
             axis tight

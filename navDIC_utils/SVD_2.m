@@ -72,14 +72,14 @@
         else
             FaceColor = 'flat' ;
         end
-        axD = axes() ;
+        axD = axes('nextplot','add',) ;
             %plot(cumsum(d)/sum(d),':ok') ; axD.XLim = [1 Neig] ; axD.YLim = [0.9 1] ; axD.YScale = 'log' ; grid on
             %plot(d,':ok') ; axD.XLim = [1 Neig] ; axD.YScale = 'log' ; grid on
             plot(T(:,mode)*d(mode),'k') ;
         ax = gobjects(0) ;
         meshV = gobjects(0) ;
         for c = 1:size(V,2) 
-            ax(c) = axes('position',[1 1 0 0] + 0.5*[-1 0 1 0] + 0.3*[0 -c*1.05 0 1]) ;
+            ax(c) = axes('nextplot','add','position',[1 1 0 0] + 0.5*[-1 0 1 0] + 0.3*[0 -c*1.05 0 1]) ;
                 %patch('Vertices',Nodes,'Faces',Elems,'facecolor','none','edgecolor','k','edgealpha',0.5) ;
                 meshV(c) = patch('Vertices',Nodes,'Faces',Elems,'facecolor',FaceColor,'facealpha',0.5,'edgecolor','none','edgealpha',0.5) ;
                 meshV(c).FaceVertexCData = V(:,c,mode) ;
