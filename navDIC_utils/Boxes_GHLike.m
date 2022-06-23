@@ -2,7 +2,7 @@
 clc
 
 clf ;
-ax = axes('nextplot','add',) ;
+ax = axes() ;
     ax.XTick = [] ;
     ax.YTick = [] ;
     box(ax,'on') ;

@@ -1543,7 +1543,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
 %disable for now, until we get it working...
 %{
         try
-            hAx = axes('nextplot','add','Parent',hTreeFig, 'units','pixels', 'position',[10,10,250,150], 'visible','off');
+            hAx = axes('Parent',hTreeFig, 'units','pixels', 'position',[10,10,250,150], 'visible','off');
             axis(hAx,'image');
             image(cdata,'Parent',hAx);
             axis(hAx,'off');

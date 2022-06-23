@@ -19,12 +19,6 @@ t = t-t(2) ;
 frlst.Callback = @(src,evt)set(txt,'String',['t = ' num2str(t(round(slider.Value)),'%.1f') ' sec']) ;
 
         
-%% Text string update
-% first create a text 'txt'
-d = abs(hd.InputData(:,1)) ;
-frlst.Callback = @(src,evt)set(txt,'String',[num2str(d(round(slider.Value)),'%.0f') ' Volts']) ;
-
-        
 %% Duration string update
 % first create a text 'txt'
 t = datetime(hd.TimeLine) ;

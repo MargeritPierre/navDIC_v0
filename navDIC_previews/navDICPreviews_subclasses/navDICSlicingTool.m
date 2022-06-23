@@ -68,7 +68,7 @@ classdef navDICSlicingTool < navDICCameraPreview
                 % SLICE PREVIEW
                     prev.SlicePrev = navDICPreview(hd,varargin{:}) ;
                         prev.SlicePrev.fig.Name = 'navDIC Slice Image' ;
-                    prev.SliceAxes = axes('nextplot','add',) ;
+                    prev.SliceAxes = axes() ;
                         prev.SliceAxes.YDir  = 'reverse' ;
                         axis tight
                         colormap(prev.SliceAxes,'gray') ;

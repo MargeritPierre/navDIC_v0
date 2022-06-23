@@ -6,7 +6,7 @@ global hd
 macro = hd.Macros(1) ;
 cam = macro.Seed.CamIDs ;
 
-%macro.setupDIC ; % re-compute all DIC maps etc.
+macro.setupDIC ; % re-compute all DIC maps etc.
 
 %% BUILD REFERENCE IMAGES
 
@@ -34,13 +34,8 @@ end
 delete(wtbr) ;
     
 %% PUSH TO NAVDIC
-    newCamIdx = numel(hd.Cameras)+1 ;
+    newCamIdx = numel(hd.Cameras);%+1 ;
     newCam = hd.Cameras(cam) ;
     newCam.Name = ['DIFF | ' hd.Cameras(cam).Name] ;
     hd.Images{newCamIdx} = IMG ;
     hd.Cameras(newCamIdx) = newCam ;
-    
-    
-    
-    
-    

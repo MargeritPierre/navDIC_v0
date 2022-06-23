@@ -73,12 +73,6 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
             if ~strcmpi(cam.VidObj.ReturnedColorSpace,'grayscale')
                 cam.VidObj.ReturnedColorSpace = 'RGB' ;
             end
-        % Set trigger mode            
-            cam.VidObj.FramesPerTrigger = 1 ;
-            cam.VidObj.TriggerRepeat = Inf ;
-        % Set FrameAcquiredFunction
-            cam.VidObj.FramesAcquiredFcnCount = 1 ;
-            cam.VidObj.FramesAcquiredFcn = @(src,evt)flushdata(src) ;
         % Retrieve infos
             cam.Infos.IMAQ = propinfo(cam.VidObj.Source) ;
         % Add custom informations
@@ -129,7 +123,8 @@ function [CAMERAS,camsHasChanged] = manageMultiCameras(CAMERAS)
         % Launch the Hardware Connection
             camToAdd = connectCamera(camToAdd) ;
             if ~isfield(camToAdd,'VidObj') ; return ; end
-            %start(camToAdd.VidObj) ; %<NEW>
+        % Set Input Infos
+            %camToAdd = setCameraSettings(camToAdd) ;
         % Display the input
             disp(char(10)) ;
             disp('NEW INPUT ADDED :') ;

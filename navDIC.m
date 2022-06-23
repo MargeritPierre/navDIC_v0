@@ -573,8 +573,12 @@ function navDIC(varargin)
         % Update the navDIC Interface
             updateMainMenu() ;
             updateToolbar() ;
+        % Record filename info    
+            hd.filename = filename;
         % Display infos
             disp(newline) ; disp('NEW SETUP HANDLES : ') ; display(hd) ;
+            disp(newline) ; disp(strcat('Loaded file : ',filename));
+            
     end
 
 
@@ -743,6 +747,9 @@ function navDIC(varargin)
             strInfos = [strInfos,' | ',num2str(length(hd.Seeds)),' DIC.Seeds'] ;
             strInfos = [strInfos,' | ',num2str(length(hd.Previews)),' Previews'] ;
             strInfos = [strInfos,' | Frame ',num2str(hd.CurrentFrame),'/',num2str(hd.nFrames)] ;
+            if isfield(hd,'filename')
+            strInfos = [strInfos,' | File ', hd.filename] ;
+            end
             hd.ToolBar.infosTxt.String = strInfos ;
         % Frame Slider
             minVal = min(1,hd.nFrames) ;

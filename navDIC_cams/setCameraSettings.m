@@ -29,9 +29,6 @@ function cam = setCameraSettings(cam)
         cam.CurrentState = 'setting' ;
         PREVIEW = [] ;
         
-    % Backup the current frameavailable callback
-        bkp_FramesAcquiredFcn = cam.VidObj.FramesAcquiredFcn ;
-        
     % Init the Figure
         fig = [] ;
         % FIGURE Parameters
@@ -53,9 +50,6 @@ function cam = setCameraSettings(cam)
             end
         end
 %         preview(cam.VidObj) ; uiwait(gcf) ;
-
-    % Reset the callback
-        cam.VidObj.FramesAcquiredFcn = bkp_FramesAcquiredFcn ;
         
     % Set the correct ROI
         cam.VidObj.ROIPosition = INFOS.Custom.ROI.Value ;
@@ -71,25 +65,23 @@ function cam = setCameraSettings(cam)
 
 
 % UPDATE CAMERA PREVIEW
-    function updatePreview(source,event,hImage)
-        disp('updating preview') ;
+    function updatePreview(obj,event,hImage)
         % Display the current image frame. 
-            frame0 = event.Data ; % getdata(source,1) ; flushdata(source) ; %
+            frame0 = event.Data ;
+            %frame0 = double(frame0) ;
             %frame0 = frame0*(1./max(getrangefromclass(event.Data))) ;
             %frame0 = double(getsnapshot(obj)) ;
         % Processing on the frame
-            frame = double(frame0) ;
             switch PREVIEW.derivBtn.String{PREVIEW.derivBtn.Value}
                 case 'gradient'
-                    frame = abs(diff(frame([1:end,end],:,:),1,1))+abs(diff(frame(:,[1:end,end],:),1,2)) ;
+                    frame = abs(diff(frame0([1:end,end],:,:),1,1))+abs(diff(frame0(:,[1:end,end],:),1,2)) ;
                 case 'laplacian'
-                    frame = abs(diff(frame([1,1:end,end],:,:),2,1))+abs(diff(frame(:,[1,1:end,end],:),2,2)) ;
+                    frame = abs(diff(frame0([1,1:end,end],:,:),2,1))+abs(diff(frame0(:,[1,1:end,end],:),2,2)) ;
                 case 'noise level'
-                    frame = abs(frame-PREVIEW.LastFrame) ;
+                    frame = abs(frame0-PREVIEW.LastFrame) ;
                 otherwise
-                    %frame = frame0 ;
+                    frame = frame0 ;
             end
-            frame = cast(frame,class(frame0)) ;
         % Show the Acquired Frame
             hImage.CData = frame ;
         % If a frame is available, process
@@ -322,10 +314,6 @@ function cam = setCameraSettings(cam)
                                 'ExposureAutoRate';...
                                 'ExposureAutoTarget';...
                                 'ExposureMode';...
-                                'ExposureTime';...
-                                'Exposure';...
-                                'Focus';...
-                                'FocusMode';...
                                 } ;
             % Available Parameters
                 paramsFields = fieldnames(INFOS.IMAQ) ;
@@ -402,7 +390,7 @@ function cam = setCameraSettings(cam)
             fig.Units = 'normalized' ;
             fig.CloseRequestFcn = @(src,evt)closeFigure ;
         % Setup the preview axes
-            axPreview = axes('nextplot','add',) ;
+            axPreview = axes() ;
                 axPreview.Units = 'pixels' ;
                 axPreview.Position = [menuSize*vidRes(1) 0 vidRes(1) vidRes(2)]*figRelSize*monit2VidRatio + [1 1 0 0] ;
                 axPreview.Units = 'normalized' ;
@@ -440,11 +428,10 @@ function cam = setCameraSettings(cam)
             addNewPositionCallback(rectROI,@(pos)updateSettings(rectROI,pos)) ;
             rectROI.Deletable = false ;
         % Setup the histogram
-            axHisto = axes('nextplot','add',) ;
+            axHisto = axes() ;
                 axHisto.Position = [marginMenu marginMenu menuSize/(1+menuSize)-2*marginMenu histoHeight] ;
                 axHisto.XTick = [] ;
                 axHisto.YTick = [] ;
-                axHisto.NextPlot = 'add' ;
                 box on ;
         % Create the menu
             createMenu() ;
@@ -453,12 +440,8 @@ function cam = setCameraSettings(cam)
         % Launch the preview
             PREVIEW.LastFrame = img0 ;
             PREVIEW.AxHistObj = axHisto ;
-            if 1
-                PREVIEW.ImgObj = preview(cam.VidObj,imgPreview) ;
-                setappdata(PREVIEW.ImgObj,'UpdatePreviewWindowFcn',@(obj,event,hImage)updatePreview(obj,event,hImage)) ;
-            else
-                cam.VidObj.FramesAcquiredFcn = @(src,evt)updatePreview(src,evt,imgPreview) ;
-            end
+            PREVIEW.ImgObj = preview(cam.VidObj,imgPreview) ;
+            setappdata(PREVIEW.ImgObj,'UpdatePreviewWindowFcn',@(obj,event,hImage)updatePreview(obj,event,hImage)) ;
     end
 
 % ZOOM ON PREVIEW /!\ rect ROI is not settable if zoom is active

@@ -19,7 +19,7 @@
     
     
 %% PERFORM DIC
-    switch 1 % Transfer matrix T: constrain DOFs s.t V = T*v, v constrained
+    switch 2 % Transfer matrix T: constrain DOFs s.t V = T*v, v constrained
         case 1 % All DOFS
             T = speye(2*mesh.nNodes) ;
         case 2 % Uniform X speed by element
@@ -48,7 +48,6 @@
     plotFreq = 1 ; % plot update frequency
     plotEachFrame = false ; % update at each frame ?
     frames = 2:hd.nFrames ;
-    V0 = [-30 0] ; % initial velocity guess
     
     clf
     im = image(refImg) ;
@@ -59,7 +58,7 @@
     axis tight
     
     X = seed.Points ; 
-    V = ones(mesh.nNodes,2,hd.nFrames).*V0 ;
+    V = zeros(mesh.nNodes,2,hd.nFrames) ;
     
     filter = blackman(filtSize(2)+2)'.*blackman(filtSize(1)+2) ;
     filter = filter(2:end-1,2:end-1) ;
@@ -146,7 +145,7 @@
     end
     %return ;
     
-%% Compute Data Fields
+% Compute Data Fields
     DATA = [] ;
     DATA.Position = 'Position' ;
         DATA.NaN = NaN(mesh.nNodes,1,hd.nFrames) ;
@@ -157,7 +156,7 @@
         DATA.v2 = V(:,2,:) ;
         DATA.V = sqrt(sum(V.^2,2)) ;
     DATA.StrainRate = 'Strain Rate' ;
-        G = mesh.diffMat ;
+        G = mesh.gradMat ;
         DATA.D11 = reshape(G{1}*reshape(V(:,1,:),[],hd.nFrames),[],1,hd.nFrames) ;
         DATA.D22 = reshape(G{2}*reshape(V(:,2,:),[],hd.nFrames),[],1,hd.nFrames) ;
         DATA.D12 = 0.5*reshape(G{1}*reshape(V(:,2,:),[],hd.nFrames)+G{2}*reshape(V(:,1,:),[],hd.nFrames),[],1,hd.nFrames) ;
@@ -165,7 +164,7 @@
         massThreshold = 43 ; % use imageThreshold to determine this (tSlider.Value)
         img = cat(4,hd.Images{seed.CamIDs}{frames}) ;
         density = double(reshape(img,[],numel(frames))>=massThreshold) ;
-        DATA.M = NaN(mesh.nElems,1,hd.nFrames) ; 
+        DATA.M = DATA.NaN(1:mesh.nElems,:,:) ; 
         DATA.M(:,frames) = INSIDE'*density(ROI,:) ;
         DATA.Q = DATA.NaN ;
         DATA.Q(:,frames) = DATA.V(:,frames).*(mesh.elem2node('mean')*DATA.M(:,frames)) ;

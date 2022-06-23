@@ -7,8 +7,8 @@
 
     % INITIALIZATION PARAMETERS
         camID = 1 ;
-        seedNumber = 3 ;
-        frames = '[1228:1229]' ; '[1:end]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
+        seedNumber = 2 ;
+        frames = '[1:end]' ; '[1,202,282]' ; '[20 42 43 72 73 78 79 84 85 126 127 168 169 186]' ; % Frames taken for DIC (allows decimation)
         dicDir = 1 ; % DIC running direction ('forward=1' or 'backward=-1')
         refFrame = 'first' ; % Reference image ('first' , 'last' or number)
         compConfig = 'Previous' ; % background help configuration ('Reference' or 'Previous') ;
@@ -25,9 +25,7 @@
     % LOAD AND PROCESS FRAMES
         globalDIC_01_LoadFrames ;
     % LOAD THE SEED
-        %Nodes = hd.Seeds(seedNumber).Points ;
-        Nodes = hd.Seeds(seedNumber).MovingPoints(:,:,frames(refFrame)) ; 
-        nNodes = size(Nodes,1) ;
+        Nodes = hd.Seeds(seedNumber).Points ; nNodes = size(Nodes,1) ;
         Elems = hd.Seeds(seedNumber).Triangles ;
         
     % PLOT THE REFERENCE CONFIGURATION

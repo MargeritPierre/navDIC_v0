@@ -33,7 +33,7 @@ classdef navDICPlotPreview < navDICPreview
                     prev.fig.ToolBar = 'figure' ;
                     prev.fig.MenuBar = 'figure' ;
                 % Set the axes
-                    prev.Axes = axes('nextplot','add','outerposition',[0 0 1 1]) ;
+                    prev.Axes = axes('outerposition',[0 0 1 1]) ;
                         box(prev.Axes,'on')
                         grid(prev.Axes,'on')
                         xlabel(prev.Axes,'XData') ;

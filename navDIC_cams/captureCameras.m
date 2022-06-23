@@ -28,7 +28,6 @@ function hd = captureCameras(hd)
 %             end
             %images{c} = getdata(cam,1) ;
             images{c} = peekdata(cam,1) ;
-            flushdata(cam) ; 
             %images{c} = im2single(images{c}) ;
         end
         

@@ -79,22 +79,14 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
             case 'ImageFolder'
                 for fr = 1:length(H.loadedFrames)
                     filename = [H.Folder filesep H.FileNames{H.loadedFrames(fr)}] ;
-                % Get date field
                     info = imfinfo(filename) ;
-                    if isfield(info,'DateTime') ; date = info.DateTime ;
-                    elseif isfield(info,'FileModDate') ; date = info.FileModDate ;
+                    %hotfix to set fr datetime locale.
+                    if isfield(info,'DateTime')
+                        t = datetime(info.DateTime,'InputFormat','yyyy:MM:dd HH:mm:ss','Locale',"fr_FR") ;
+                    elseif isfield(info,'FileModDate')
+                        t = datetime(info.FileModDate,'InputFormat','dd-MMM-yyyy HH:mm:ss','Locale',"fr_FR") ;
                     end
-                % Convert to time
-                    t = [] ;
-                    if isempty(t) ; try ; t = datetime(date,'InputFormat','yyyy:MM:dd HH:mm:ss') ; end ; end
-                    if isempty(t) ; try ; t = datetime(date,'InputFormat','dd-MMM-yyyy HH:mm:ss') ; end ; end
-                    if isempty(t) ; try ; t = datetime(date,'InputFormat','dd-MMMM-yyyy HH:mm:ss','locale','fr_FR') ; end ; end
-                % Set the TimeLine
-                    if ~isempty(t) ; 
-                        TimeLine(fr,:) = [t.Year t.Month t.Day t.Hour t.Minute t.Second] ;
-                    else
-                        TimeLine(fr,:) = mod(fr,cumprod([365 30 24 60 60 1],'reverse')) ;
-                    end
+                    TimeLine(fr,:) = [year(t) month(t) day(t) hour(t) minute(t) second(t)] ;
                 end
             case 'Video'
         end
@@ -361,7 +353,7 @@ function [valid,hd] = loadFrames(hd,dataSource,camID)
                                     + [-1/2 0 1 0]*dimFig(1)*1/(1-menuSizeLeft) ...
                                     + [0 -1/2 0 1]*dimFig(2)*1/(1-uiHeight) ;
         % Axes containing the image preview
-            H.axImg = axes('nextplot','add','outerposition',[menuSizeLeft 0 1-menuSizeLeft 1-uiHeight]) ;
+            H.axImg = axes('outerposition',[menuSizeLeft 0 1-menuSizeLeft 1-uiHeight]) ;
                 H.axImg.LooseInset = [1 1 1 1]*0.005 ;
                 H.axImg.YDir = 'reverse' ;
                 H.axImg.XTick = [] ; H.axImg.YTick = [] ;

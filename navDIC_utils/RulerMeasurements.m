@@ -15,6 +15,10 @@ rulerLength = @(ruler)sqrt(sum(diff(ruler.Position,1,1).^2,2)) ;
 addlistener(ruler,'MovingROI',@(src,evt)disp(['length: ',num2str(rulerLength(src))])) ;
         
 
+
+
+
+
 %% INITIALIZE THE FIGURES
     global hd
     seed = hd.Seeds(end) ;
