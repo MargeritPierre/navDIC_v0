@@ -45,7 +45,8 @@ function [obj,hd] = navDIC_fftdisp(obj,hd)
     end
     
 % Compute DataFields
-    obj.computeDataFields ;
+    obj.computeDataFields([],hd.CurrentFrame) ;
+    %obj.computeDataFields ;
     
 % Display Object
     %disp(obj)

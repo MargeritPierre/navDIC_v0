@@ -107,6 +107,8 @@ methods
         [this.MAP,this.IN] = this.P1ShapeFunctions(refImg) ;
     % Get the ROI
         this.ROI = reshape(any(this.IN,2),[nI nJ]) ;
+        this.ROI([1 end],:) = false ;
+        this.ROI(:,[1 end]) = false ;
         this.MAP = this.MAP(this.ROI,:) ;
         this.IN = this.IN(this.ROI,:) ;
     % Construct the gradient matrices
@@ -148,7 +150,7 @@ methods
             j = this.dr_da'*r ;
             switch this.RegCrit
                 case 'abs' ; jr = this.Hr*(dx(:)+this.N2V*(X(:)+U(:))) ;
-                case 'rel' ; jr = this.Hr*this.N2V*U(:) ;
+                case 'rel' ; jr = this.Hr*(this.N2V*U(:)) ;
             end
         % Update
             dU = - (this.H + this.Beta*this.Hr*this.N2V) \ (j + this.Beta*jr) ;
@@ -261,7 +263,8 @@ methods
     % Lines: create a quadrilateron from offsetted lines
         isLine = sum(Elems>0,2)==2 ;
         if any(isLine)
-            mergeAdj = true ; % merge adjacent nodes ?
+            mergeAdj = false ; % merge adjacent nodes for strain regularisation ?
+            nodeNormals = false ; % offset with node normals ?
         % Get involved node indices and reshape the element list
             nn = Elems(isLine,1:2) ;
             Elems = Elems(~isLine,:) ; % remove line elements
@@ -271,10 +274,15 @@ methods
                 Mu = sparse(iun(:)',1:numel(nn),1,numel(un),numel(nn)) ;
                 Mu = diag(1./sum(Mu,2))*Mu ; % mean over duplicated nodes
             end
-        % Line to Nodes transfer
+        % Line to Nodes transfer for offsetting
             nNodes = size(Vertices,1) ;
-            l2n = sparse(nn(:)',repmat(1:nLines,[1 2]),1,nNodes,nLines) ;
-            l2n = diag(1./sum(l2n,2))*l2n ; % mean over adjacent edges
+            if nodeNormals
+                l2n = sparse(nn(:)',repmat(1:nLines,[1 2]),1,nNodes,nLines) ;
+                l2n = diag(1./sum(l2n,2))*l2n ; % mean over adjacent edges
+                l2n = l2n(nn(:),:) ;
+            else
+                l2n = sparse(1:2*nLines,repmat(1:nLines,[1 2]),1,2*nLines,nLines) ;
+            end
         % Define the offset points
             h = this.EdgeThickness/2 ; % position shift along normal
             RotMat = sparse([0 1 ; -1 0]) ; % 90°rotation matrix tangent->normal
@@ -282,7 +290,7 @@ methods
             nor = tan*RotMat ; % line normal
             Pnor = l2n*nor ; % normal on line nodes for offset
             P = h*Pnor./(sqrt(sum(Pnor.^2,2))) ; % offset distance
-            P = repmat(Vertices(nn,:),[2 1]) + [-P(nn,:) ; P(nn,:)] ;
+            P = repmat(Vertices(nn,:),[2 1]) + [-P ; P] ;
             if mergeAdj ; P = blkdiag(Mu,Mu)*P ; end
             Vertices = [Vertices ; P] ;
         % Transfer matrix
@@ -348,6 +356,15 @@ methods
         Tris(isnan(Tris)) = 0 ;
         Tris = newInd(Tris+1) ;
         
+    end
+    
+    function pl = plotMesh(this)
+    % Plot the underlying simplex mesh for debugging purposes
+        axis equal tight ij
+        imagesc(this.RefImgs{end}) ;
+        colormap gray
+        m = pkg.geometry.mesh.Mesh('Nodes',this.Vertices,'Elems',this.Tris) ;
+        pl = plot(m,'FaceColor','none','EdgeColor','r') ;
     end
     
     function [MAP,IN] = P1ShapeFunctions(this,refImg,Vertices,Tris)

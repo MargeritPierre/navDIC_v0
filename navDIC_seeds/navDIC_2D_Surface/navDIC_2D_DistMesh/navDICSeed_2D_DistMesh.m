@@ -45,6 +45,7 @@ methods
                                         ) ;
             obj.Points = obj.drawToolH.DistMesh.Points ;
             obj.Elems = obj.drawToolH.DistMesh.Triangles ;
+            obj.Elems(:,all(isnan(obj.Elems),1)) = [] ;
         % INITIALIZE
             obj.MovingPoints = ones(size(obj.Points,1),2,hd.nFrames)*NaN ;
     end
@@ -752,6 +753,7 @@ methods
     % Curvature
         iL = diag(sparse(1./DATA.L(:,1))) ;
         if onNodes ; Dk = D*iL ; else ; Dk = D*b2n*iL ; end
+        if size(Dk,2)==1 ; Dk = full(Dk) ; end
         DATA.Curvature = 'Curvature' ; 
         DATA.K = reshape(Dk*DATA.A(:,:),[],1,nFrames) ;
         DATA.dK = reshape(Dk*DATA.dA(:,:),[],1,nFrames) ;
@@ -797,7 +799,8 @@ methods
         
     function initSeedPreview(obj,ax)
         % INIT THE MESH
-            axes('nextplot','add',ax) ;
+            axes(ax)
+            set(ax,'nextplot','add') ;
             triMesh = patch(obj.Points(:,1),obj.Points(:,2),NaN*obj.Points(:,2) ...
                             ,'vertices',obj.Points...
                             ,'faces',obj.Elems...

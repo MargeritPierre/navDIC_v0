@@ -2,14 +2,15 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
 
     % PARAMETERS
         dir = 'both' ; % displacement directions: 'both', 'X' or 'Y'
-        CorrSize = 71*[1 1] ; % Rectangular window
+        CorrSize = 61*[1 1] ; % Rectangular window
         m = round(CorrSize/4) ; % Margin to truncate borders
         uMax = CorrSize/2 ; 30*[1 1] ; % Maximum allowed displacement per iteration
         maxImagetShift = CorrSize/2 ; % Maximum allowed imagette shift (close to image borders)
         iterateIfMaxDispHigherThan = 1 ;
         maxIt = 10 ;
-        FIT =   'LS' ...
+        FIT =   ...'LS' ...
                 ... 'SVD' ...
+                 'COR' ...
                 ; 
         spatialSmoothing = prod(CorrSize)<20000 ;
         spatialSmoothingRatio = 1/2 ;
@@ -211,32 +212,69 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,CorrSize)
                                     k(p,2) = W(H1(:,1)<KK(1),1)\W(H1(:,1)>1,1) ;
                                     k(p,1) = W(H2(:,1)<KK(2),1)\W(H2(:,1)>1,1) ;
                                 else
-                                    V = phi'*diag(1./sqrt(w(1)))*W ;
+                                    W = phi'*diag(1./sqrt(w(1)))*W ;
                                     k(p,2) = W(1:end-1,1)\W(2:end,1) ;
-                                    k(p,1) = conj(V(1:end-1,1)\V(2:end,1)) ;
+                                    k(p,1) = conj(W(1:end-1,1)\W(2:end,1)) ;
                                 end
                         end
+                    case 'COR'
+                    % kept indices
+                        indI = 1+m(1):CorrSize(1)-m(1) ; 
+                        indJ = 1+m(2):CorrSize(2)-m(2) ;
+                        phi = PHI(indI,indJ,:) ;
+                    % Sizes
+                        L = size(phi,[1 2]) ; N = ceil(L/2) ; M = L-N+1 ;
+                    % Fourier transform pre-compute
+                        Fphi = fft(fft(phi,[],1),[],2) ;
+                    % Intialize
+                        W = ones([M nPtsValid])/sqrt(prod(M)) ;
+                        dW = inf ;
+                    % Eigenvector estimation via Power iterations w = (Cpp*w)/norm(Cpp*w)
+                        while max(abs(dW(:)))>1e-6
+                        % product of Cpp = Hp*Hp' with W
+                            W0 = W ;
+                        % W = Hp'*W
+                            W = flip(flip(conj(W),1),2) ;
+                            Fw = fft(fft(W,L(1),1),L(2),2) ;
+                            Fw = Fw.*Fphi ;
+                            W = ifft(ifft(Fw,[],1),[],2) ;
+                            W = W(M(1):L(1),M(2):L(2),:) ;
+                            W = conj(W) ;
+                        % W = Hp*W ;
+                            W = flip(flip(W,1),2) ;
+                            Fw = fft(fft(W,L(1),1),L(2),2) ;
+                            Fw = Fw.*Fphi ;
+                            W = ifft(ifft(Fw,[],1),[],2) ;
+                            W = W(N(1):L(1),N(2):L(2),:) ;
+                        % W = W/norm(W)
+                            W = W./sqrt(sum(abs(W).^2,[1 2])) ;
+                        % Update
+                            dW = W-W0 ;
+                        end
+                    % Least-squares pole estimation
+                        k(:,2) = sum(conj(W(1:end-1,:,:)).*W(2:end,:,:),[1 2])./sum(abs(W(1:end-1,:,:)).^2,[1 2]) ;
+                        k(:,1) = sum(conj(W(:,1:end-1,:)).*W(:,2:end,:),[1 2])./sum(abs(W(:,1:end-1,:)).^2,[1 2]) ;
                 end
 
 
             % Displacement
-                U = real(1i*log(k)) ;
-                U = bsxfun(@times,U,flip(CorrSize(:)')/2/pi);
-                normU = sqrt(sum(U.^2,2)) ;
-                U(normU>uMax(2),1) = NaN ;
-                U(normU>uMax(1),2) = NaN ;
+                W = real(1i*log(k)) ;
+                W = bsxfun(@times,W,flip(CorrSize(:)')/2/pi);
+                normU = sqrt(sum(W.^2,2)) ;
+                W(normU>uMax(2),1) = NaN ;
+                W(normU>uMax(1),2) = NaN ;
 
             % Zero components if needed
                 switch dir
                     case 'both'
                     case 'X'
-                        U(:,2) = 0 ; % Uy = 0
+                        W(:,2) = 0 ; % Uy = 0
                     case 'Y'
-                        U(:,1) = 0 ; % Ux = 0
+                        W(:,1) = 0 ; % Ux = 0
                 end
 
             % Moving Points
-                MovingPoints(ValidPts,:) = U + disPtsMov(ValidPts,:) - (disPtsRef(ValidPts,:)-PtsRef(ValidPts,:)) ;
+                MovingPoints(ValidPts,:) = W + disPtsMov(ValidPts,:) - (disPtsRef(ValidPts,:)-PtsRef(ValidPts,:)) ;
 
             % Absolute value of the displacement increment
                 normU = zeros(nPts,1) ;

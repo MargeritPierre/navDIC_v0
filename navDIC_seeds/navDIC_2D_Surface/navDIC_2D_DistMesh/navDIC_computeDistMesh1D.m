@@ -23,10 +23,16 @@ function mesh = navDIC_computeDistMesh1D(edgFcn,fh,pfix,Axes)
         else
             t = [0;1] ;
         end
-    % new bars
-        bars = [bars ; size(p,1) + [1:numel(t)-1 ; 2:numel(t)]' ] ;
     % new points
-        p = [p ; edgFcn{s}(t(:))] ;
+        ep = edgFcn{s}(t(:)) ;
+        [uep,ia,ic] = unique(ep,'rows') ;
+    % new bars
+        ebars = size(p,1) + [1:numel(t)-1 ; 2:numel(t)]' ;
+        ebars = reshape(ic(ebars),size(ebars)) ;
+        ebars(ebars(:,1)==ebars(:,2),2) = NaN ;
+    % update
+        bars = [bars ; ebars] ;
+        p = [p ; uep] ;
     end
     
 % Plot

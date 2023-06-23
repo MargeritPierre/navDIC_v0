@@ -4,7 +4,7 @@ Seed = hd.Seeds(end) ;
 cam = 1 ;
 frame = hd.CurrentFrame ; 2000 ;
 
-Pts = Seed.MovingPoints(:,:,frame) ; Seed.Points ;
+Pts = Seed.Points ; Seed.MovingPoints(:,:,frame) ;
 Elems = Seed.Elems ;
 IMG = hd.Images{cam}{frame} ;
 
