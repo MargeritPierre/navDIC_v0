@@ -184,7 +184,8 @@ methods
     
     function [dr_da,H] = GNData(this,img)
     % Return Gauss-Newton residual derivative and Hessian
-        dr_da = [(this.Grad{1}*img(:)).*this.MAP (this.Grad{2}*img(:)).*this.MAP] ;
+        dr_da = [diag(sparse(this.Grad{1}*img(:)))*this.MAP diag(sparse(this.Grad{2}*img(:)))*this.MAP] ;
+        %dr_da = [this.Grad{1}*img(:)).*this.MAP (this.Grad{2}*img(:)).*this.MAP] ;
         [~,W] = this.normalizedImg(img(this.ROI)) ;
         H = dr_da'*diag(sparse(W(:)))*dr_da ;
         H = (H+H')/2 ;

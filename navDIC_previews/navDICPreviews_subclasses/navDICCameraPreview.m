@@ -8,8 +8,12 @@ classdef navDICCameraPreview < navDICPreview
             AxesImg = [] ;
         % Handles to the Image Display
             Img = [] ;
+            imgMenu = gobjects(0) ;
         % Options
+            ShowImage = true ;
             BlackAndWhiteImage = true ;
+            Normalize = false ;
+            Invert = false ;
             ShowTimeStamp = 'none' ;
             TimeStampText = gobjects(0) ;
     end
@@ -77,13 +81,49 @@ classdef navDICCameraPreview < navDICPreview
                                                 ,'Interpreter','tex' ...
                                                 ,'tag','timestamp' ...
                                              ) ;
-                % Contrain the aspect ratio
+                % Image processing menu
+                    submenus = gobjects(0) ;
+                    prev.imgMenu = uimenu(prev.fig,'Label','Image') ;
+                    % Show image
+                        submenus(end+1) = uimenu(prev.imgMenu,'Label','Show','checked',prev.ShowImage) ;
+                    % Coloring
+                        mColor = uimenu(prev.imgMenu,'Label','Color') ;
+                            submenus(end+1) = uimenu(mColor,'Label','Black&White','checked',prev.BlackAndWhiteImage) ;
+                            submenus(end+1) = uimenu(mColor,'Label','RGB or Colormap','checked',~prev.BlackAndWhiteImage) ;
+                    % Process
+                        submenus(end+1) = uimenu(prev.imgMenu,'Label','Normalize') ;
+                        submenus(end+1) = uimenu(prev.imgMenu,'Label','Invert') ;
+                    % TimeStamp
+                        mStamp = uimenu(prev.imgMenu,'Label','Time Stamp') ;
+                            submenus(end+1) = uimenu(mStamp,'Label','none','checked','on') ;
+                            submenus(end+1) = uimenu(mStamp,'Label','abs') ;
+                            submenus(end+1) = uimenu(mStamp,'Label','rel') ;
+                        set(submenus,'callback',@(src,evt)prev.updateMenus(src)) ;
+                % Constrain the aspect ratio
                     %prev.fig.SizeChangedFcn = @(fig,evt)navDICCameraPreview.fixAspectRatio(fig,ratios) ;
                 % Update the preview
                     %prev = updatePreview(prev,hd) ;
             end
             
         % UPDATE
+            function prev = updateMenus(prev,submenu)
+                % toggle checking
+                    if submenu.Parent==prev.imgMenu % one option
+                        submenu.Checked = ~submenu.Checked ;
+                    else % list of options
+                        % Uncheck all subMenuItems
+                            set(submenu.Parent.Children,'checked','off')
+                        % Check the selected item
+                            submenu.Checked = 'on' ;
+                    end
+                % Set preview properties
+                    prev.ShowImage = get(findobj(prev.imgMenu,'Label','Show'),'checked') ;
+                    prev.BlackAndWhiteImage = get(findobj(prev.imgMenu,'Label','Black&White'),'checked') ;
+                    prev.ShowTimeStamp = get(findobj(get(findobj(prev.imgMenu,'Label','Time Stamp'),'children'),'checked','on'),'Label') ;
+                    prev.Normalize = get(findobj(prev.imgMenu,'Label','Normalize'),'checked') ;
+                    prev.Invert = get(findobj(prev.imgMenu,'Label','Invert'),'checked') ;
+            end
+            
             function prev = updatePreview(prev,hd)
                 % Superclass updating function
                     prev = updatePreview@navDICPreview(prev,hd) ;
@@ -101,10 +141,20 @@ classdef navDICCameraPreview < navDICPreview
                     % Process
                         %img = single(img) ;
                         %img = img*(max(getrangefromclass(img(:)))/range(img(:))) ;
+                    prev.Img.Visible = prev.ShowImage ; 
                     if prev.BlackAndWhiteImage && size(img,3) == 1 && isinteger(img) 
                         prev.Img.CData = repmat(img,[1 1 3]) ;
                     else
                         prev.Img.CData = img ;
+                    end
+                    if prev.Normalize
+                        ranClass = getrangefromclass(prev.Img.CData) ;
+                        ranImg = [min(prev.Img.CData(:)) max(prev.Img.CData(:))] ;
+                        prev.Img.CData = (prev.Img.CData-ranImg(1))*(ranClass(2)/diff(ranImg))+ranClass(1) ;
+                    end
+                    if prev.Invert
+                        ranClass = getrangefromclass(prev.Img.CData) ;
+                        prev.Img.CData = ranClass(2)-prev.Img.CData ;
                     end
                 % Actualize timestamp if needed
                     switch prev.ShowTimeStamp

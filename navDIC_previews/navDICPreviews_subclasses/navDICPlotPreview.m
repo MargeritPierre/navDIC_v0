@@ -43,6 +43,9 @@ classdef navDICPlotPreview < navDICPreview
                         prev.Legend.EdgeColor = 'k' ;
                         prev.Legend.Color = 'none' ;
                         prev.Legend.Location = 'best' ;
+                % Add a menu
+                    menu = uimenu(prev.fig,'Label','Options') ;
+                        uimenu(menu,'Label','Show Curve Panel','checked','on','callback',@(src,evt)prev.toggleCurvePanel(src))
                 % Init the curve panel
                     prev.initCurvePanel ;
                     clearPreview(prev) ;
@@ -389,6 +392,13 @@ classdef navDICPlotPreview < navDICPreview
                 prev.Axes.OuterPosition(2) = 0 ;
                 prev.Axes.OuterPosition(4) = 1 ;
                 prev.CurvePanel.Visible = 'off' ;
+            end
+            function toggleCurvePanel(prev,menu)
+                menu.Checked = ~menu.Checked ;
+                if menu.Checked ; prev.showCurvePanel() ;
+                else prev.hideCurvePanel() ;
+                end
+                    
             end
             
         % ADD/REMOVE CURVES

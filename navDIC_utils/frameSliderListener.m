@@ -18,7 +18,11 @@ t = sum(hd.TimeLine(:,4:6).*[3600 60 1],2) ;
 t = t-t(2) ;
 frlst.Callback = @(src,evt)set(txt,'String',['t = ' num2str(t(round(slider.Value)),'%.1f') ' sec']) ;
 
-        
+%%
+frlst.Callback = @(src,evt)set(txt,'String',regexprep(hd.InputData.Infos(round(slider.Value)),'.*SRF(\d+).*','$1 Hz')) ;
+
+%%
+regexprep(hd.InputData.Infos(1),'.*SRF(\d+).*','$1 Hz')
 %% Text string update
 % first create a text 'txt'
 d = abs(hd.InputData(:,1)) ;

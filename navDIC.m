@@ -18,8 +18,16 @@ function navDIC(varargin)
             frameEditWidth = .03 ; % relative to toolbar size
             frameBtnWidth = .01 ; % relative to toolbar size
         % Handles Saving Parameters
-            canBeSaved = {'WorkDir','Cameras','DAQInputs'...
-                            ,'TimeLine','Images','InputData','Seeds','Macros'} ;
+            canBeSaved = {'WorkDir'...
+                            ,'Cameras'...
+                            ,'DAQInputs'...
+                            ,'TimeLine'...
+                            ,'Images'...
+                            ,'InputData'...
+                            ,'Seeds'...
+                            ,'Macros'...
+                            ,'UserData'...
+                            } ;
         
     % Process the varargin
         COMMAND = '' ;
@@ -647,8 +655,16 @@ function navDIC(varargin)
         % Prepare the animation
             out = prepareAnimation(hd) ;
             if ~out.Valid ; warning('ANIMATION ABORTED') ; return ; end
+            [~,~,ext] = fileparts(out.AnimationFile) ;
+            isGIF = strcmp(lower(ext),'.gif') ;
         % Record the animation
-            open(out.writerObj) ;
+            if ~isGIF
+            % Create the Video Writer
+                writerObj = VideoWriter(out.AnimationFile,'MPEG-4') ;
+                writerObj.Quality = out.VideoQuality ;
+                writerObj.FrameRate = out.FrameRate ;
+                open(writerObj) ;
+            end
             statusBox = warndlg({'The Animation is Recording...','Press OK or close to stop.'},'RECORDING...') ;
             for fr = out.FramesRecorded
                 if ishandle(statusBox) % One can close it to stop the animation
@@ -660,7 +676,7 @@ function navDIC(varargin)
                         drawnow ; 
                     % Get the individual frames
                         FR = {} ;
-                        defaultColor = 1 ;
+                        defaultColor = 255 ;
                         for ff = 1:length(out.figs)
                             FR{end+1} = getframe(out.figs(ff)) ;
                             FR{end} = FR{end}.cdata ;
@@ -681,7 +697,7 @@ function navDIC(varargin)
                                 pixPos = out.figPos./out.pixelRatio ;
                                 pixPos(:,1:2) = pixPos(:,1:2) - min(pixPos(:,1:2),[],1) ;
                                 pixPos = round(pixPos) ;
-                                szImg = flip(max(pixPos(:,1:2)+pixPos(:,3:4)) - min(pixPos(:,1:2))) ;
+                                szImg = flip(max(pixPos(:,1:2)+pixPos(:,3:4),[],1) - min(pixPos(:,1:2),[],1)) ;
                                 IMG = repmat(cast(defaultColor,class(FR{end})),[szImg 3]) ;
                                 for ff = 1:length(out.figs)
                                     %ii = pixPos(ff,2)+(1:pixPos(ff,4)) ;
@@ -691,10 +707,19 @@ function navDIC(varargin)
                                 end
                         end
                     % Add to the animation
-                        writeVideo(out.writerObj,IMG) ;
+                        if isGIF
+                            [A,map] = rgb2ind(IMG,256) ;
+                            if fr==out.FramesRecorded(1)
+                                imwrite(A,map,out.AnimationFile,'gif','LoopCount',out.LoopCount,'DelayTime',1/out.FrameRate) ;
+                            else
+                                imwrite(A,map,out.AnimationFile,'gif',"WriteMode","append",'DelayTime',1/out.FrameRate) ;
+                            end
+                        else
+                            writeVideo(writerObj,IMG) ;
+                        end
                 end
             end
-            close(out.writerObj) ;
+            if ~isGIF ; close(writerObj) ; end
             if ishandle(statusBox) ; close(statusBox) ; end
     end
 

@@ -6,6 +6,7 @@ properties
     BlackAndWhite logical = false
     Normalize logical = false
     Multiply double = 1
+    Invert logical = false
 end
 
 methods
@@ -27,12 +28,14 @@ methods
                         'Black and White' , num2str(this.BlackAndWhite) ...
                         ; 'Normalize' , num2str(this.Normalize) ...
                         ; 'Multiply' , num2str(this.Multiply) ...
+                        ; 'Invert' , num2str(this.Invert) ...
                     } ;
         out = inputdlg(defInputs(:,1),'Image Process Options',1,defInputs(:,2)) ;
         if isempty(out) ; return ; end
         this.BlackAndWhite = str2double(out{1}) ;
         this.Normalize = str2double(out{2}) ;
         this.Multiply = str2double(out{3}) ;
+        this.Invert = str2double(out{4}) ;
     end
 
     function hd = run(this,hd)
@@ -42,6 +45,7 @@ methods
             if this.BlackAndWhite ; img = sum(img*(1/size(img,3)),3,'native') ; end
             if this.Normalize ; img = img*(max(getrangefromclass(img))/double(max(img(:)))) ; end
             if this.Multiply~=1 ; img = img*this.Multiply ; end
+            if this.Invert ; img = max(getrangefromclass(img)) - img ; end
             hd.Images{id}{hd.CurrentFrame} = img ;
         end
     end

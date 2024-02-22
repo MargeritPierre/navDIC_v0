@@ -7,7 +7,7 @@ fig = clf('reset')  ;
 
 % Parameters
     camID = 1 ;
-    frames = 1:20000 ;
+    frames = 1:hd.nFrames ; 20000 ;
     refFrame = 1 ;
     dimDisp = 1 ; % Dimension of the image to eval. displacements
     trunc = 10 ; % Truncation to limit high wavenumbers noise effect
@@ -119,13 +119,13 @@ fig = clf('reset')  ;
     FUNC = 'cos' ;
     CRITERION = 'SAMOS' ;
     compute_dK = true ;
-    indF = 2:10000 ;
+    indF = 2:hd.nFrames ; 10000 ;
     
     K = ones(length(indF),max(R0))*NaN ;
     dK = ones(length(indF),max(R0))*NaN ;
     A = ones(length(indF),max(R0))*NaN ;
     for ff = 1:length(indF)
-        out = ESPRIT(tfU(:,indF(ff)),1,'R0',R0,'CRITERION',CRITERION,'FUNC',FUNC,'COMPUTE_dK',compute_dK,'COMPUTE_U',true) ;
+        out = ESPRIT_fcn(tfU(:,indF(ff)),1,'R0',R0,'CRITERION',CRITERION,'FUNC',FUNC,'COMPUTE_dK',compute_dK,'COMPUTE_U',true) ;
         nk = length(out.K) ;
         K(ff,1:nk) = out.K ;
         dK(ff,1:nk) = out.dK ;
