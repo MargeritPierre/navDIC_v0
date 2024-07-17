@@ -115,10 +115,10 @@ fig = clf('reset')  ;
                             
 %% APPLY ESPRIT (EXTRACT WAVENUMBERS)
 
-    R0 = 1;%:2 ;
+    R0 = 1:2 ;
     FUNC = 'cos' ;
-    CRITERION = 'ESTER' ;
-    compute_dK = false ;
+    CRITERION = 'SAMOS' ;
+    compute_dK = true ;
     indF = 2:numel(f)/2 ; hd.nFrames ; 10000 ;
     indX = 100:size(tfU,1)-100 ;
     
@@ -129,7 +129,7 @@ fig = clf('reset')  ;
         out = ESPRIT_fcn(tfU(indX,indF(ff)),1,'R0',R0,'CRITERION',CRITERION,'FUNC',FUNC,'COMPUTE_dK',compute_dK,'COMPUTE_U',true) ;
         nk = length(out.K) ;
         K(ff,1:nk) = out.K ;
-        if compute_dK ; dK(ff,1:nk) = out.dK ; end
+        dK(ff,1:nk) = out.dK ;
         A(ff,1:nk) = out.U ;
         ff
     end
@@ -139,7 +139,7 @@ fig = clf('reset')  ;
     gammaMin = 1e-4 ;
     gammaMax = 1e-1 ;
     dKmax = 1e-3 ;
-    relAmin = 5e-3 ;
+    relAmin = e-3 ;
     res = 1260/.42;%6000 ; % pix/m
 
     F = reshape(f(indF),[],1)*ones(1,max(R0)) ;
@@ -157,7 +157,6 @@ fig = clf('reset')  ;
         ax = gobjects(0) ;
         ax(1) = mysubplot(2,1,1) ;
             plot(F(valid),2*pi*F(valid)./abs(real(K(valid)))/res,'.k','tag','experimental') ;
-            %plot(F(valid),abs(real(K(valid)))*res,'.k','tag','experimental') ;
             %scatter(F(valid),2*pi*F(valid)./abs(real(K(valid))),2,log10(abs(gamma(valid)))) ; colorbar
             set(gca,'yscale','log')
             grid on
@@ -180,10 +179,10 @@ save([path,file],'Fi','U','K')
 
 %% THEORETICAL PREDICTIONS
 
-E = 5e9 ; 2.8e9 ;
-N = 210e-3*9.81 ; 2.25 ;
-D = .6e-3 ;
-rho = 1150 ; 345e-6/(pi*D^2/4*.99) ;
+E = 3.8e9 ; 2.8e9 ;
+N = 240e-3*9.81 ; 2.25 ;
+D = .58e-3 ;
+rho = 345e-6/(pi*D^2/4*.99) ; 1150 ;
 
 S = pi*(D/2)^2 ;
 I = pi*D^4/64 ;

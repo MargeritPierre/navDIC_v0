@@ -733,6 +733,7 @@ function navDIC(varargin)
             filename = [path,file] ;
         % Initialize the fields to be saved
             fields = canBeSaved ;
+            fields = fields(ismember(fields,fieldnames(hd))) ;
         % Estimate the size of the handles and ask to save images
             if ~isempty(hd.Images)
                 bytes = getfield(whos('hd'),'bytes') ;
