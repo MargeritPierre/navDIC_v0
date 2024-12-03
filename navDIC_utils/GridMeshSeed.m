@@ -24,8 +24,8 @@
     
 %% REGULAR GRID
     % Number of nodes
-        nX = 8 ; round(150/25) ; 
-        nY = 15 ; NaN ; round(nI/nJ*(nX-1))+1 ;
+        nX = 9 ; round(150/25) ; 
+        nY = 9 ; NaN ; round(nI/nJ*(nX-1))+1 ;
     % Initial grid corners position
         pos0 = round( [1 1 ; nJ 1 ; nJ nI ; 1 nI] + 0.02*[1 1 ; -1 1 ; -1 -1 ; 1 -1].*[nJ nI] ) ;
         poly = findobj(gca,'type','images.roi.polygon') ;
