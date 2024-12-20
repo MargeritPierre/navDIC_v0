@@ -111,26 +111,17 @@ methods
         this.ROI(:,[1 end]) = false ;
         this.MAP = this.MAP(this.ROI,:) ;
         this.IN = this.IN(this.ROI,:) ;
-    % Construct the gradient matrices
-        pp = find(this.ROI(:)) ;
-        ip = (1:numel(pp))' ;
-        d_dx1 = sparse(ip.*[1 1],pp+[-1 1]*nI,pp*0+[-1 1]/2,numel(pp),nI*nJ) ;
-        d_dx2 = sparse(ip.*[1 1],pp+[-1 1],pp*0+[-1 1]/2,numel(pp),nI*nJ) ;
-        this.Grad = {d_dx1,d_dx2} ;
-    % Compute the GN data
-        [this.dr_da,this.H] = GNData(this,refImg) ;
     % Compute regularisation data
-        [~,this.Hr] = strainGradientRegularisation(this) ;
-    % Project to seed nodes
-        this.dr_da = this.dr_da*this.N2V ;
-        this.H = this.N2V'*this.H*this.N2V ;
+        [~,this.Hr] = this.strainGradientRegularisation() ;
         this.Hr = this.N2V'*this.Hr ;
+    % Compute the GN data
+        [this.dr_da,this.H] = this.GNData(refImg) ;
     end
     
-    function X = updateDIC(this,X,imgs)
+    function X = updateDIC(this,X,imgs,refImgs)
     % Update the configuration X using DIC performed on imgs
     % For now, only working on one gray-scale image
-        G = this.RefImgs{end}(:,:,1) ; % reference <MONOCHROME SINGLE CAMERA!>
+        G = refImgs{end}(:,:,1) ; % reference <MONOCHROME SINGLE CAMERA!>
         g = imgs{end}(:,:,1) ; % current <MONOCHROME SINGLE CAMERA!>
     % Prepare the reference frame
         G = G(this.ROI) ;
@@ -146,6 +137,12 @@ methods
             gx = this.bilinearInterp(g,xx) ; % [nPix 1]
         % Image residual
             r = this.normalizedImg(gx(:))-G(:) ;
+        % Full gauss-newton ?
+            switch this.GNAlgorithm
+                case 'modified'
+                otherwise
+                    [this.dr_da,this.H] = this.GNData(g,xx) ;
+            end
         % Jacobians
             j = this.dr_da'*r ;
             switch this.RegCrit
@@ -182,11 +179,27 @@ methods
         X = X+U ;
     end
     
-    function [dr_da,H] = GNData(this,img)
+    function [dr_da,H] = GNData(this,img,xx)
     % Return Gauss-Newton residual derivative and Hessian
-        dr_da = [diag(sparse(this.Grad{1}*img(:)))*this.MAP diag(sparse(this.Grad{2}*img(:)))*this.MAP] ;
-        %dr_da = [this.Grad{1}*img(:)).*this.MAP (this.Grad{2}*img(:)).*this.MAP] ;
-        [~,W] = this.normalizedImg(img(this.ROI)) ;
+    % Compute the image gradient
+        dI_dx = conv2(img,[1 , 0 , -1]/2,'same') ;
+        dI_dy = conv2(img,[1 ; 0 ; -1]/2,'same') ;
+    % Interpolate at the given coordinates & compute the residual
+        if nargin<3 % take the ROI by default
+        %dr_da = [diag(sparse(this.Grad{1}*img(:)))*this.MAP diag(sparse(this.Grad{2}*img(:)))*this.MAP] ;
+            imgdata = img(this.ROI) ;
+            dr_da = [diag(sparse(dI_dx(this.ROI)))*this.MAP diag(sparse(dI_dy(this.ROI)))*this.MAP] ;
+        else % 
+            imgdata = this.bilinearInterp(img,xx) ;
+            dI_dx = this.bilinearInterp(dI_dx,xx) ;
+            dI_dy = this.bilinearInterp(dI_dy,xx) ;
+            dr_da = [diag(sparse(dI_dx))*this.MAP diag(sparse(dI_dy))*this.MAP] ;
+        end
+    % Project to seed nodes
+        dr_da = dr_da*this.N2V ;
+    % Normalization weights
+        [~,W] = this.normalizedImg(imgdata) ;
+    % Hessian
         H = dr_da'*diag(sparse(W(:)))*dr_da ;
         H = (H+H')/2 ;
     end
@@ -208,7 +221,7 @@ methods
         I = I.*W ;
     end
     
-    function I = transformImage(this,X,x,I)
+    function I = transformImage(this,I,x,X)
     % Transform the image(s) I from configuration X to x
         x = reshape(this.N2V*x(:),[],2) ; 
         for ii = 1:numel(I)

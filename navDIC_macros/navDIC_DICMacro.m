@@ -84,8 +84,8 @@ end
 
 methods (Abstract)
 % THESE METHODS NEED TO BE INSTANCIED BY SUBCLASSES
-    X = updateDIC(this,X,imgs) % Update the configuration X using DIC performed on imgs
-    I = transformImage(this,X,x,I) % Transform an image(s) I from configuration X to x
+    X = updateDIC(this,X,img,IMG) % Update the configuration X using DIC performed from current images "img" to references "IMG"
+    I = transformImage(this,I,x,X) % Transform the image(s) I from configuration X to x
 end
 
 methods (Sealed)
@@ -125,10 +125,10 @@ methods (Sealed)
         imgs = hd.Images{this.Seed.CamIDs}(CF) ;
         imgs = this.processImgs(imgs) ;
     % Update the DIC
-        X = updateDIC(this,X0,imgs) ;
+        X = this.updateDIC(X0,imgs,this.RefImgs) ;
     % Update the reference images if needed
         if this.WeightPreviousImage
-            imgs = transformImage(this,X0,X,imgs) ;
+            imgs = this.transformImage(imgs,X,X0) ;
             for ii = 1:numel(this.RefImgs)
                 this.RefImgs{ii} = this.RefImgs{ii}*(1-this.WeightPreviousImage) + imgs{ii}*this.WeightPreviousImage ;
             end
