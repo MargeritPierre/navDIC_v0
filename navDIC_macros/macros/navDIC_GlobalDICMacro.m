@@ -279,7 +279,7 @@ methods
     % Lines: create a quadrilateron from offsetted lines
         isLine = sum(Elems>0,2)==2 ;
         if any(isLine)
-            mergeAdj = false ; % merge adjacent nodes for strain regularisation ?
+            mergeAdj = true ; % merge adjacent nodes for strain regularisation ?
             nodeNormals = false ; % offset with node normals ?
         % Get involved node indices and reshape the element list
             nn = Elems(isLine,1:2) ;
