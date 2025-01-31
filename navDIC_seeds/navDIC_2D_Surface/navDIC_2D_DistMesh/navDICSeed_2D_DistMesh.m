@@ -1088,7 +1088,7 @@ methods
                                     % Set Color Limits
                                         CLim = min(max(avg+N*ec*[-1 1],minData),maxData) ;
                             end
-                            if range(CLim)<eps ; CLim = CLim(1)+abs(CLim(1))*[-1 1]*eps ; end
+                            if range(CLim)<eps ; CLim = mean(abs(CLim))+[-1 1]*eps ; end
                             if any(CLim~=caxis(ax)) ; caxis(ax,CLim) ; end
                     end
                 % Color Steps
