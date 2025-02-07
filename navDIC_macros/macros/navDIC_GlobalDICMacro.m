@@ -9,11 +9,6 @@ properties
                         ... 'zeromean' ... Zero-mean difference
                          'normalized' ... Normalized Zero-mean difference
                          ;
-     % Estimated displacement components
-        DispComp =  'both' ... Both components
-                        ... 'X' ... 
-                        ... 'Y' ... 
-                         ;
     % Descent Algorithm
         GNAlgorithm = ... 'full' ... full Gauss-Newton
                   'modified' ... modified (assume "grad(g(x+u))=grad(f(x))") OK for small perturbations
@@ -61,9 +56,9 @@ methods
         defInputs = { ...
                         'Gauss-Newton descent algorithm [full/modified]' , this.GNAlgorithm ...
                         ; 'Image difference criterion [diff/zeromean/normalized]' , this.DiffCriterion ...
-                        ; 'Estimated displacement components [both/X/Y]' , this.DispComp ...
                         ; 'Maximum displacement update at convergence' , num2str(this.MaxDisp) ...
                         ; 'Strain regularisation parameter Beta' , num2str(this.Beta) ...
+                        ; 'Strain regularisation mode [abs/rel]' , this.RegCrit ...
                         ; 'Maximum number of iterations' , num2str(this.MaxIt) ...
                         ; 'Step ratio [0->1]' , num2str(this.StepRatio) ...
                         ; 'Image interpolation order [linear/cubic]' , num2str(this.InterpOrder) ...
@@ -75,9 +70,9 @@ methods
         if isempty(out) ; return ; end
         this.GNAlgorithm = out{1} ;
         this.DiffCriterion = out{2} ; 
-        this.DispComp = out{3} ; 
-        this.MaxDisp = str2double(out{4}) ;
-        this.Beta = str2double(out{5}) ;
+        this.MaxDisp = str2double(out{3}) ;
+        this.Beta = str2double(out{4}) ;
+        this.RegCrit = out{5} ;
         this.MaxIt = str2double(out{6}) ;
         this.StepRatio = str2double(out{7}) ;
         this.InterpOrder = str2double(out{8}) ;
@@ -517,52 +512,6 @@ methods
     % Associated Hessian
         if nargout>=2 ; Hr = dB'*W*dB ; Hr = (Hr+Hr')/2 ; end
         dB = W*dB ;
-    end
-    
-    function val = bilinearInterp(this,img,xx,extrapVal)
-    % Bilinear interpolation of an image at real-valued coordinates xx
-    % faster than gg = interp2(img,xx(:,1),xx(:,2),'linear') ;
-    % xx = [nValues 2] = [jj(:) ii(:)] ;
-    % with ii and jj resp. the (real-valued) row and column indices
-    % extrapVal: extrapolation value (default: NaN)
-
-        if nargin<4 ; extrapVal = NaN ; end
-
-        % Image informations
-        [nI,nJ,~] = size(img) ;
-
-        % Valid coordinates
-        valid = xx(:,1)<=nJ ...
-                & xx(:,1)>=1 ...
-                & xx(:,2)<=nI ...
-                & xx(:,2)>=1 ;
-
-        % Dummy values
-        xx(~valid,:) = 1 ;
-
-        % Integer part of the cordinates
-        ji = floor(xx) ;
-        ji(ji(:,1)==nJ,1) = nJ-1 ;
-        ji(ji(:,2)==nI,2) = nI-1 ;
-
-        % Neightboring pixels
-        p1 = ji(:,2)+nI*(ji(:,1)-1) ;
-        p2 = p1 + nI ; 
-        p3 = p2+1 ; 
-        p4 = p1+1 ;
-
-        % residual coordinates
-        dx = xx-ji ;
-
-        % bilinear interpolation
-        val = img(p1).*(1-dx(:,1)).*(1-dx(:,2)) ...
-            + img(p2).*dx(:,1).*(1-dx(:,2)) ...
-            + img(p3).*dx(:,1).*dx(:,2) ...
-            + img(p4).*(1-dx(:,1)).*dx(:,2) ;
-
-        % Non-valid values
-        val(~valid) = extrapVal ;
-
     end
 end
 

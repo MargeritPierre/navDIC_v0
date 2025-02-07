@@ -54,7 +54,7 @@ methods
     % Delete current camera & data
         if id~=this.CameraID
             hd.Cameras(this.CameraID).CurrentState = 'deleted' ;
-            hd.Images(this.CameraID) = {} ;
+            hd.Images{this.CameraID} = {} ;
         end
     % Create the virtual camera
         cam = struct('Infos',[],'Adaptor','none','VidObj',[],'Name',this.Name,'CurrentState','virtual') ;
@@ -70,6 +70,8 @@ methods
         end
     % Set the ID
         this.CameraID = id ;
+    % Add an empty image
+        hd.Images{this.CameraID} = {} ;
     end
 end
 

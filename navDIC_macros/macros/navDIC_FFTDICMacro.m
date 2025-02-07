@@ -1,51 +1,19 @@
-classdef navDIC_GlobalDICMacro < navDIC_DICMacro
-%NAVDIC_GlobalDICMacro Implement Global DIC
+classdef navDIC_FFTDICMacro < navDIC_DICMacro
+%NAVDIC_FFTDICMacro Implements local DIC via FFT
 
-properties
-    % Image interpolation
-        InterpOrder = 'linear' ;
-    % Image difference criterion
-        DiffCriterion = ... 'diff' ... Simple difference
-                        ... 'zeromean' ... Zero-mean difference
-                         'normalized' ... Normalized Zero-mean difference
-                         ;
-     % Estimated displacement components
-        DispComp =  'both' ... Both components
-                        ... 'X' ... 
-                        ... 'Y' ... 
-                         ;
-    % Descent Algorithm
-        GNAlgorithm = ... 'full' ... full Gauss-Newton
-                  'modified' ... modified (assume "grad(g(x+u))=grad(f(x))") OK for small perturbations
-                    ;
-    % Geometry enhancement
-        EdgeThickness = 30 ; % include surrounding pixels of (outer) edges
-        PointSatellites = 4 ; % add satellite points to isolated points
-    % Geometry validation criteria
-        CullOutOfFrame = true ; % Cull out of frame points
-        MinCorrCoeff = 0 ; % Below this, elements are culled
-        MaxMeanElemResidue = Inf ; % Above this, elements are culled
-        ThresholdValidGeometry = 0 ; % Check correlation. coeffs when the (normA/minNorm)<thresholdValidGeometry. (0 disable the check)
-    % Regularisation
-        StepRatio = 1 ; % Descent step ratio, damping the convergence is <1
-        RegCrit = 'rel' ; % second gradient minimization: absolute variation ('abs') or relative ('rel')
-        Beta = 1*1e7 ; % Strain gradient penalisation coefficient
-        EpsTrsh = 1e0 ; % Limit value for the regularisation weights (active when regCrit = 'rel')
-    % Convergence Criteria
-        MaxIt = 100 ; % Maximum number of Newton-Raphson iterations
-        MaxDisp = 1e-4 ; % Maximum displacement of a node
-        MaxResidueRelativeVariation = Inf ; % Maximum relative variation of the image residue (RMSE)
-        MinCorrdU = -.999 ; % Maximum update correlation between two consecutive iterations (avoids oscillations)
-    % Plotting
-        Debug logical = false
-        PlotRate = Inf ; % Plot Refresh Frequency 
-        PlotEachIteration = false ; % Plot at every iteration (without necessary pausing, bypass plotRate)
-        PlotEachFrame = false ; % Plot at every Frame end (without necessary pausing, bypass plotRate)
-        PauseAtPlot = false ; % Pause at each iteration for debugging
+properties % see fftdispmethod script for more details
+    CorrSize = 0 ; % Rectangular correlation window (imaget size) see this.autoCorrSize
+    Margin = 1/4 ; % Margin to truncate borders (relative to window size)
+    MaxImagetShift = 1/2 ; % Maximum allowed imagette shift (close to image borders) (relative to window size)
+    MaxDispPerIteration = 1/2 ; % Maximum allowed displacement per iteration (relative to window size)
+    MaxDispAtConvergence = 1.1 ; % continue itrating if update is more than n pixels
+    MaxIterations = 10 ; % maximum number of iterations
+    Method = 'COR' ; % type of correlation
+    Windowing = true ; % apply a blackman windowing
 end
 
 methods
-    function this = navDIC_GlobalDICMacro()
+    function this = navDIC_FFTDICMacro()
     % Class constructor
     end
     
@@ -57,33 +25,28 @@ methods
     % Setup the macro (change parameters, etc)
         hd = setup@navDIC_DICMacro(this,hd) ; % Set parameters common to DIC macros
         if isempty(this.Seed) ; return ; end
+        this.CorrSize = this.autoCorrSize() ;
     % Set globalDIC parameters
         defInputs = { ...
-                        'Gauss-Newton descent algorithm [full/modified]' , this.GNAlgorithm ...
-                        ; 'Image difference criterion [diff/zeromean/normalized]' , this.DiffCriterion ...
-                        ; 'Estimated displacement components [both/X/Y]' , this.DispComp ...
-                        ; 'Maximum displacement update at convergence' , num2str(this.MaxDisp) ...
-                        ; 'Strain regularisation parameter Beta' , num2str(this.Beta) ...
-                        ; 'Maximum number of iterations' , num2str(this.MaxIt) ...
-                        ; 'Step ratio [0->1]' , num2str(this.StepRatio) ...
-                        ; 'Image interpolation order [linear/cubic]' , num2str(this.InterpOrder) ...
-                        ; 'Edge Thickness' , num2str(this.EdgeThickness) ...
-                        ; 'Number of satellites for isolated points' , num2str(this.PointSatellites) ...
-                        ; 'Debug mode' , num2str(this.Debug) ...
+                         'Correlation window size [nI nJ] 0:auto, -1:full' , mat2str(this.CorrSize) ...
+                         ; 'FFT spectrum trunctation (relative)' , num2str(this.Margin) ...
+                         ; 'Maximum imaget shift (relative)' , num2str(this.MaxImagetShift) ...
+                         ; 'Maximum displacement per iteration (relative)' , num2str(this.MaxDispPerIteration) ...
+                         ; 'Maximum displacement at convergence (pixels)' , num2str(this.MaxDispAtConvergence) ...
+                         ; 'Maximum number of iterations' , num2str(this.MaxIterations) ...
+                         ; 'Correlation method [COR/LS/SVD]' , this.Method ...
+                         ; 'Apply windowing' , num2str(this.Windowing) ...
                     } ;
-        out = inputdlg(defInputs(:,1),'Global DIC parameters',1,defInputs(:,2)) ;
+        out = inputdlg(defInputs(:,1),'FFT DIC parameters',1,defInputs(:,2)) ;
         if isempty(out) ; return ; end
-        this.GNAlgorithm = out{1} ;
-        this.DiffCriterion = out{2} ; 
-        this.DispComp = out{3} ; 
-        this.MaxDisp = str2double(out{4}) ;
-        this.Beta = str2double(out{5}) ;
-        this.MaxIt = str2double(out{6}) ;
-        this.StepRatio = str2double(out{7}) ;
-        this.InterpOrder = str2double(out{8}) ;
-        this.EdgeThickness = str2double(out{9}) ;
-        this.PointSatellites = str2double(out{10}) ;
-        this.Debug = str2double(out{11}) ;
+        this.CorrSize = str2num(out{1}) ; 
+        this.Margin = str2num(out{2}) ;
+        this.MaxImagetShift = str2num(out{3}) ; 
+        this.MaxDispPerIteration = str2num(out{4}) ; 
+        this.MaxDispAtConvergence = str2num(out{5}) ; 
+        this.MaxIterations = str2num(out{6}) ;
+        this.Method = out{7} ; 
+        this.Windowing = str2num(out{8}) ;
     % Prepare the DIC data
         this.setupDIC(hd) ;
     end
@@ -91,38 +54,40 @@ end
 
 
 %% DIC PROCEDURES
-properties
-   Vertices % (Augmented) simplex mesh nodes [nVertices 2]
-   Tris % (Augmented) simplicex mesh elements [nTris 3]
-   N2V % transfer matrix from the seed mesh nodes to the simplex mesh vertices [2*nVertices 2*nNodes]
-   MAP % Sparse nodal->pixels interpolation matrix [nPixelsInROI nNodes] (FEM shape functions evaluated at pixel coordinates)
-   IN % Sparse logical matrix [nPixelsInROI nElems]: which pixel is in which element ?
-   ROI % Region Of Interest (everywhere the mapping is not zero)
-   Grad % Sparse matrices aiming to compute the image gradient {[nPixelsInROI nPixels]}(nCoord)
-   dr_da % derivative of the image difference w.r.t parameters
-   H % hessian
-   Hr % regularization hessian
-end
 methods
+    function sz = autoCorrSize(this)
+    % Automatic choice of correlation window sizes
+        res = size(this.RefImgs{end},1:2) ;
+        switch sum(abs(this.CorrSize))
+            case 0 % automatic choice based on seed elements
+                switch size(this.Seed.Elems,2)
+                    case 1 % Points, take the frame size divided by he number of points
+                        nPts = size(this.Seed.Points,1) ;
+                        if nPts==1 
+                            sz = res-2 ;
+                        else
+                            nPix = prod(res) ;
+                            nPixByPt = nPix./nPts ;
+                            sz = floor(sqrt(nPixByPt)).*[1 1] ;
+                        end
+                    case 2 % Edges, take the mean edge length
+                        edgPts = reshape(this.Seed.Points(this.Seed.Elems,:),[],2,2) ;
+                        Le = sqrt(sum(diff(edgPts,1,2).^2,3)) ;
+                        sz = floor(median(Le)).*[1 1] ;
+                    otherwise % tiangles or quads, use the mean element area
+                        [~,A] = this.Seed.jacobian([.5 .5]) ;
+                        sz = floor(sqrt(median(A))).*[1 1] ;
+                end
+            case -1 % Full image size
+                sz = res - 2 ;
+            otherwise % user-defined choice [nI nJ]
+                sz = round(this.CorrSize) ;
+        end
+    end
+    
     function setupDIC(this,hd)
-    % Prepare the DIC data
-        refImg = this.RefImgs{end}(:,:,1) ; % gray-scale reference
-        [nI,nJ] = size(refImg,[1 2]) ;
-    % Build the augmented simplex mesh
-        [this.Vertices,this.Tris,this.N2V] = this.simplexMesh() ;
-    % Construct the FEM interpolation mapping
-        [this.MAP,this.IN] = this.P1ShapeFunctions(refImg) ;
-    % Get the ROI
-        this.ROI = reshape(any(this.IN,2),[nI nJ]) ;
-        this.ROI([1 end],:) = false ; % remove image borders
-        this.ROI(:,[1 end]) = false ; % remove image borders
-        this.MAP = this.MAP(this.ROI,:) ; % reduce the problem to ROI
-        this.IN = this.IN(this.ROI,:) ; % reduce the problem to ROI
-    % Compute regularisation data
-        [~,this.Hr] = this.strainGradientRegularisation() ;
-        this.Hr = this.N2V'*this.Hr ;
-    % Compute the GN data
-        [this.dr_da,this.H] = this.GNData(refImg) ;
+    % Setup all variables for the DIC...
+        this.CorrSize = this.autoCorrSize() ;
     end
     
     function X = updateDIC(this,X,imgs,refImgs)
@@ -130,122 +95,19 @@ methods
     % For now, only working on one gray-scale image
         G = refImgs{end}(:,:,1) ; % reference <MONOCHROME SINGLE CAMERA!>
         g = imgs{end}(:,:,1) ; % current <MONOCHROME SINGLE CAMERA!>
-    % Prepare the reference frame
-        G = G(this.ROI) ;
-        G = this.normalizedImg(G) ;
-    % Initialize
-        U = X*0 ; it = 0 ; outFlag = [] ;
-        dx = this.Vertices-reshape(this.N2V*this.Seed.Points(:),[],2) ;
-    % DIC Loop
-        while isempty(outFlag)
-        % Image interpolation
-            x = reshape(this.N2V*(X(:)+U(:)),[],2) ; 
-            xx = this.MAP*(x+dx) ; % [nPix nCoord]
-            gx = this.bilinearInterp(g,xx) ; % [nPix 1]
-        % Image residual
-            r = this.normalizedImg(gx(:))-G(:) ;
-        % Full gauss-newton ?
-            switch this.GNAlgorithm
-                case 'modified'
-                otherwise
-                    [this.dr_da,this.H] = this.GNData(g,xx) ;
-            end
-        % Jacobians
-            j = this.dr_da'*r ;
-            switch this.RegCrit
-                case 'abs' ; jr = this.Hr*(dx(:)+this.N2V*(X(:)+U(:))) ;
-                case 'rel' ; jr = this.Hr*(this.N2V*U(:)) ;
-            end % full H & j
-            j = j + this.Beta*jr ;
-            H = this.H + this.Beta*this.Hr*this.N2V ;
-        % Select components
-            switch this.DispComp
-                case 'both' % do nothing
-                case 'X'
-                    j = j(1:end/2) ;
-                    H = H(1:end/2,1:end/2) ;
-                case 'Y'
-                    j = j(end/2+1:end) ;
-                    H = H(end/2+1:end,end/2+1:end) ;
-            end
-        % Update
-            du = - H \ j ; 
-            switch this.DispComp
-                case 'both' % do nothing
-                    dU = reshape(du,[],2) ;
-                case 'X'
-                    dU = [1 0].*du ;
-                case 'Y'
-                    dU = [0 1].*du ;
-            end
-            U = U + dU ;
-        % Break criterion
-            it = it+1 ;
-            if it>=this.MaxIt ; outFlag = 'maximum iterations reached' ; end
-            if max(abs(dU))<=this.MaxDisp ; outFlag = 'below displacement threshold' ; end
-            if all(isnan(dU)) ; outFlag = 'all nodes are NaN' ; end
-        % Display infos
-            disp([ ...
-                this.Name ':' ...
-                ' it ' num2str(it) ...
-                ' max(dU) ' num2str(max(abs(dU))) ...
-                ]) ;
-        % Debug ?
-            if this.Debug
-                global hd
-            % Update seed data
-                this.Seed.MovingPoints(:,:,hd.CurrentFrame) = X+U ;
-                this.Seed.computeDataFields([],hd.CurrentFrame) ;
-            % Update navDIC previews
-                hd = updateAllPreviews(hd) ;
-            % Draw
-                drawnow ;
-            end
-        end
-    % Return the config
-        X = X+U ;
-    end
-    
-    function [dr_da,H] = GNData(this,img,xx)
-    % Return Gauss-Newton residual derivative and Hessian
-    % Compute the image gradient
-        dI_dx = conv2(img,[1 , 0 , -1]/2,'same') ;
-        dI_dy = conv2(img,[1 ; 0 ; -1]/2,'same') ;
-    % Interpolate at the given coordinates & compute the residual
-        if nargin<3 % take the ROI by default
-        %dr_da = [diag(sparse(this.Grad{1}*img(:)))*this.MAP diag(sparse(this.Grad{2}*img(:)))*this.MAP] ;
-            imgdata = img(this.ROI) ;
-            dr_da = [diag(sparse(dI_dx(this.ROI)))*this.MAP diag(sparse(dI_dy(this.ROI)))*this.MAP] ;
-        else % 
-            imgdata = this.bilinearInterp(img,xx) ;
-            dI_dx = this.bilinearInterp(dI_dx,xx) ;
-            dI_dy = this.bilinearInterp(dI_dy,xx) ;
-            dr_da = [diag(sparse(dI_dx))*this.MAP diag(sparse(dI_dy))*this.MAP] ;
-        end
-    % Project to seed nodes
-        dr_da = dr_da*this.N2V ;
-    % Normalization weights
-        [~,W] = this.normalizedImg(imgdata) ;
-    % Hessian
-        H = dr_da'*diag(sparse(W(:)))*dr_da ;
-        H = (H+H')/2 ;
-    end
-    
-    function [I,W] = normalizedImg(this,I,w)
-    % Return the normalized image
-        W = ones(size(I)) ; % weighting
-        if ismember(this.DiffCriterion,{'diff'}) ; return ; end
-    % Weights
-        if nargin<3 ; w = this.IN ; end
-        sumW = sum(w,1)' ;
-    % Substract the mean image
-        meanI = (w'*I)./sumW ;
-        I = I-w*meanI ;
-        if ismember(this.DiffCriterion,{'zeromean'}) ; return ; end
-    % Normalize
-        normI = sqrt( ( w'*(I.^2) )./sumW ) ;
-        W = w*(1./normI) ;
-        I = I.*W ;
+        X0 = this.Seed.Points ;
+        params = struct(...
+                         'dir' , this.DispComp ...
+                       , 'CorrSize' , this.CorrSize ...
+                       , 'm' , round(this.Margin.*this.CorrSize) ...
+                       , 'maxImagetShift' , round(this.MaxImagetShift.*this.CorrSize) ...
+                       , 'uMax' , round(this.MaxDispPerIteration.*this.CorrSize) ...
+                       , 'iterateIfMaxDispHigherThan' , this.MaxDispAtConvergence ...
+                       , 'maxIt' , this.MaxIterations ...
+                       , 'FIT' , this.Method ...
+                       , 'windowing' , this.Windowing ...
+                        ) ;
+        X = fftDispMethod(X,X0,g,G,params) ;
     end
     
     function I = transformImage(this,I,x,X)

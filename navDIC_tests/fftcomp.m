@@ -15,8 +15,8 @@ d = 2*pi/(nX) ;
 X = x ; 
 
 g = exp(-(9*(x-nX/2)/nX).^2) ;
-u = ...1*nX*((14/100)*(2*(x/nX-.5)).^2 + 15/1000) ...
-    1/100*nX*sin(2*pi*(x/nX-.5)*21) ...
+u = 1*nX*((18/100)*(1*(x/nX-.5)).^1 + 0/1000) ...
+    ...1/100*nX*sin(2*pi*(x/nX-.5)*21) ...
     ;
 phi = x + u ;
 f = interp1([x-nX x x+nX],[g g g],phi,'cubic') ;
@@ -37,7 +37,7 @@ err_F = norm(Fa-F)/norm(F)
 clf ; plot(x,phi-x) ;
 clf ; plot(x,f) ; plot(x,g) ; plot(x,real(fb),':') ;
 %clf ; plot3(X,real(F),imag(F)) ; plot3(X,real(G),imag(G)) ; plot3(X,real(Fa),imag(Fa),':') ;
-%clf ; imagesc(real(P))
+clf ; imagesc(real(P))
 %%
 Ga = 1/(nX*1+0) * (fft(g)) ; y = x ;
 Ga = fftshift(Ga) ; y = X ;

@@ -36,5 +36,11 @@ methods
     end
 end
 
+methods (Sealed=true)
+    function tf = eq(varargin)
+        tf = eq@handle(varargin{:});
+    end
+end
+
 end
 

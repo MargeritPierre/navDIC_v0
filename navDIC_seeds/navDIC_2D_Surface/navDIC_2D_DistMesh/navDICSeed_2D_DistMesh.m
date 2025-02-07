@@ -258,8 +258,8 @@ methods
     % Jacobian
         J = NaN(size(elmt,1),4) ;
         if any(isTri) 
-            J(isTri,[1 2]) =  elmtPts(isTri,:,2) - elmtPts(isTri,:,2) ; 
-            J(isTri,[3 4]) =  elmtPts(isTri,:,3) - elmtPts(isTri,:,2) ; 
+            J(isTri,[1 2]) =  elmtPts(isTri,:,2) - elmtPts(isTri,:,1) ; 
+            J(isTri,[3 4]) =  elmtPts(isTri,:,3) - elmtPts(isTri,:,1) ; 
         end
         if any(isQuad)
             J(isQuad,[1 2]) =  (1-E(isQuad,2)).*(elmtPts(isQuad,:,2)-elmtPts(isQuad,:,1)) ...
@@ -558,7 +558,7 @@ methods
         [nPoints,nCoord,nFrames] = size(obj.MovingPoints) ;
         if nargin<3 ; fr = 1:nFrames ; end
         % Init the structure
-            computeAll = isempty(obj.DataFields) || nargin<3 ;
+            computeAll = isempty(obj.DataFields) || isempty(fieldnames(obj.DataFields)) || nargin<3 ;
             DATA = struct() ;
         % REFERENCE CONFIGURATION
             if computeAll % re-determine the reference config
@@ -1088,7 +1088,7 @@ methods
                                     % Set Color Limits
                                         CLim = min(max(avg+N*ec*[-1 1],minData),maxData) ;
                             end
-                            if range(CLim)<eps ; CLim = mean(abs(CLim))+[-1 1]*eps ; end
+                            if range(CLim)<eps ; CLim = mean(abs(CLim))+[-1 1]*sqrt(eps) ; end
                             if any(CLim~=caxis(ax)) ; caxis(ax,CLim) ; end
                     end
                 % Color Steps
