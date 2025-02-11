@@ -84,6 +84,9 @@ function navDIC(varargin)
                 return ;
             end
         end
+        
+    % STARTUP FILE
+        navDIC_startup ;
     
     % Initialization of handles 
     % (type "global hd" in cmd to remote debugging access)
