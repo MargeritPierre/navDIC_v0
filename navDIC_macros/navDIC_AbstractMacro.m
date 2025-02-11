@@ -18,6 +18,11 @@ methods
     % Class destructor
     end
     
+    function hd = setupUI(this,hd)
+    % Setup the macro via its UI (change parameters, etc)
+        hd = setup(this,hd) % for backward compatibility
+    end
+    
     function hd = setup(this,hd)
     % Setup the macro (change parameters, etc)
     end

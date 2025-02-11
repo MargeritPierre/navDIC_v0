@@ -24,7 +24,7 @@ methods
     % Class destructor
     end
     
-    function hd = setup(this,hd)
+    function hd = setupUI(this,hd)
     % Setup the macro (change parameters, etc)
     % First, choose the seed
         if isempty(hd.Seeds) 
@@ -71,16 +71,22 @@ methods
         if isempty(out) ; return ; end
         this.Name = out{1} ;
         this.Enable = str2num(out{2}) ;
-        switch str2num(out{3})
-            case 0 ; this.RefImgs = this.Seed.refImgs ;
-            otherwise ; this.RefImgs = hd.Images{this.Seed.CamIDs}(str2num(out{3})) ;
-        end
+        this.RefFrame = str2double(out{3}) ;
         this.WeightPreviousImage = str2num(out{4}) ;
         this.GaussianFilterSize = str2num(out{5}) ;
         this.InitWithExistingData = str2num(out{6}) ;
         this.UsePreviousVelocity = str2num(out{7}) ;
         this.DispComp = out{8} ;
-    % Filter the reference image
+    % Setup the macro
+        hd = setup(this,hd) ;
+    end
+
+    function hd = setup(this,hd)
+    % Build the reference image
+        switch this.RefFrame
+            case 0 ; this.RefImgs = this.Seed.refImgs ;
+            otherwise ; this.RefImgs = hd.Images{this.Seed.CamIDs}(this.RefFrame) ;
+        end
         this.RefImgs = this.processImgs(this.RefImgs);
     end
 end

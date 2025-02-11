@@ -32,6 +32,10 @@ methods
         if any(~ismember([MasterID SlaveID],1:numel(hd.Seeds))) ; return ; end
         this.MasterSeed = hd.Seeds(MasterID) ;
         this.SlaveSeed = hd.Seeds(SlaveID) ;
+        this.initProjector() ;
+    end
+
+    function initProjector(this)
         this.P = this.MasterSeed.interpMat(this.SlaveSeed.Points) ;
     end
 

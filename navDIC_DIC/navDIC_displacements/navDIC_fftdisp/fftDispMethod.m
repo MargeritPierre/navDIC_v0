@@ -17,8 +17,10 @@ function MovingPoints = fftDispMethod(PtsMov,PtsRef,imgMov,imgRef,params)
         windowing = true ; % apply a blackman windowing
     
     % Override parameters (not very nice..)
-        for ff = fieldnames(params)'
-            eval([ff{1} ' = params.' ff{1} ';' ]) ;
+        if ~isempty(params)
+            for ff = fieldnames(params)'
+                eval([ff{1} ' = params.' ff{1} ';' ]) ;
+            end
         end
         
     % INITIALIZE

@@ -928,7 +928,16 @@ methods
                 set(submenus,'callback',@(src,evt)obj.updateSeedMenus(src,ax)) ;
             % UserData in axes to choose the data to plot
                 ax.UserData.dataLabel = submenus(defMenu).Label ;
-                ax.UserData.plotType = 'Mesh' ;
+                switch size(obj.Elems,2)
+                    case 0 % points
+                            ax.UserData.plotType = 'Scatter' ;
+                    case 1 % points
+                            ax.UserData.plotType = 'Scatter' ;
+                    case 2 % edges
+                            ax.UserData.plotType = 'Edges' ;
+                    otherwise
+                            ax.UserData.plotType = 'Mesh' ;
+                end
                 ax.UserData.dataScale = 'Linear' ;
                 ax.UserData.clrMode = 'Preset' ;
                 ax.UserData.clrFramesLabel = 'Current' ;

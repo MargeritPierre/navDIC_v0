@@ -105,7 +105,7 @@ function [Macros,macroListChanged] = manageMacros(Macros)
             id = listBoxCurrent.Value ;
         % Modify the macro settings
             global hd
-            hd = setup(newMacros(id),hd) ;
+            hd = setupUI(newMacros(id),hd) ;
         % Update Lists
             updateLists() ;
             macroListChanged = true ;

@@ -21,14 +21,14 @@ methods
     % Class destructor
     end
     
-    function hd = setup(this,hd)
+    function hd = setupUI(this,hd)
     % Setup the macro (change parameters, etc)
-        hd = setup@navDIC_DICMacro(this,hd) ; % Set parameters common to DIC macros
+        hd = setupUI@navDIC_DICMacro(this,hd) ; % Set parameters common to DIC macros
         if isempty(this.Seed) ; return ; end
         this.CorrSize = this.autoCorrSize() ;
     % Set globalDIC parameters
         defInputs = { ...
-                         'Correlation window size [nI nJ] 0:auto, -1:full' , mat2str(this.CorrSize) ...
+                         'Correlation window size [nX nY] 0:auto, -1:full' , mat2str(this.CorrSize) ...
                          ; 'FFT spectrum trunctation (relative)' , num2str(this.Margin) ...
                          ; 'Maximum imaget shift (relative)' , num2str(this.MaxImagetShift) ...
                          ; 'Maximum displacement per iteration (relative)' , num2str(this.MaxDispPerIteration) ...
@@ -47,7 +47,13 @@ methods
         this.MaxIterations = str2num(out{6}) ;
         this.Method = out{7} ; 
         this.Windowing = str2num(out{8}) ;
+    % Setup the macro
+        hd = this.setup(hd) ;
+    end
+    
+    function hd = setup(this,hd)
     % Prepare the DIC data
+        hd = setup@navDIC_DICMacro(this,hd) ; 
         this.setupDIC(hd) ;
     end
 end
@@ -57,7 +63,7 @@ end
 methods
     function sz = autoCorrSize(this)
     % Automatic choice of correlation window sizes
-        res = size(this.RefImgs{end},1:2) ;
+        res = size(this.RefImgs{end},[2 1]) ;
         switch sum(abs(this.CorrSize))
             case 0 % automatic choice based on seed elements
                 switch size(this.Seed.Elems,2)
@@ -80,7 +86,7 @@ methods
                 end
             case -1 % Full image size
                 sz = res - 2 ;
-            otherwise % user-defined choice [nI nJ]
+            otherwise % user-defined choice [nX nY]
                 sz = round(this.CorrSize) ;
         end
     end

@@ -48,9 +48,9 @@ methods
     % Class destructor
     end
     
-    function hd = setup(this,hd)
+    function hd = setupUI(this,hd)
     % Setup the macro (change parameters, etc)
-        hd = setup@navDIC_DICMacro(this,hd) ; % Set parameters common to DIC macros
+        hd = setupUI@navDIC_DICMacro(this,hd) ; % Set parameters common to DIC macros
         if isempty(this.Seed) ; return ; end
     % Set globalDIC parameters
         defInputs = { ...
@@ -79,7 +79,13 @@ methods
         this.EdgeThickness = str2double(out{9}) ;
         this.PointSatellites = str2double(out{10}) ;
         this.Debug = str2double(out{11}) ;
+    % Setup the macro
+        hd = this.setup(hd) ;
+    end
+    
+    function hd = setup(this,hd)
     % Prepare the DIC data
+        hd = setup@navDIC_DICMacro(this,hd) ; 
         this.setupDIC(hd) ;
     end
 end
