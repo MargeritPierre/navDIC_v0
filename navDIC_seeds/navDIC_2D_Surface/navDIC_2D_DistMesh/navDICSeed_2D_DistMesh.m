@@ -191,7 +191,7 @@ methods
 
 % ------- GLOBAL/LOCAL COORDINATES MAPPING ------------------------------
 % Works for triangles and quadrangles only (P1)
-% (e1,e2) in [0->1]²
+% (e1,e2) in [0->1]Â²
 %               3        |          4--3
 %        TRI:   | \      |  QUAD:   |  |
 %               1--2     |          1--2
@@ -738,20 +738,21 @@ methods
         DATA.Length = 'Length' ; 
         DATA.L = abs(P) ;
         DATA.dL = cat(3,zeros(size(DX,1),1),diff(DATA.L,1,3)) ;
-        DATA.dLtot = cumsum(DATA.dL,3) ;
+        DATA.dLtot = cumsum(DATA.dL,3,'omitnan') ;
+        L0 = DATA.L(:,:,DATA.FirstValidFrame(1)) ;
     % Strains
         DATA.Length = 'Stretch' ; 
-        DATA.E = DATA.dLtot./DATA.L(:,1) ;
+        DATA.E = DATA.dLtot./L0 ;
         DATA.lambda = DATA.E + 1 ;
         DATA.D = DATA.dL./DATA.L ;
-        DATA.TS = cumsum(DATA.D,3) ;
+        DATA.TS = cumsum(DATA.D,3,'omitnan') ;
     % Edge Rotation
         DATA.Rotations = 'Rotation' ; 
         DATA.A = angle(P) ;
         DATA.dA = angle(cat(3,zeros(size(DX,1),1),P(:,:,2:end)./P(:,:,1:end-1))) ;
-        DATA.dAtot = cumsum(DATA.dA,3) ;
+        DATA.dAtot = cumsum(DATA.dA,3,'omitnan') ;
     % Curvature
-        iL = diag(sparse(1./DATA.L(:,1))) ;
+        iL = diag(sparse(1./L0)) ;
         if onNodes ; Dk = D*iL ; else ; Dk = D*b2n*iL ; end
         if size(Dk,2)==1 ; Dk = full(Dk) ; end
         DATA.Curvature = 'Curvature' ; 
